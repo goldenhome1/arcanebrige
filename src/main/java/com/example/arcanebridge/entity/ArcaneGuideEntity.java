@@ -300,8 +300,7 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                     player.drop(coreStack, false);
                 }
             }
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6[Гид] §7«Сворачиваю контуры. Протокол портативности активирован.»"));
-            this.discard();
+                        this.discard();
         }
     }
 
