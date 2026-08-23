@@ -127,8 +127,8 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                     return;
                 }
             }
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-                    "§6[Гид] §cСигнал рассеялся. В радиусе 100 чанков целевая структура не обнаружена."
+                        player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                    "§6[Гид] §cСигнал рассеялся. В радиусе 4000 блоков целевая структура не обнаружена."
             ));
         }
     }
