@@ -82,19 +82,27 @@ public class GuideDialogueScreen extends Screen {
             return;
         }
 
-                // Нативное открытие FTB Quests через прямой клиентский вызов
+                        // Нативное открытие FTB Quests через прямой API вызов
         if ("OPEN_FTB_QUESTS".equalsIgnoreCase(nodeKey)) {
             closeSafely();
             try {
                 Class<?> clientFileClass = Class.forName("dev.ftb.mods.ftbquests.client.ClientQuestFile");
                 Object instance = clientFileClass.getField("INSTANCE").get(null);
                 if (instance != null) {
-                    clientFileClass.getMethod("openQuestGui").invoke(instance);
-                    return;
+                    try {
+                        clientFileClass.getMethod("openQuestGui").invoke(instance);
+                    } catch (NoSuchMethodException e) {
+                        Class<?> screenClass = Class.forName("dev.ftb.mods.ftbquests.gui.quests.QuestScreen");
+                        Object screen = screenClass.getConstructor(clientFileClass).newInstance(instance);
+                        screen.getClass().getMethod("openGui").invoke(screen);
+                    }
                 }
-            } catch (Throwable ignored) {}
-            if (this.minecraft != null && this.minecraft.player != null) {
-                this.minecraft.player.connection.sendCommand("ftbquests open_gui");
+            } catch (Throwable t) {
+                if (this.minecraft != null && this.minecraft.player != null) {
+                    this.minecraft.player.displayClientMessage(
+                            net.minecraft.network.chat.Component.literal("§c[Ошибка] Не удалось открыть окно FTB Quests."), true
+                    );
+                }
             }
             return;
         }
