@@ -24,29 +24,38 @@ public class GuideDialogueScreen extends Screen {
     private JsonObject dialogueTree;
     private String currentNodeKey = "greeting";
 
-    @Override
+        @Override
     public void tick() {
         super.tick();
-        // Фиксация взгляда Гида строго на игроке во время диалога
-        if (this.guideEntity != null && this.minecraft != null && this.minecraft.player != null) {
-            double dx = this.minecraft.player.getX() - this.guideEntity.getX();
-            double dz = this.minecraft.player.getZ() - this.guideEntity.getZ();
-            double dy = (this.minecraft.player.getEyeY()) - (this.guideEntity.getEyeY());
+        // Полная синхронизация ориентации тела и головы без рывков
+        if (this.guideEntity instanceof net.minecraft.world.entity.LivingEntity living && this.minecraft != null && this.minecraft.player != null) {
+            double dx = this.minecraft.player.getX() - living.getX();
+            double dz = this.minecraft.player.getZ() - living.getZ();
+            double dy = this.minecraft.player.getEyeY() - living.getEyeY();
             double distXZ = Math.sqrt(dx * dx + dz * dz);
             float yaw = (float) (net.minecraft.util.Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
             float pitch = (float) (-(net.minecraft.util.Mth.atan2(dy, distXZ) * (180.0D / Math.PI)));
 
-            this.guideEntity.setYRot(yaw);
-            this.guideEntity.setXRot(pitch);
-            this.guideEntity.yRotO = yaw;
-            this.guideEntity.xRotO = pitch;
-            if (this.guideEntity instanceof net.minecraft.world.entity.LivingEntity living) {
-                living.yHeadRot = yaw;
-                living.yHeadRotO = yaw;
-                living.yBodyRot = yaw;
-                living.yBodyRotO = yaw;
-            }
+            living.setYRot(yaw);
+            living.setXRot(pitch);
+            living.yRotO = yaw;
+            living.xRotO = pitch;
+            living.yHeadRot = yaw;
+            living.yHeadRotO = yaw;
+            living.yBodyRot = yaw;
+            living.yBodyRotO = yaw;
         }
+    }
+
+    private int getBoxY(int npcLinesCount) {
+        int optionsCount = Math.max(1, this.currentOptions.size());
+        int boxHeight = 36 + (npcLinesCount * 11) + (optionsCount * 14) + 8;
+        return this.height - boxHeight - 12;
+    }
+
+    private int getOptionY(int index, int boxY, int npcLinesCount) {
+        int startY = boxY + 28 + (npcLinesCount * 11);
+        return startY + (index * 14);
     }
 
     private String currentNpcText = "";
