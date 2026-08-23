@@ -141,54 +141,110 @@ public class GuideDialogueScreen extends Screen {
     }
 
     @Override
+
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+
         if (button == 0) {
-            int startY = this.height - 75;
+
+            var npcLines = this.font.split(Component.literal("«" + this.currentNpcText + "»"), this.width - 90);
+
+            int boxY = getBoxY(npcLines.size());
+
+
             for (int i = 0; i < currentOptions.size(); i++) {
-                int optionY = startY + (i * 12);
-                if (mouseX >= 40 && mouseX <= this.width - 40 && mouseY >= optionY && mouseY <= optionY + 10) {
+
+                int optionY = getOptionY(i, boxY, npcLines.size());
+
+                if (mouseX >= 36 && mouseX <= this.width - 36 && mouseY >= optionY - 2 && mouseY <= optionY + 11) {
+
                     selectOption(currentOptions.get(i));
+
                     return true;
+
                 }
+
             }
+
         }
+
         return super.mouseClicked(mouseX, mouseY, button);
+
     }
+
 
     private void selectOption(DialogueOption option) {
+
         if (this.minecraft != null && this.minecraft.player != null) {
+
             this.minecraft.player.playSound(SoundEvents.UI_BUTTON_CLICK.get(), 0.5F, 1.2F);
+
         }
+
         loadNode(option.targetNode());
+
     }
 
+
     @Override
+
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+
+        var npcLines = this.font.split(Component.literal("«" + this.currentNpcText + "»"), this.width - 90);
+
+        int boxY = getBoxY(npcLines.size());
+
+
         // Полупрозрачная подложка снизу в стиле HUD
-        int boxHeight = 110;
-        int boxY = this.height - boxHeight - 10;
-        
-        graphics.fill(30, boxY, this.width - 30, this.height - 10, 0xCC0D0E11);
-        graphics.fill(30, boxY, this.width - 30, boxY + 2, 0xFF5A4D41); // латунный верхний кант
 
-                // Заголовок моба
-        graphics.drawString(this.font, "§6[Гид]", 40, boxY + 8, 0xFFFFFF, false);
+        graphics.fill(30, boxY, this.width - 30, this.height - 12, 0xDD0D0E11);
 
-        // Текст реплики NPC
-        graphics.drawString(this.font, "§f«" + this.currentNpcText + "»", 40, boxY + 22, 0xE0E0E0, false);
+        graphics.fill(30, boxY, this.width - 30, boxY + 2, 0xFF7A6855); // латунный кант
 
-        // Список опций выбора (1, 2, 3...)
-        int startY = boxY + 40;
-        for (int i = 0; i < currentOptions.size(); i++) {
-            DialogueOption opt = currentOptions.get(i);
-            int optionY = startY + (i * 12);
 
-            boolean isHovered = mouseX >= 40 && mouseX <= this.width - 40 && mouseY >= optionY && mouseY <= optionY + 10;
-            String prefix = isHovered ? "§e► [" + opt.index() + "] " : "§7[" + opt.index() + "] §f";
-            
-            graphics.drawString(this.font, prefix + opt.text(), 40, optionY, 0xFFFFFF, false);
+        // Заголовок моба
+
+        graphics.drawString(this.font, "§6[Гид]", 42, boxY + 8, 0xFFFFFF, false);
+
+
+        // Текст реплики NPC с динамическим переносом строк
+
+        int textY = boxY + 22;
+
+        for (var line : npcLines) {
+
+            graphics.drawString(this.font, line, 42, textY, 0xEAEAEA, false);
+
+            textY += 11;
+
         }
 
+
+        // Список опций выбора с динамическим смещением и подсветкой кликабельной зоны
+
+        for (int i = 0; i < currentOptions.size(); i++) {
+
+            DialogueOption opt = currentOptions.get(i);
+
+            int optionY = getOptionY(i, boxY, npcLines.size());
+
+
+            boolean isHovered = mouseX >= 36 && mouseX <= this.width - 36 && mouseY >= optionY - 2 && mouseY <= optionY + 11;
+
+            if (isHovered) {
+
+                graphics.fill(36, optionY - 2, this.width - 36, optionY + 11, 0x25FFFFFF);
+
+            }
+
+
+            String prefix = isHovered ? "§e► [" + opt.index() + "] " : "§7[" + opt.index() + "] §f";
+
+            graphics.drawString(this.font, prefix + opt.text(), 42, optionY, 0xFFFFFF, false);
+
+        }
+
+
         super.render(graphics, mouseX, mouseY, partialTick);
+
     }
 }
