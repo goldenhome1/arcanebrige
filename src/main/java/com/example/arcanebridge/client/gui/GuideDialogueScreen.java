@@ -82,9 +82,17 @@ public class GuideDialogueScreen extends Screen {
             return;
         }
 
-        // Нативное открытие FTB Quests
+                // Нативное открытие FTB Quests через прямой клиентский вызов
         if ("OPEN_FTB_QUESTS".equalsIgnoreCase(nodeKey)) {
             closeSafely();
+            try {
+                Class<?> clientFileClass = Class.forName("dev.ftb.mods.ftbquests.client.ClientQuestFile");
+                Object instance = clientFileClass.getField("INSTANCE").get(null);
+                if (instance != null) {
+                    clientFileClass.getMethod("openQuestGui").invoke(instance);
+                    return;
+                }
+            } catch (Throwable ignored) {}
             if (this.minecraft != null && this.minecraft.player != null) {
                 this.minecraft.player.connection.sendCommand("ftbquests open_gui");
             }
