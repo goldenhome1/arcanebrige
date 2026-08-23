@@ -58,10 +58,9 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
     private static final RawAnimation EXPLAIN_ANIM = RawAnimation.begin().thenLoop("explain");
     private static final RawAnimation CALIBRATE_ANIM = RawAnimation.begin().thenPlay("calibrate_eye");
 
-    private static final double SHIELD_RADIUS = 6.5D;
-    private static final double HOVER_HEIGHT = 1.5D;
+        private static final double SHIELD_RADIUS = 6.5D;
+    private static final double TARGET_HOVER_HEIGHT = 1.0D;
 
-    private double groundY = Double.NaN;
     private int stateTimer = 0;
     private int idleFlavorCooldown = 200;
 
