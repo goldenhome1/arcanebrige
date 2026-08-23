@@ -93,12 +93,43 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         return this.getAnimState() == STATE_CHARGE;
     }
 
-    public static AttributeSupplier.Builder createAttributes() {
+        public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 100.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.25D)
                 .add(Attributes.FOLLOW_RANGE, 32.0D)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0D);
+    }
+
+    public void performStructureScan(net.minecraft.server.level.ServerPlayer player, String structureId) {
+        this.setAnimState(STATE_CHARGE, 60);
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                SoundEvents.BEACON_ACTIVATE, SoundSource.NEUTRAL, 1.0F, 1.3F);
+
+        if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            net.minecraft.resources.ResourceLocation structLoc = new net.minecraft.resources.ResourceLocation(structureId);
+            var structRegistry = serverLevel.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.STRUCTURE);
+            var structure = structRegistry.get(structLoc);
+
+            if (structure != null) {
+                var holderSet = net.minecraft.core.HolderSet.direct(structRegistry.getHolderOrThrow(structRegistry.getResourceKey(structure).orElseThrow()));
+                var result = serverLevel.getChunkSource().getGenerator().findNearestMapStructure(
+                        serverLevel, holderSet, player.blockPosition(), 100, false
+                );
+
+                if (result != null) {
+                    net.minecraft.core.BlockPos pos = result.getFirst();
+                    int dist = (int) Math.sqrt(player.blockPosition().distSqr(pos));
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                            "§6[Гид] §aСпектральный сигнал зафиксирован: §eX: " + pos.getX() + "§7, §eZ: " + pos.getZ() + " §7(~" + dist + " блоков)"
+                    ));
+                    return;
+                }
+            }
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                    "§6[Гид] §cСигнал рассеялся. В радиусе 100 чанков целевая структура не обнаружена."
+            ));
+        }
     }
 
         @Override
