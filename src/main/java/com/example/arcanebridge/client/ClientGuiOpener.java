@@ -35,7 +35,7 @@ public class ClientGuiOpener {
             startNode = "greeting_resonance_alert";
         }
 
-                GuideDialogueScreen screen = new GuideDialogueScreen(entity, jsonContent);
+                        GuideDialogueScreen screen = new GuideDialogueScreen(entity, jsonContent);
         mc.setScreen(screen);
         screen.loadNode(startNode);
     }
@@ -58,19 +58,20 @@ public class ClientGuiOpener {
             }
         } catch (Exception ignored) {}
 
-                        // Резервный JSON, если файл не найден в ресурсах
+        // Резервный JSON, если файл не найден в ресурсах
         return """
         {
           "start_node": "greeting",
           "nodes": {
             "greeting": {
-              "npc_text": "Приветствую, странник. Эфирные потоки спокойны, готов ответить на твои вопросы.",
+              "npc_text": "Приветствую, странник. Эфирные потоки спокойны, готов предоставить диагностику или данные локатора.",
               "sound_event": "arcane_bridge:guide.greeting_01",
               "options": [
                 { "index": 1, "text": "Открыть журнал задач (Квестбук)", "target_node": "OPEN_FTB_QUESTS" },
-                { "index": 2, "text": "Что делать дальше?", "target_node": "progression" },
-                { "index": 3, "text": "Проверь частоты резонанса.", "target_node": "resonance" },
-                { "index": 4, "text": "[Завершить диалог]", "target_node": "EXIT" }
+                { "index": 2, "text": "Что делать дальше? (Вектор прогрессии)", "target_node": "progression_hub" },
+                { "index": 3, "text": "Спектральный Локатор структур", "target_node": "locator_hub" },
+                { "index": 4, "text": "Проверь частоты резонанса.", "target_node": "resonance" },
+                { "index": 5, "text": "[Завершить диалог]", "target_node": "EXIT" }
               ]
             },
             "greeting_injured": {
@@ -78,8 +79,9 @@ public class ClientGuiOpener {
               "sound_event": "arcane_bridge:guide.greeting_injured",
               "options": [
                 { "index": 1, "text": "Открыть журнал задач (Квестбук)", "target_node": "OPEN_FTB_QUESTS" },
-                { "index": 2, "text": "Что делать дальше?", "target_node": "progression" },
-                { "index": 3, "text": "[Завершить диалог]", "target_node": "EXIT" }
+                { "index": 2, "text": "Спектральный Локатор структур", "target_node": "locator_hub" },
+                { "index": 3, "text": "Что делать дальше?", "target_node": "progression_hub" },
+                { "index": 4, "text": "[Завершить диалог]", "target_node": "EXIT" }
               ]
             },
             "greeting_resonance_alert": {
@@ -91,16 +93,26 @@ public class ClientGuiOpener {
                 { "index": 3, "text": "[Завершить диалог]", "target_node": "EXIT" }
               ]
             },
-            "progression": {
-              "npc_text": "Для стабилизации разлома и выхода в Незер тебе понадобится Эфирный Инициатор. Собери его на конвейере Create.",
+            "progression_hub": {
+              "npc_text": "Барьер Незера заблокирован. Для пробития пространственного разлома собери Эфирный Инициатор на сборочной линии конвейера.",
               "sound_event": "arcane_bridge:guide.progression_nether",
               "options": [
                 { "index": 1, "text": "[Назад]", "target_node": "greeting" },
                 { "index": 2, "text": "[Завершить диалог]", "target_node": "EXIT" }
               ]
             },
+            "locator_hub": {
+              "npc_text": "Укажи целевой энергетический след для калибровки спектрального сенсора:",
+              "sound_event": "arcane_bridge:guide.locator_menu",
+              "options": [
+                { "index": 1, "text": "Подземелье Кователя (Wroughtnaut Chamber)", "target_node": "ACTION_LOCATE:mowziesmobs:wroughtnaut_chamber" },
+                { "index": 2, "text": "Древняя Фабрика (Ancient Factory / Harbinger)", "target_node": "ACTION_LOCATE:cataclysm:ancient_factory" },
+                { "index": 3, "text": "Пылающая Арена (Burning Arena / Ignis)", "target_node": "ACTION_LOCATE:cataclysm:burning_arena" },
+                { "index": 4, "text": "[Назад]", "target_node": "greeting" }
+              ]
+            },
             "resonance": {
-              "npc_text": "Следи за нагрузкой частот. Ношение более 2 предметов одной категории без Матрицы вызовет диссонанс.",
+              "npc_text": "Следи за нагрузкой частот. Ношение более 2 предметов одной категории (Mech / Arcane / Ele) без Матрицы снижает стабильность тела.",
               "sound_event": "arcane_bridge:guide.resonance_warning",
               "options": [
                 { "index": 1, "text": "[Назад]", "target_node": "greeting" },
