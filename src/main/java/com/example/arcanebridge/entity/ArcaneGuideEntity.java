@@ -108,13 +108,15 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
     }
 
-        @Override
+            @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
 
-        // Открытие экрана диалога на стороне клиента
+        // Безопасное открытие экрана диалога только на стороне клиента игрока
         if (this.level().isClientSide()) {
-            com.example.arcanebridge.client.ClientGuiOpener.openGuideDialogue(this.getId());
+            net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
+                com.example.arcanebridge.client.ClientGuiOpener.openGuideDialogue(this.getId());
+            });
         }
 
         return InteractionResult.sidedSuccess(this.level().isClientSide());
