@@ -58,7 +58,7 @@ public class ClientGuiOpener {
             }
         } catch (Exception ignored) {}
 
-                // Резервный JSON, если файл не найден в ресурсах
+                        // Резервный JSON, если файл не найден в ресурсах
         return """
         {
           "start_node": "greeting",
@@ -67,8 +67,27 @@ public class ClientGuiOpener {
               "npc_text": "Приветствую, странник. Эфирные потоки спокойны, готов ответить на твои вопросы.",
               "sound_event": "arcane_bridge:guide.greeting_01",
               "options": [
-                { "index": 1, "text": "Что делать дальше?", "target_node": "progression" },
-                { "index": 2, "text": "Проверь частоты резонанса.", "target_node": "resonance" },
+                { "index": 1, "text": "Открыть журнал задач (Квестбук)", "target_node": "OPEN_FTB_QUESTS" },
+                { "index": 2, "text": "Что делать дальше?", "target_node": "progression" },
+                { "index": 3, "text": "Проверь частоты резонанса.", "target_node": "resonance" },
+                { "index": 4, "text": "[Завершить диалог]", "target_node": "EXIT" }
+              ]
+            },
+            "greeting_injured": {
+              "npc_text": "Критическая потеря био-материала! Стабилизирую твои каналы... Установи искусственные тромбоциты (Cyberware), чтобы не истекать кровью в бою.",
+              "sound_event": "arcane_bridge:guide.greeting_injured",
+              "options": [
+                { "index": 1, "text": "Открыть журнал задач (Квестбук)", "target_node": "OPEN_FTB_QUESTS" },
+                { "index": 2, "text": "Что делать дальше?", "target_node": "progression" },
+                { "index": 3, "text": "[Завершить диалог]", "target_node": "EXIT" }
+              ]
+            },
+            "greeting_resonance_alert": {
+              "npc_text": "Фиксирую частотный диссонанс! Твоя эфирная броня конфликтует. Установи Настроечную Матрицу, пока стабильность не упала.",
+              "sound_event": "arcane_bridge:guide.resonance_warning",
+              "options": [
+                { "index": 1, "text": "Как снизить диссонанс?", "target_node": "resonance" },
+                { "index": 2, "text": "Открыть журнал задач (Квестбук)", "target_node": "OPEN_FTB_QUESTS" },
                 { "index": 3, "text": "[Завершить диалог]", "target_node": "EXIT" }
               ]
             },
