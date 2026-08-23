@@ -55,12 +55,11 @@ public class GuideDialogueScreen extends Screen {
 
     public record DialogueOption(int index, String text, String targetNode) {}
 
-    public GuideDialogueScreen(Entity guideEntity, String jsonContent) {
+        public GuideDialogueScreen(Entity guideEntity, String jsonContent) {
         super(Component.literal("ARC-0 Dialogue"));
         this.guideEntity = guideEntity;
         try {
             this.dialogueTree = JsonParser.parseString(jsonContent).getAsJsonObject();
-            loadNode(this.dialogueTree.has("start_node") ? this.dialogueTree.get("start_node").getAsString() : "greeting");
         } catch (Exception e) {
             this.currentNpcText = "Ошибка загрузки диалоговой матрицы.";
         }
@@ -71,15 +70,21 @@ public class GuideDialogueScreen extends Screen {
         return false;
     }
 
-        public void loadNode(String nodeKey) {
-        if ("EXIT".equalsIgnoreCase(nodeKey) || this.dialogueTree == null) {
+    private void closeSafely() {
+        if (this.minecraft != null) {
             this.onClose();
+        }
+    }
+
+    public void loadNode(String nodeKey) {
+        if ("EXIT".equalsIgnoreCase(nodeKey) || this.dialogueTree == null) {
+            closeSafely();
             return;
         }
 
-                        // Нативное открытие FTB Quests
+        // Нативное открытие FTB Quests
         if ("OPEN_FTB_QUESTS".equalsIgnoreCase(nodeKey)) {
-            this.onClose();
+            closeSafely();
             if (this.minecraft != null && this.minecraft.player != null) {
                 this.minecraft.player.connection.sendCommand("ftbquests open_gui");
             }
@@ -89,7 +94,7 @@ public class GuideDialogueScreen extends Screen {
         // Запуск спектральной локации структур через сетевой менеджер
         if (nodeKey.startsWith("ACTION_LOCATE:")) {
             String structureId = nodeKey.substring("ACTION_LOCATE:".length());
-            this.onClose();
+            closeSafely();
             if (this.guideEntity != null) {
                 com.example.arcanebridge.network.NetworkHandler.sendToServer(
                         new com.example.arcanebridge.network.ServerboundGuideActionPacket(
@@ -100,24 +105,20 @@ public class GuideDialogueScreen extends Screen {
             return;
         }
 
-        // Запуск спектральной локации структур
-        if (nodeKey.startsWith("ACTION_LOCATE:")) {
-            String structureId = nodeKey.substring("ACTION_LOCATE:".length());
-            this.onClose();
-            if (this.guideEntity != null) {
-                                com.example.arcanebridge.network.NetworkHandler.sendToServer(
-                        new com.example.arcanebridge.network.ServerboundGuideActionPacket(
-                                this.guideEntity.getId(), "LOCATE", structureId
-                        )
-                );
-            }
+        JsonObject nodes = this.dialogueTree.getAsJsonObject("nodes");
+        if (nodes == null) {
+            closeSafely();
             return;
         }
 
-        JsonObject nodes = this.dialogueTree.getAsJsonObject("nodes");
-        if (nodes == null || !nodes.has(nodeKey)) {
-            this.onClose();
-            return;
+        if (!nodes.has(nodeKey)) {
+            String fallback = this.dialogueTree.has("start_node") ? this.dialogueTree.get("start_node").getAsString() : "greeting";
+            if (!nodeKey.equals(fallback) && nodes.has(fallback)) {
+                nodeKey = fallback;
+            } else {
+                closeSafely();
+                return;
+            }
         }
 
         this.currentNodeKey = nodeKey;
