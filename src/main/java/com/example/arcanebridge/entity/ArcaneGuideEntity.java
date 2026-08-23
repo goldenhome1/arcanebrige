@@ -101,11 +101,11 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0D);
     }
 
-    @Override
+        @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(1, new LookAtPlayerGoal(this, Player.class, 8.0F));
-        this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
+        // Убираем RandomLookAroundGoal и ставим 100% приоритет удержания взгляда на игроке
+        this.goalSelector.addGoal(1, new LookAtPlayerGoal(this, Player.class, 10.0F, 1.0F));
     }
 
             @Override
