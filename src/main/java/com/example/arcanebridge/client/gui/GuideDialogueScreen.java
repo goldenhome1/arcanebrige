@@ -105,7 +105,7 @@ public class GuideDialogueScreen extends Screen {
             String structureId = nodeKey.substring("ACTION_LOCATE:".length());
             this.onClose();
             if (this.guideEntity != null) {
-                com.example.arcanebridge.network.ModMessages.sendToServer(
+                                com.example.arcanebridge.network.NetworkHandler.sendToServer(
                         new com.example.arcanebridge.network.ServerboundGuideActionPacket(
                                 this.guideEntity.getId(), "LOCATE", structureId
                         )
