@@ -275,7 +275,49 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         }
     }
 
-                @Override
+                    private void packIntoCore(Player player) {
+        if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, this.getX(), this.getY() + 0.8, this.getZ(), 12, 0.2, 0.3, 0.2, 0.05);
+            this.level().playSound(null, this.blockPosition(), SoundEvents.IRON_GOLEM_REPAIR, SoundSource.PLAYERS, 1.0F, 1.4F);
+
+            net.minecraft.world.item.Item coreItem = net.minecraftforge.registries.ForgeRegistries.ITEMS
+                    .getValue(new net.minecraft.resources.ResourceLocation("arcane_bridge", "guide_core"));
+            if (coreItem != null) {
+                net.minecraft.world.item.ItemStack coreStack = new net.minecraft.world.item.ItemStack(coreItem);
+                if (!player.getInventory().add(coreStack)) {
+                    player.drop(coreStack, false);
+                }
+            }
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6[Гид] §7«Сворачиваю контуры. Протокол портативности активирован.»"));
+            this.discard();
+        }
+    }
+
+    private void triggerAmbientBehavior() {
+        if (!(this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel)) return;
+
+        Player nearbyPlayer = this.level().getNearestPlayer(this, 8.0D);
+        if (nearbyPlayer == null) return;
+
+        String phrase;
+        if (this.level().isRaining()) {
+            phrase = "«Влага повышает электропроводность среды. Берегите узлы кинетики от окисления.»";
+        } else if (this.level().getDayTime() % 24000L > 11500L && this.level().getDayTime() % 24000L < 13000L) {
+            phrase = "«Фиксирую спад освещения. Эфирный фон дестабилизируется, готовлю контур защиты.»";
+        } else {
+            String[] randomThoughts = {
+                    "«Калибровка спектрального сенсора завершена. Отклонений не зафиксировано.»",
+                    "«Следите за стабильностью резонанса: диссонанс накапливается незаметно.»",
+                    "«Инженерные конвейеры требуют чистоты подачи компонентов.»"
+            };
+            phrase = randomThoughts[this.random.nextInt(randomThoughts.length)];
+        }
+
+        nearbyPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6[Гид] §8" + phrase));
+        serverLevel.sendParticles(ParticleTypes.ENCHANT, this.getX(), this.getY() + 1.6, this.getZ(), 4, 0.2, 0.2, 0.2, 0.05);
+    }
+
+    @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(this, "controller", 40, event -> {
             return switch (this.getAnimState()) {
