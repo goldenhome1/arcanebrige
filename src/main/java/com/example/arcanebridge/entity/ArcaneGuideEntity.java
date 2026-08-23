@@ -108,11 +108,16 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         this.goalSelector.addGoal(1, new LookAtPlayerGoal(this, Player.class, 10.0F, 1.0F));
     }
 
-            @Override
+                @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
 
-        // Безопасное открытие экрана диалога только на стороне клиента игрока
+        // 1. Серверная проверка и оказание первой помощи
+        if (!this.level().isClientSide() && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+            applyFirstAid(serverPlayer);
+        }
+
+        // 2. Безопасное открытие экрана диалога только на стороне клиента игрока
         if (this.level().isClientSide()) {
             net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
                 com.example.arcanebridge.client.ClientGuiOpener.openGuideDialogue(this.getId());
@@ -120,6 +125,29 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         }
 
         return InteractionResult.sidedSuccess(this.level().isClientSide());
+    }
+
+    private void applyFirstAid(net.minecraft.server.level.ServerPlayer player) {
+        net.minecraft.world.effect.MobEffect bleeding = net.minecraftforge.registries.ForgeRegistries.MOB_EFFECTS
+                .getValue(new net.minecraft.resources.ResourceLocation("majruszsdifficulty", "bleeding"));
+
+        boolean hasBleeding = bleeding != null && player.hasEffect(bleeding);
+        boolean isCriticalHealth = player.getHealth() <= 6.0F;
+
+        if (hasBleeding || isCriticalHealth) {
+            if (hasBleeding) {
+                player.removeEffect(bleeding);
+            }
+            player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                    net.minecraft.world.effect.MobEffects.REGENERATION, 140, 0, false, true, true
+            ));
+
+            this.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.NEUTRAL, 0.8F, 1.2F);
+            ((net.minecraft.server.level.ServerLevel) this.level()).sendParticles(
+                    ParticleTypes.HEART, player.getX(), player.getY() + 1.2, player.getZ(), 5, 0.3, 0.3, 0.3, 0.1
+            );
+        }
     }
 
             @Override
