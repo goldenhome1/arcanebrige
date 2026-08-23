@@ -251,7 +251,23 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         }
     }
 
-                    private void applyNightForceField() {
+                        private double findGroundY() {
+        net.minecraft.core.BlockPos.MutableBlockPos pos = this.blockPosition().mutable();
+        // Проверяем блоки под мобом вниз до 10 блоков
+        for (int i = 0; i < 10; i++) {
+            if (!this.level().getBlockState(pos).isAir()) {
+                net.minecraft.world.phys.shapes.VoxelShape shape = this.level().getBlockState(pos).getCollisionShape(this.level(), pos);
+                if (!shape.isEmpty()) {
+                    return pos.getY() + shape.max(net.minecraft.core.Direction.Axis.Y);
+                }
+                return pos.getY() + 1.0D;
+            }
+            pos.move(net.minecraft.core.Direction.DOWN);
+        }
+        return this.getY();
+    }
+
+    private void applyNightForceField() {
         AABB searchBox = this.getBoundingBox().inflate(SHIELD_RADIUS, 3.5D, SHIELD_RADIUS);
         List<Entity> entities = this.level().getEntities(this, searchBox,
                 e -> !(e instanceof Player) && !(e instanceof ItemEntity) && e.isAlive());
