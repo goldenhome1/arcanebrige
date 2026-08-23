@@ -47,11 +47,18 @@ public class NetworkHandler {
                 .consumerMainThread(ServerboundRaidEndPacket::handle)
                 .add();
 
-        // 5. Завершение калибровки брони (GUI -> Сервер)
+                // 5. Завершение калибровки брони (GUI -> Сервер)
         CHANNEL.messageBuilder(ServerboundRepairCompletePacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(ServerboundRepairCompletePacket::encode)
                 .decoder(ServerboundRepairCompletePacket::decode)
                 .consumerMainThread(ServerboundRepairCompletePacket::handle)
+                .add();
+
+        // 6. Запрос действий Гида / Локатора (GUI -> Сервер)
+        CHANNEL.messageBuilder(ServerboundGuideActionPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(ServerboundGuideActionPacket::toBytes)
+                .decoder(ServerboundGuideActionPacket::new)
+                .consumerMainThread(ServerboundGuideActionPacket::handle)
                 .add();
     }
 
