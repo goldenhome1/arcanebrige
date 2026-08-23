@@ -77,11 +77,25 @@ public class GuideDialogueScreen extends Screen {
             return;
         }
 
-                // Нативное открытие FTB Quests
+                        // Нативное открытие FTB Quests
         if ("OPEN_FTB_QUESTS".equalsIgnoreCase(nodeKey)) {
             this.onClose();
             if (this.minecraft != null && this.minecraft.player != null) {
                 this.minecraft.player.connection.sendCommand("ftbquests open_gui");
+            }
+            return;
+        }
+
+        // Запуск спектральной локации структур через сетевой менеджер
+        if (nodeKey.startsWith("ACTION_LOCATE:")) {
+            String structureId = nodeKey.substring("ACTION_LOCATE:".length());
+            this.onClose();
+            if (this.guideEntity != null) {
+                com.example.arcanebridge.network.NetworkHandler.sendToServer(
+                        new com.example.arcanebridge.network.ServerboundGuideActionPacket(
+                                this.guideEntity.getId(), "LOCATE", structureId
+                        )
+                );
             }
             return;
         }
