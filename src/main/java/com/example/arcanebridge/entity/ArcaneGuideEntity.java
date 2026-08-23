@@ -225,19 +225,20 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                             SoundEvents.BEACON_DEACTIVATE, SoundSource.NEUTRAL, 1.0F, 1.0F);
                 }
 
-                if (this.stateTimer > 0) {
+                                if (this.stateTimer > 0) {
                     this.stateTimer--;
                     if (this.stateTimer <= 0) {
                         this.entityData.set(ANIM_STATE, STATE_IDLE);
                     }
                 } else if (this.getAnimState() == STATE_IDLE) {
                     if (--this.idleFlavorCooldown <= 0) {
-                        this.idleFlavorCooldown = 240 + this.random.nextInt(200);
+                        this.idleFlavorCooldown = 400 + this.random.nextInt(300);
                         if (this.random.nextBoolean()) {
                             this.setAnimState(STATE_PONDER, 60);
                         } else {
                             this.setAnimState(STATE_CALIBRATE, 30);
                         }
+                        triggerAmbientBehavior();
                     }
                 }
             }
