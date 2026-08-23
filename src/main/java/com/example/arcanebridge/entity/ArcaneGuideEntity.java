@@ -113,8 +113,9 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
 
             if (structure != null) {
                 var holderSet = net.minecraft.core.HolderSet.direct(structRegistry.getHolderOrThrow(structRegistry.getResourceKey(structure).orElseThrow()));
+                                // Увеличенный радиус поиска (250 чанков = 4000 блоков)
                 var result = serverLevel.getChunkSource().getGenerator().findNearestMapStructure(
-                        serverLevel, holderSet, player.blockPosition(), 100, false
+                        serverLevel, holderSet, player.blockPosition(), 250, false
                 );
 
                 if (result != null) {
