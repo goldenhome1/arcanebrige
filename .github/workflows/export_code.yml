@@ -1,0 +1,68 @@
+// filepath: .github/workflows/export_code.yml
+name: Export Clean Codebase
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Generate all_sources.txt
+        run: |
+          python - << 'EOF'
+          import os
+
+          OUTPUT_FILE = "all_sources.txt"
+          VALID_EXTS = ('.java', '.js', '.json', '.gradle', '.toml', '.mcmeta', '.properties')
+          IGNORE_DIRS = {'.git', '.github', 'build', 'gradle', '.gradle', 'bin', 'out', 'textures', 'sounds'}
+
+          with open(OUTPUT_FILE, 'w', encoding='utf-8') as out:
+              for root, dirs, files in os.walk('.'):
+                  dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
+                  for file in sorted(files):
+                      if file.endswith(VALID_EXTS):
+                          full_path = os.path.join(root, file)
+                          rel_path = os.path.relpath(full_path, '.').replace('\\', '/')
+                          
+                          # Игнорируем бинарные или вспомогательные файлы
+                          if any(ignored in rel_path for ignored in ['gradle-wrapper', 'assets/arcane_bridge/sounds']):
+                              continue
+                              
+                          out.write(f"\n{'=' * 80}\n")
+                          out.write(f"// FILE: {rel_path}\n")
+                          out.write(f"{'=' * 80}\n\n")
+                          
+                          try:
+                              with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
+                                  out.write(f.read().strip() + "\n")
+                          except Exception as e:
+                              out.write(f"// Ошибка чтения: {e}\n")
+
+          print(f"Файл {OUTPUT_FILE} успешно сгенерирован.")
+          EOF
+
+      - name: Deploy to raw-code branch
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Создаем изолированную ветку без истории коммитов
+          git checkout --orphan raw-code
+          git rm -rf .
+          git add all_sources.txt
+          git commit -m "chore: auto-update all_sources.txt [skip ci]"
+          git push origin raw-code --force
