@@ -241,9 +241,10 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                     if (this.stateTimer <= 0) {
                         this.entityData.set(ANIM_STATE, STATE_IDLE);
                     }
-                } else if (this.getAnimState() == STATE_IDLE) {
+                                } else if (this.getAnimState() == STATE_IDLE) {
                     if (--this.idleFlavorCooldown <= 0) {
-                        this.idleFlavorCooldown = 400 + this.random.nextInt(300);
+                        // Раз в 2.5–5 минут (3000-6000 тиков)
+                        this.idleFlavorCooldown = 3000 + this.random.nextInt(3000);
                         if (this.random.nextBoolean()) {
                             this.setAnimState(STATE_PONDER, 60);
                         } else {
