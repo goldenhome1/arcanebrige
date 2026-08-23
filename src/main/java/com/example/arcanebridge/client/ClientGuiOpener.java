@@ -21,13 +21,17 @@ public class ClientGuiOpener {
         Entity entity = mc.level.getEntity(entityId);
         String jsonContent = loadDialogueJson();
 
-        // Определение динамического состояния игрока
+                // Определение динамического состояния игрока
         String startNode = "greeting";
         boolean isInjured = mc.player.getHealth() <= 6.0F || mc.player.hasEffect(
                 ForgeRegistries.MOB_EFFECTS.getValue(new ResourceLocation("majruszsdifficulty", "bleeding"))
         );
-        boolean hasDissonance = mc.player.getPersistentData().getBoolean("ArcaneEleOverload") ||
-                                mc.player.getPersistentData().getFloat("ArcaneStability") < 70.0F;
+        
+        // Считываем реальные клиентские синхронизированные данные резонанса
+        boolean hasDissonance = com.example.arcanebridge.network.ClientboundResonanceSyncPacket.clientStability < 70.0F ||
+                                com.example.arcanebridge.network.ClientboundResonanceSyncPacket.mechLoadStatic > com.example.arcanebridge.network.ClientboundResonanceSyncPacket.mechLimitStatic ||
+                                com.example.arcanebridge.network.ClientboundResonanceSyncPacket.arcaneLoadStatic > com.example.arcanebridge.network.ClientboundResonanceSyncPacket.arcaneLimitStatic ||
+                                com.example.arcanebridge.network.ClientboundResonanceSyncPacket.eleLoadStatic > com.example.arcanebridge.network.ClientboundResonanceSyncPacket.eleLimitStatic;
 
         if (isInjured) {
             startNode = "greeting_injured";
