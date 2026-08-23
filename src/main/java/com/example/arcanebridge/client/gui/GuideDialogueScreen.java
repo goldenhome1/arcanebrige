@@ -82,39 +82,27 @@ public class GuideDialogueScreen extends Screen {
             return;
         }
 
-                                // Корректный вызов экрана FTB Quests через FTB Library / ClientQuestFile
+                                        // Корректный вызов интерфейса FTB Quests (через ClientQuestFile.openGui() или FTBQuestsClient.openGui())
         if ("OPEN_FTB_QUESTS".equalsIgnoreCase(nodeKey)) {
             closeSafely();
             try {
-                // 1. Способ через инстанс ClientQuestFile (штатный путь FTB Quests)
                 Class<?> clientFileClass = Class.forName("dev.ftb.mods.ftbquests.client.ClientQuestFile");
                 Object instance = clientFileClass.getField("INSTANCE").get(null);
                 if (instance != null) {
-                    // Метод openQuestGui() без параметров открывает главное окно
-                    java.lang.reflect.Method openMethod = null;
-                    for (java.lang.reflect.Method m : clientFileClass.getMethods()) {
-                        if (m.getName().equals("openQuestGui") && m.getParameterCount() == 0) {
-                            openMethod = m;
-                            break;
-                        }
-                    }
-                    if (openMethod != null) {
-                        openMethod.invoke(instance);
-                        return;
-                    }
-
-                    // 2. Способ через создание QuestScreen и вызов openGui() из FTBLibrary BaseScreen
-                    Class<?> questScreenClass = Class.forName("dev.ftb.mods.ftbquests.gui.quests.QuestScreen");
-                    Object questScreenInstance = questScreenClass.getConstructor(clientFileClass).newInstance(instance);
-                    questScreenClass.getMethod("openGui").invoke(questScreenInstance);
+                    clientFileClass.getMethod("openGui").invoke(instance);
                     return;
                 }
-            } catch (Throwable t) {
-                // 3. Fallback через эмуляцию нажатия хоткея квестов или сетевой запрос книги
-                if (this.minecraft != null && this.minecraft.player != null) {
-                    this.minecraft.player.displayClientMessage(
-                            net.minecraft.network.chat.Component.literal("§6[Гид] §eЖурнал открыт. Если окно не появилось, проверьте клавишу квестов в управлении."), true
-                    );
+            } catch (Throwable t1) {
+                try {
+                    Class<?> clientClass = Class.forName("dev.ftb.mods.ftbquests.client.FTBQuestsClient");
+                    clientClass.getMethod("openGui").invoke(null);
+                    return;
+                } catch (Throwable t2) {
+                    if (this.minecraft != null && this.minecraft.player != null) {
+                        this.minecraft.player.displayClientMessage(
+                                net.minecraft.network.chat.Component.literal("§c[Ошибка] Не удалось открыть окно FTB Quests."), true
+                        );
+                    }
                 }
             }
             return;
