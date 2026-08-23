@@ -71,9 +71,18 @@ public class GuideDialogueScreen extends Screen {
         return false;
     }
 
-    public void loadNode(String nodeKey) {
+        public void loadNode(String nodeKey) {
         if ("EXIT".equalsIgnoreCase(nodeKey) || this.dialogueTree == null) {
             this.onClose();
+            return;
+        }
+
+        // Нативное открытие FTB Quests
+        if ("OPEN_FTB_QUESTS".equalsIgnoreCase(nodeKey)) {
+            this.onClose();
+            if (this.minecraft != null && this.minecraft.player != null) {
+                this.minecraft.player.connection.sendCommand("ftbquests open_gui");
+            }
             return;
         }
 
