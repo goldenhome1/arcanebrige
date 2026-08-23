@@ -24,26 +24,18 @@ public class GuideDialogueScreen extends Screen {
     private JsonObject dialogueTree;
     private String currentNodeKey = "greeting";
 
-        @Override
+            @Override
     public void tick() {
         super.tick();
-        // Полная синхронизация ориентации тела и головы без рывков
-        if (this.guideEntity instanceof net.minecraft.world.entity.LivingEntity living && this.minecraft != null && this.minecraft.player != null) {
-            double dx = this.minecraft.player.getX() - living.getX();
-            double dz = this.minecraft.player.getZ() - living.getZ();
-            double dy = this.minecraft.player.getEyeY() - living.getEyeY();
-            double distXZ = Math.sqrt(dx * dx + dz * dz);
-            float yaw = (float) (net.minecraft.util.Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
-            float pitch = (float) (-(net.minecraft.util.Mth.atan2(dy, distXZ) * (180.0D / Math.PI)));
+        if (this.guideEntity instanceof net.minecraft.world.entity.Mob mob && this.minecraft != null && this.minecraft.player != null) {
+            // Передаем управление ванильному контроллеру взгляда, исключая конфликт с GeckoLib
+            mob.getLookControl().setLookAt(this.minecraft.player, 100.0F, 100.0F);
 
-            living.setYRot(yaw);
-            living.setXRot(pitch);
-            living.yRotO = yaw;
-            living.xRotO = pitch;
-            living.yHeadRot = yaw;
-            living.yHeadRotO = yaw;
-            living.yBodyRot = yaw;
-            living.yBodyRotO = yaw;
+            double dx = this.minecraft.player.getX() - mob.getX();
+            double dz = this.minecraft.player.getZ() - mob.getZ();
+            float yaw = (float) (net.minecraft.util.Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
+            mob.setYRot(yaw);
+            mob.yBodyRot = yaw;
         }
     }
 
