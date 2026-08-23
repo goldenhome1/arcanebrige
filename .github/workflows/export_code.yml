@@ -1,4 +1,3 @@
-// filepath: .github/workflows/export_code.yml
 name: Export Clean Codebase
 
 on:
