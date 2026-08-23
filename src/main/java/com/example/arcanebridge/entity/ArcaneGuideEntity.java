@@ -139,23 +139,33 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         this.goalSelector.addGoal(1, new LookAtPlayerGoal(this, Player.class, 10.0F, 1.0F));
     }
 
-                @Override
+                    @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
 
-        // 1. Серверная проверка и оказание первой помощи
-        if (!this.level().isClientSide() && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+        Level level = this.level();
+
+        // 1. Shift + ПКМ: Сворачивание Гида в ядро
+        if (player.isShiftKeyDown()) {
+            if (!level.isClientSide()) {
+                packIntoCore(player);
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide());
+        }
+
+        // 2. Серверная проверка и оказание первой помощи
+        if (!level.isClientSide() && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
             applyFirstAid(serverPlayer);
         }
 
-        // 2. Безопасное открытие экрана диалога только на стороне клиента игрока
-        if (this.level().isClientSide()) {
+        // 3. Безопасное открытие экрана диалога только на стороне клиента игрока
+        if (level.isClientSide()) {
             net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
                 com.example.arcanebridge.client.ClientGuiOpener.openGuideDialogue(this.getId());
             });
         }
 
-        return InteractionResult.sidedSuccess(this.level().isClientSide());
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
     private void applyFirstAid(net.minecraft.server.level.ServerPlayer player) {
