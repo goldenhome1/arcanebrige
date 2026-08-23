@@ -13,14 +13,30 @@ public class ClientGuiOpener {
 
     private static final ResourceLocation DIALOGUE_RES = new ResourceLocation("arcane", "dialogues/guide_dialogues.json");
 
-    public static void openGuideDialogue(int entityId) {
+        public static void openGuideDialogue(int entityId) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) return;
+        if (mc.level == null || mc.player == null) return;
 
         Entity entity = mc.level.getEntity(entityId);
         String jsonContent = loadDialogueJson();
 
-        mc.setScreen(new GuideDialogueScreen(entity, jsonContent));
+        // Определение динамического состояния игрока
+        String startNode = "greeting";
+        boolean isInjured = mc.player.getHealth() <= 6.0F || mc.player.hasEffect(
+                ForgeRegistries.MOB_EFFECTS.getValue(new ResourceLocation("majruszsdifficulty", "bleeding"))
+        );
+        boolean hasDissonance = mc.player.getPersistentData().getBoolean("ArcaneEleOverload") ||
+                                mc.player.getPersistentData().getFloat("ArcaneStability") < 70.0F;
+
+        if (isInjured) {
+            startNode = "greeting_injured";
+        } else if (hasDissonance) {
+            startNode = "greeting_resonance_alert";
+        }
+
+        GuideDialogueScreen screen = new GuideDialogueScreen(entity, jsonContent);
+        screen.loadNode(startNode);
+        mc.setScreen(screen);
     }
 
     private static String loadDialogueJson() {
