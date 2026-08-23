@@ -1,0 +1,29 @@
+{
+  "arcane_breach": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "arcane_bridge:arcane_breach",
+        "stream": true
+      }
+    ]
+  },
+  "syndicate_raid": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "arcane_bridge:syndicate_raid",
+        "stream": true
+      }
+    ]
+  },
+  "thermal_surge": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "arcane_bridge:thermal_surge",
+        "stream": true
+      }
+    ]
+  }
+}

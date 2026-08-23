@@ -1,0 +1,78 @@
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'org.spongepowered.mixin' version '0.7.+'
+}
+
+group = mod_group_id
+version = mod_version
+archivesBaseName = mod_id
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+// Вставь этот блок перед блоком minecraft { ... } или в районе настройки путей
+sourceSets {
+    main {
+        resources {
+            srcDirs = [
+                    "src/main/resources",
+                    "src/generated/resources"
+            ]
+        }
+    }
+}
+
+minecraft {
+    mappings channel: 'official', version: '1.20.1'
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            mods { "${mod_id}" { source sourceSets.main } }
+        }
+        client { property 'forge.enabledGameTestNamespaces', mod_id }
+        server { property 'forge.enabledGameTestNamespaces', mod_id; args '--nogui' }
+    }
+}
+
+repositories {
+    flatDir { dir 'libs' }
+}
+
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    implementation name: 'curios-forge-5.14.1+1.20.1'
+    implementation name: 'caelus-forge-3.2.0+1.20.1'
+    implementation name: 'cloth-config-11.1.136-forge'
+    implementation name: 'hexcasting-forge-1.20.1-0.11.3'
+    implementation name: 'inline-forge-1.20.1-1.2.2'
+    implementation name: 'Patchouli-1.20.1-85-FORGE'
+    implementation name: 'paucal-0.6.0+1.20.1-forge'
+    implementation name: 'create-1.20.1-6.0.8'
+    implementation name: 'geckolib-forge-1.20.1-4.8.4'
+
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}
+
+
+mixin {
+    add sourceSets.main, "arcane_bridge.refmap.json"
+    config "arcane_bridge.mixins.json"
+}
+
+jar {
+    manifest {
+        attributes([
+                "Specification-Title": mod_id,
+                "Implementation-Title": project.name,
+                "MixinConfigs": "arcane_bridge.mixins.json"
+        ])
+    }
+}
+
