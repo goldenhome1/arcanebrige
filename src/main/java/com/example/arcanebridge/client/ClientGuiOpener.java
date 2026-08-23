@@ -35,9 +35,9 @@ public class ClientGuiOpener {
             startNode = "greeting_resonance_alert";
         }
 
-        GuideDialogueScreen screen = new GuideDialogueScreen(entity, jsonContent);
-        screen.loadNode(startNode);
+                GuideDialogueScreen screen = new GuideDialogueScreen(entity, jsonContent);
         mc.setScreen(screen);
+        screen.loadNode(startNode);
     }
 
     private static String loadDialogueJson() {
