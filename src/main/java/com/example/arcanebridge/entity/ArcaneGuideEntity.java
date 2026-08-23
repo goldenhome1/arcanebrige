@@ -198,11 +198,10 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         if (!this.level().isClientSide()) {
             boolean isNightTime = this.level().isNight();
 
-            if (isNightTime) {
+                        if (isNightTime) {
                 if (this.getAnimState() != STATE_SHIELD_NIGHT) {
                     this.entityData.set(ANIM_STATE, STATE_SHIELD_NIGHT);
                     this.entityData.set(NIGHT_SHIELD_TICKS, 0);
-                    this.groundY = this.getY();
                     this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
                             SoundEvents.BEACON_ACTIVATE, SoundSource.NEUTRAL, 1.0F, 1.0F);
                 }
@@ -212,16 +211,13 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                     this.entityData.set(NIGHT_SHIELD_TICKS, currentTicks + 1);
                 }
 
-                if (Double.isNaN(this.groundY)) {
-                    this.groundY = this.getY();
-                }
-
-                // Физический подъем сущности и ее хитбокса
-                float progress = Math.min(1.0F, this.entityData.get(NIGHT_SHIELD_TICKS) / 60.0F);
-                double targetY = this.groundY + (HOVER_HEIGHT * Math.sin(progress * Math.PI / 2.0));
-
+                // Динамический контроль высоты: 1.0 блок над твердой поверхностью
+                double actualGroundY = findGroundY();
+                double targetY = actualGroundY + TARGET_HOVER_HEIGHT;
                 double diffY = targetY - this.getY();
-                this.setDeltaMovement(0, diffY * 0.25D, 0);
+
+                // Плавная стабилизация по Y (подъем или спуск)
+                this.setDeltaMovement(this.getDeltaMovement().x * 0.5D, diffY * 0.2D, this.getDeltaMovement().z * 0.5D);
                 this.hasImpulse = true;
                 this.fallDistance = 0.0F;
 
@@ -230,7 +226,6 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                 if (this.getAnimState() == STATE_SHIELD_NIGHT) {
                     this.entityData.set(ANIM_STATE, STATE_IDLE);
                     this.entityData.set(NIGHT_SHIELD_TICKS, 0);
-                    this.groundY = Double.NaN;
                     this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
                             SoundEvents.BEACON_DEACTIVATE, SoundSource.NEUTRAL, 1.0F, 1.0F);
                 }
