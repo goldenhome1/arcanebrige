@@ -24,6 +24,31 @@ public class GuideDialogueScreen extends Screen {
     private JsonObject dialogueTree;
     private String currentNodeKey = "greeting";
 
+    @Override
+    public void tick() {
+        super.tick();
+        // Фиксация взгляда Гида строго на игроке во время диалога
+        if (this.guideEntity != null && this.minecraft != null && this.minecraft.player != null) {
+            double dx = this.minecraft.player.getX() - this.guideEntity.getX();
+            double dz = this.minecraft.player.getZ() - this.guideEntity.getZ();
+            double dy = (this.minecraft.player.getEyeY()) - (this.guideEntity.getEyeY());
+            double distXZ = Math.sqrt(dx * dx + dz * dz);
+            float yaw = (float) (net.minecraft.util.Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
+            float pitch = (float) (-(net.minecraft.util.Mth.atan2(dy, distXZ) * (180.0D / Math.PI)));
+
+            this.guideEntity.setYRot(yaw);
+            this.guideEntity.setXRot(pitch);
+            this.guideEntity.yRotO = yaw;
+            this.guideEntity.xRotO = pitch;
+            if (this.guideEntity instanceof net.minecraft.world.entity.LivingEntity living) {
+                living.yHeadRot = yaw;
+                living.yHeadRotO = yaw;
+                living.yBodyRot = yaw;
+                living.yBodyRotO = yaw;
+            }
+        }
+    }
+
     private String currentNpcText = "";
     private final List<DialogueOption> currentOptions = new ArrayList<>();
 
@@ -137,8 +162,8 @@ public class GuideDialogueScreen extends Screen {
         graphics.fill(30, boxY, this.width - 30, this.height - 10, 0xCC0D0E11);
         graphics.fill(30, boxY, this.width - 30, boxY + 2, 0xFF5A4D41); // латунный верхний кант
 
-        // Заголовок моба
-        graphics.drawString(this.font, "§6[АРК-0 // ДИАГНОСТ]", 40, boxY + 8, 0xFFFFFF, false);
+                // Заголовок моба
+        graphics.drawString(this.font, "§6[Гид]", 40, boxY + 8, 0xFFFFFF, false);
 
         // Текст реплики NPC
         graphics.drawString(this.font, "§f«" + this.currentNpcText + "»", 40, boxY + 22, 0xE0E0E0, false);
