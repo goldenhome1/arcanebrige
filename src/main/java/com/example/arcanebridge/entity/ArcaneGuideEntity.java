@@ -267,10 +267,12 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         return this.getY();
     }
 
-    private void applyNightForceField() {
+        private void applyNightForceField() {
         AABB searchBox = this.getBoundingBox().inflate(SHIELD_RADIUS, 3.5D, SHIELD_RADIUS);
+        // Фильтруем только враждебных мобов (Enemy) и снаряды, игнорируя служебные маркеры и невидимки
         List<Entity> entities = this.level().getEntities(this, searchBox,
-                e -> !(e instanceof Player) && !(e instanceof ItemEntity) && e.isAlive());
+                e -> (e instanceof Projectile || e instanceof net.minecraft.world.entity.monster.Enemy)
+                        && e.isAlive() && !e.isSpectator() && !e.isInvisible());
 
         for (Entity entity : entities) {
             Vec3 diff = entity.position().subtract(this.position());
@@ -297,10 +299,14 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         }
     }
 
-                    private void packIntoCore(Player player) {
+    private void packIntoCore(Player player) {
         if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, this.getX(), this.getY() + 0.8, this.getZ(), 12, 0.2, 0.3, 0.2, 0.05);
-            this.level().playSound(null, this.blockPosition(), SoundEvents.IRON_GOLEM_REPAIR, SoundSource.PLAYERS, 1.0F, 1.4F);
+            // Эффект распада голограммы / дематериализации проекции
+            serverLevel.sendParticles(ParticleTypes.PORTAL, this.getX(), this.getY() + 1.0, this.getZ(), 25, 0.3, 0.5, 0.3, 0.8);
+            serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK, this.getX(), this.getY() + 1.0, this.getZ(), 15, 0.2, 0.4, 0.2, 0.1);
+            
+            this.level().playSound(null, this.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 1.0F, 1.6F);
+            this.level().playSound(null, this.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 0.8F, 1.4F);
 
             net.minecraft.world.item.Item coreItem = net.minecraftforge.registries.ForgeRegistries.ITEMS
                     .getValue(new net.minecraft.resources.ResourceLocation("arcane_bridge", "guide_core"));
@@ -310,7 +316,7 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                     player.drop(coreStack, false);
                 }
             }
-                        this.discard();
+            this.discard();
         }
     }
 
