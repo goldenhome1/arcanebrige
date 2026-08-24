@@ -58,10 +58,10 @@ public class ShieldDomeLayer extends GeoRenderLayer<ArcaneGuideEntity> {
         RenderSystem.disableCull();
         RenderSystem.depthMask(false);
 
-                // Вычисляем смещение до уровня земли от текущей позиции парящей сущности
-        float hoverOffset = 1.5F * smoothExpand;
+                        // Вычисляем точное смещение до уровня земли (1.0 блок парения + микрозазор от z-fighting)
+        float hoverOffset = 1.0F * smoothExpand;
 
-        // 1. Напольные концентрические магические печати (остаются на земле под мобом)
+        // 1. Напольные концентрические магические печати
         poseStack.pushPose();
         poseStack.translate(0, 0.02D - hoverOffset, 0);
 
