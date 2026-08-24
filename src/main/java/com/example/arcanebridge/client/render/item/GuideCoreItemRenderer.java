@@ -29,36 +29,36 @@ public class GuideCoreItemRenderer extends GeoItemRenderer<GuideCoreItem> {
 
         switch (transformType) {
             case GUI -> {
-                // Смещение точно в центр ячейки инвентаря/хотбара с изометрическим наклоном
-                poseStack.translate(0.75D, 0.75D, 0.5D);
+                // Точные координаты центра слота (0.5, 0.5) и оптимальный масштаб +30%
+                poseStack.translate(0.5D, 0.5D, 0.0D);
                 poseStack.mulPose(Axis.XP.rotationDegrees(25.0F));
                 poseStack.mulPose(Axis.YP.rotationDegrees(45.0F));
-                poseStack.scale(1.20F, 1.20F, 1.20F);
+                poseStack.scale(1.30F, 1.30F, 1.30F);
             }
             case FIRST_PERSON_RIGHT_HAND -> {
-                poseStack.translate(0.50D, 0.20D, -0.45D);
-                poseStack.mulPose(Axis.YP.rotationDegrees(35.0F));
-                poseStack.scale(0.75F, 0.75F, 0.75F);
+                poseStack.translate(0.45D, 0.20D, -0.45D);
+                poseStack.mulPose(Axis.YP.rotationDegrees(40.0F));
+                poseStack.scale(0.65F, 0.65F, 0.65F);
             }
             case FIRST_PERSON_LEFT_HAND -> {
-                poseStack.translate(-0.50D, 0.20D, -0.45D);
-                poseStack.mulPose(Axis.YP.rotationDegrees(-35.0F));
-                poseStack.scale(0.75F, 0.75F, 0.75F);
+                poseStack.translate(-0.45D, 0.20D, -0.45D);
+                poseStack.mulPose(Axis.YP.rotationDegrees(-40.0F));
+                poseStack.scale(0.65F, 0.65F, 0.65F);
             }
             case THIRD_PERSON_RIGHT_HAND, THIRD_PERSON_LEFT_HAND -> {
-                poseStack.translate(0.0D, 0.20D, 0.05D);
-                poseStack.scale(0.55F, 0.55F, 0.55F);
+                poseStack.translate(0.0D, 0.15D, 0.05D);
+                poseStack.scale(0.50F, 0.50F, 0.50F);
             }
             case GROUND -> {
-                poseStack.translate(0.5D, 0.30D, 0.5D);
-                poseStack.scale(0.65F, 0.65F, 0.65F);
+                poseStack.translate(0.5D, 0.25D, 0.5D);
+                poseStack.scale(0.55F, 0.55F, 0.55F);
             }
             case FIXED -> {
                 poseStack.translate(0.5D, 0.5D, 0.5D);
-                poseStack.scale(0.85F, 0.85F, 0.85F);
+                poseStack.scale(0.75F, 0.75F, 0.75F);
             }
             default -> {
-                poseStack.scale(0.70F, 0.70F, 0.70F);
+                poseStack.scale(0.60F, 0.60F, 0.60F);
             }
         }
 
