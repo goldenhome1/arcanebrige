@@ -50,12 +50,12 @@ public class GuideDialogueScreen extends Screen {
         return startY + (index * 14);
     }
 
-    private String currentNpcText = "";
+        private String currentNpcText = "";
     private final List<DialogueOption> currentOptions = new ArrayList<>();
 
     public record DialogueOption(int index, String text, String targetNode) {}
 
-                public GuideDialogueScreen(Entity guideEntity, String jsonContent) {
+    public GuideDialogueScreen(Entity guideEntity, String jsonContent) {
         super(Component.literal("Мастер Резонанса"));
         this.guideEntity = guideEntity;
         try {
@@ -161,7 +161,7 @@ public class GuideDialogueScreen extends Screen {
         }
     }
 
-        private static SimpleSoundInstance currentVoiceInstance = null;
+            private static SimpleSoundInstance currentVoiceInstance = null;
 
     private void playVoiceLine(String soundEventId) {
         if (soundEventId == null || soundEventId.isEmpty()) return;
@@ -169,7 +169,6 @@ public class GuideDialogueScreen extends Screen {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player == null) return;
 
-            // Глушим строго предыдущую фразу гида
             if (currentVoiceInstance != null) {
                 mc.getSoundManager().stop(currentVoiceInstance);
                 currentVoiceInstance = null;
