@@ -161,14 +161,26 @@ public class GuideDialogueScreen extends Screen {
         }
     }
 
+        private static SimpleSoundInstance currentVoiceInstance = null;
+
     private void playVoiceLine(String soundEventId) {
-        ResourceLocation loc = new ResourceLocation(soundEventId);
-        SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(loc);
-        if (sound != null && Minecraft.getInstance().player != null) {
-            Minecraft.getInstance().getSoundManager().stop(); // глушим прошлую реплику
-            Minecraft.getInstance().getSoundManager().play(
-                    SimpleSoundInstance.forUI(sound, 1.0F, 1.0F)
-            );
+        if (soundEventId == null || soundEventId.isEmpty()) return;
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player == null) return;
+
+            // Глушим строго предыдущую фразу гида
+            if (currentVoiceInstance != null) {
+                mc.getSoundManager().stop(currentVoiceInstance);
+                currentVoiceInstance = null;
+            }
+
+            ResourceLocation loc = new ResourceLocation(soundEventId);
+            SoundEvent sound = SoundEvent.createVariableRangeEvent(loc);
+            currentVoiceInstance = SimpleSoundInstance.forUI(sound, 1.0F, 1.0F);
+            mc.getSoundManager().play(currentVoiceInstance);
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
     }
 
