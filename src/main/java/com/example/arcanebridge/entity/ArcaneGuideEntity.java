@@ -301,21 +301,32 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         }
     }
 
+        private int dematerializeTimer = -1;
+    private Player packingPlayer = null;
+
     private void packIntoCore(Player player) {
         if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-            // Эффект распада голограммы / дематериализации проекции
-            serverLevel.sendParticles(ParticleTypes.PORTAL, this.getX(), this.getY() + 1.0, this.getZ(), 25, 0.3, 0.5, 0.3, 0.8);
-            serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK, this.getX(), this.getY() + 1.0, this.getZ(), 15, 0.2, 0.4, 0.2, 0.1);
+            // Включаем режим глитч-сворачивания на 20 тиков (1 секунда)
+            this.setAnimState(STATE_DEMATERIALIZE, 20);
+            this.dematerializeTimer = 20;
+            this.packingPlayer = player;
             
-            this.level().playSound(null, this.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 1.0F, 1.6F);
-            this.level().playSound(null, this.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 0.8F, 1.4F);
+            this.level().playSound(null, this.blockPosition(), SoundEvents.CHORUS_FRUIT_TELEPORT, SoundSource.PLAYERS, 1.0F, 1.8F);
+            this.level().playSound(null, this.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 1.0F, 1.5F);
+        }
+    }
+
+    private void finishPacking() {
+        if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel && this.packingPlayer != null) {
+            serverLevel.sendParticles(ParticleTypes.REVERSE_PORTAL, this.getX(), this.getY() + 0.8, this.getZ(), 20, 0.2, 0.4, 0.2, 0.1);
+            serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK, this.getX(), this.getY() + 0.8, this.getZ(), 15, 0.2, 0.3, 0.2, 0.15);
 
             net.minecraft.world.item.Item coreItem = net.minecraftforge.registries.ForgeRegistries.ITEMS
                     .getValue(new net.minecraft.resources.ResourceLocation("arcane_bridge", "guide_core"));
             if (coreItem != null) {
                 net.minecraft.world.item.ItemStack coreStack = new net.minecraft.world.item.ItemStack(coreItem);
-                if (!player.getInventory().add(coreStack)) {
-                    player.drop(coreStack, false);
+                if (!this.packingPlayer.getInventory().add(coreStack)) {
+                    this.packingPlayer.drop(coreStack, false);
                 }
             }
             this.discard();
