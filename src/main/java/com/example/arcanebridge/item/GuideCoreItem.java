@@ -42,9 +42,9 @@ public class GuideCoreItem extends Item implements GeoItem {
         SingletonGeoAnimatable.registerSyncedAnimatable(this);
     }
 
-    @Override
+        @Override
     public Component getName(ItemStack stack) {
-        return Component.translatableWithFallback(this.getDescriptionId(stack), "Проекционный модуль АРК-0");
+        return Component.translatableWithFallback(this.getDescriptionId(stack), "Ядро Мастера Резонанса");
     }
 
     @Override
@@ -91,11 +91,11 @@ public class GuideCoreItem extends Item implements GeoItem {
         return InteractionResult.PASS;
     }
 
-    @Override
+        @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
         tooltip.add(Component.literal("Портативный проекционный передатчик.").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal("Удерживает квантово-эфирный канал связи").withStyle(ChatFormatting.DARK_PURPLE));
-        tooltip.add(Component.literal("с Архи-Оператором АРК-0.").withStyle(ChatFormatting.DARK_PURPLE));
+        tooltip.add(Component.literal("с Мастером Резонанса.").withStyle(ChatFormatting.DARK_PURPLE));
         super.appendHoverText(stack, level, tooltip, isAdvanced);
     }
 
