@@ -67,25 +67,23 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
     private int stateTimer = 0;
     private int idleFlavorCooldown = 200;
 
-    public ArcaneGuideEntity(EntityType<? extends PathfinderMob> type, Level level) {
+        public ArcaneGuideEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
-        this.setCustomName(Component.translatableWithFallback("entity.arcane_bridge.arcane_guide", "Архи-Оператор АРК-0"));
-        this.setCustomNameVisible(false);
     }
 
     @Override
     public Component getName() {
-        return Component.translatableWithFallback(this.getType().getDescriptionId(), "Архи-Оператор АРК-0");
+        return Component.translatableWithFallback(this.getType().getDescriptionId(), "Мастер Резонанса");
     }
 
     @Override
     public Component getTypeName() {
-        return Component.translatableWithFallback(this.getType().getDescriptionId(), "Архи-Оператор АРК-0");
+        return Component.translatableWithFallback(this.getType().getDescriptionId(), "Мастер Резонанса");
     }
 
     @Override
     public Component getDisplayName() {
-        return Component.translatableWithFallback(this.getType().getDescriptionId(), "Архи-Оператор АРК-0");
+        return Component.translatableWithFallback(this.getType().getDescriptionId(), "Мастер Резонанса");
     }
 
     @Override
@@ -149,14 +147,14 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                 if (result != null) {
                     net.minecraft.core.BlockPos pos = result.getFirst();
                     int dist = (int) Math.sqrt(player.blockPosition().distSqr(pos));
-                    player.sendSystemMessage(Component.literal(
-                            "§6[Гид] §aСпектральный сигнал зафиксирован: §eX: " + pos.getX() + "§7, §eZ: " + pos.getZ() + " §7(~" + dist + " блоков)"
+                                        player.sendSystemMessage(Component.literal(
+                            "§6[Мастер Резонанса] §aСпектральный сигнал зафиксирован: §eX: " + pos.getX() + "§7, §eZ: " + pos.getZ() + " §7(~" + dist + " блоков)"
                     ));
                     return;
                 }
             }
             player.sendSystemMessage(Component.literal(
-                    "§6[Гид] §cСигнал рассеялся. В радиусе 4000 блоков целевая структура не обнаружена."
+                    "§6[Мастер Резонанса] §cСигнал рассеялся. В радиусе 4000 блоков целевая структура не обнаружена."
             ));
         }
     }
@@ -393,7 +391,7 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
             phrase = randomThoughts[this.random.nextInt(randomThoughts.length)];
         }
 
-        nearbyPlayer.sendSystemMessage(Component.literal("§6[Гид] §8" + phrase));
+                nearbyPlayer.sendSystemMessage(Component.literal("§6[Мастер Резонанса] §8" + phrase));
         serverLevel.sendParticles(ParticleTypes.ENCHANT, this.getX(), this.getY() + 1.6, this.getZ(), 4, 0.2, 0.2, 0.2, 0.05);
     }
 
