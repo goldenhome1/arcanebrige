@@ -37,11 +37,68 @@ public class ShieldDomeLayer extends GeoRenderLayer<ArcaneGuideEntity> {
                        RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer,
                        float partialTick, int packedLight, int packedOverlay) {
 
-        if (animatable.getAnimState() != ArcaneGuideEntity.STATE_SHIELD_NIGHT) {
+        int animState = animatable.getAnimState();
+
+
+        // 1. Отрисовка лазерной плоскости сканирования при материализации/дематериализации
+
+        if (animState == ArcaneGuideEntity.STATE_MATERIALIZE || animState == ArcaneGuideEntity.STATE_DEMATERIALIZE) {
+
+            int totalDuration = (animState == ArcaneGuideEntity.STATE_MATERIALIZE) ? 30 : 25;
+
+            int remaining = animatable.getActionTicks();
+
+            float current = (totalDuration - remaining) + partialTick;
+
+            float rawProgress = org.joml.Math.clamp(current / (float) totalDuration, 0.0F, 1.0F);
+
+            float progress = (animState == ArcaneGuideEntity.STATE_MATERIALIZE) ? rawProgress : (1.0F - rawProgress);
+
+
+            float scanY = progress * 1.95F; // Движение линии сканирования от 0 до 1.95 блока
+
+            float time = animatable.tickCount + partialTick;
+
+
+            RenderSystem.enableBlend();
+
+            RenderSystem.defaultBlendFunc();
+
+            RenderSystem.disableCull();
+
+            RenderSystem.depthMask(false);
+
+            RenderSystem.setShader(GameRenderer::getPositionColorShader);
+
+
+            poseStack.pushPose();
+
+            poseStack.translate(0, scanY, 0);
+
+            drawHologramScanPlane(poseStack.last().pose(), 0.75F, time);
+
+            poseStack.popPose();
+
+
+            RenderSystem.enableCull();
+
+            RenderSystem.depthMask(true);
+
+            RenderSystem.disableBlend();
+
             return;
+
         }
 
-                float time = animatable.tickCount + partialTick;
+
+        if (animState != ArcaneGuideEntity.STATE_SHIELD_NIGHT) {
+
+            return;
+
+        }
+
+
+        float time = animatable.tickCount + partialTick;
 
         // Плавное раскрытие сферы за первые 3 секунды (60 тиков) с субтиковой интерполяцией
         float currentTicks = animatable.getNightShieldTicks() < 60 ? animatable.getNightShieldTicks() + partialTick : 60.0F;
