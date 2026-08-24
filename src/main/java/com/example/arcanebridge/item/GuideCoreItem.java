@@ -46,8 +46,8 @@ public class GuideCoreItem extends Item {
                 guide.setYHeadRot(yaw);
                 guide.setYBodyRot(yaw);
                 
-                // Сразу включаем анимацию приветствия при материализации
-                guide.setAnimState(ArcaneGuideEntity.STATE_GREETING, 50);
+                                // Запуск глитч-материализации проекции на 25 тиков, затем переход в приветствие
+                guide.setAnimState(ArcaneGuideEntity.STATE_MATERIALIZE, 25);
                 serverLevel.addFreshEntity(guide);
 
                 // Эффекты голографической проекции и глитч-частицы
