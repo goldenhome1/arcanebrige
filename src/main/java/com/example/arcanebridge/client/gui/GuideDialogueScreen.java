@@ -247,8 +247,8 @@ public class GuideDialogueScreen extends Screen {
 
         graphics.fill(30, boxY, this.width - 30, boxY + 2, 0xFF7A6855); // латунный кант
 
+        // Заголовок моба
 
-                // Заголовок моба
 
         graphics.drawString(this.font, "§6[Мастер Резонанса]", 42, boxY + 8, 0xFFFFFF, false);
 
