@@ -1,6 +1,7 @@
 package com.example.arcanebridge.entity;
 
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -16,8 +17,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
@@ -35,9 +34,9 @@ import java.util.List;
 public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-            private static final EntityDataAccessor<Integer> ANIM_STATE =
+    private static final EntityDataAccessor<Integer> ANIM_STATE =
             SynchedEntityData.defineId(ArcaneGuideEntity.class, EntityDataSerializers.INT);
-        private static final EntityDataAccessor<Integer> NIGHT_SHIELD_TICKS =
+    private static final EntityDataAccessor<Integer> NIGHT_SHIELD_TICKS =
             SynchedEntityData.defineId(ArcaneGuideEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ACTION_TICKS =
             SynchedEntityData.defineId(ArcaneGuideEntity.class, EntityDataSerializers.INT);
@@ -48,7 +47,7 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
     public static final int STATE_ANALYZE = 3;
     public static final int STATE_PONDER = 4;
     public static final int STATE_EXPLAIN = 5;
-        public static final int STATE_CALIBRATE = 6;
+    public static final int STATE_CALIBRATE = 6;
     public static final int STATE_SHIELD_NIGHT = 7;
     public static final int STATE_MATERIALIZE = 8;
     public static final int STATE_DEMATERIALIZE = 9;
@@ -62,7 +61,7 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
     private static final RawAnimation EXPLAIN_ANIM = RawAnimation.begin().thenLoop("explain");
     private static final RawAnimation CALIBRATE_ANIM = RawAnimation.begin().thenPlay("calibrate_eye");
 
-        private static final double SHIELD_RADIUS = 6.5D;
+    private static final double SHIELD_RADIUS = 6.5D;
     private static final double TARGET_HOVER_HEIGHT = 1.0D;
 
     private int stateTimer = 0;
@@ -70,9 +69,26 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
 
     public ArcaneGuideEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
+        this.setCustomName(Component.translatableWithFallback("entity.arcane_bridge.arcane_guide", "Архи-Оператор АРК-0"));
+        this.setCustomNameVisible(false);
     }
 
-            @Override
+    @Override
+    public Component getName() {
+        return Component.translatableWithFallback(this.getType().getDescriptionId(), "Архи-Оператор АРК-0");
+    }
+
+    @Override
+    public Component getTypeName() {
+        return Component.translatableWithFallback(this.getType().getDescriptionId(), "Архи-Оператор АРК-0");
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return Component.translatableWithFallback(this.getType().getDescriptionId(), "Архи-Оператор АРК-0");
+    }
+
+    @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(ANIM_STATE, STATE_IDLE);
@@ -98,11 +114,11 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         this.stateTimer = durationTicks;
     }
 
-        public boolean isCasting() {
+    public boolean isCasting() {
         return this.getAnimState() == STATE_CHARGE;
     }
 
-        public static AttributeSupplier.Builder createAttributes() {
+    public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 100.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.25D)
@@ -122,7 +138,6 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
 
             if (structure != null) {
                 var holderSet = net.minecraft.core.HolderSet.direct(structRegistry.getHolderOrThrow(structRegistry.getResourceKey(structure).orElseThrow()));
-                                // Увеличенный радиус поиска (250 чанков = 4000 блоков)
                 var result = serverLevel.getChunkSource().getGenerator().findNearestMapStructure(
                         serverLevel, holderSet, player.blockPosition(), 250, false
                 );
@@ -130,32 +145,30 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                 if (result != null) {
                     net.minecraft.core.BlockPos pos = result.getFirst();
                     int dist = (int) Math.sqrt(player.blockPosition().distSqr(pos));
-                    player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                    player.sendSystemMessage(Component.literal(
                             "§6[Гид] §aСпектральный сигнал зафиксирован: §eX: " + pos.getX() + "§7, §eZ: " + pos.getZ() + " §7(~" + dist + " блоков)"
                     ));
                     return;
                 }
             }
-                        player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+            player.sendSystemMessage(Component.literal(
                     "§6[Гид] §cСигнал рассеялся. В радиусе 4000 блоков целевая структура не обнаружена."
             ));
         }
     }
 
-        @Override
+    @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        // Убираем RandomLookAroundGoal и ставим 100% приоритет удержания взгляда на игроке
         this.goalSelector.addGoal(1, new LookAtPlayerGoal(this, Player.class, 10.0F, 1.0F));
     }
 
-                    @Override
+    @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
 
         Level level = this.level();
 
-        // 1. Shift + ПКМ: Сворачивание Гида в ядро
         if (player.isShiftKeyDown()) {
             if (!level.isClientSide()) {
                 packIntoCore(player);
@@ -163,12 +176,10 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
             return InteractionResult.sidedSuccess(level.isClientSide());
         }
 
-        // 2. Серверная проверка и оказание первой помощи
         if (!level.isClientSide() && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
             applyFirstAid(serverPlayer);
         }
 
-        // 3. Безопасное открытие экрана диалога только на стороне клиента игрока
         if (level.isClientSide()) {
             net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
                 com.example.arcanebridge.client.ClientGuiOpener.openGuideDialogue(this.getId());
@@ -201,27 +212,24 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         }
     }
 
-                @Override
+    @Override
     public void tick() {
         super.tick();
 
         if (!this.level().isClientSide()) {
-            // Тикер синхронизированного таймера анимаций
             int actionRemaining = this.entityData.get(ACTION_TICKS);
             if (actionRemaining > 0) {
                 this.entityData.set(ACTION_TICKS, actionRemaining - 1);
             }
 
-            // Обработка дематериализации перед удалением
             if (this.dematerializeTimer > 0) {
                 this.dematerializeTimer--;
                 if (this.dematerializeTimer <= 0) {
                     finishPacking();
                 }
-                return; // Полностью блокируем ночной режим на время сворачивания
+                return;
             }
 
-            // Завершение фазы материализации
             if (this.getAnimState() == STATE_MATERIALIZE) {
                 if (this.stateTimer > 0) {
                     this.stateTimer--;
@@ -247,12 +255,10 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                     this.entityData.set(NIGHT_SHIELD_TICKS, currentTicks + 1);
                 }
 
-                // Динамический контроль высоты: 1.0 блок над твердой поверхностью
                 double actualGroundY = findGroundY();
                 double targetY = actualGroundY + TARGET_HOVER_HEIGHT;
                 double diffY = targetY - this.getY();
 
-                // Плавная стабилизация по Y
                 this.setDeltaMovement(this.getDeltaMovement().x * 0.5D, diffY * 0.2D, this.getDeltaMovement().z * 0.5D);
                 this.hasImpulse = true;
                 this.fallDistance = 0.0F;
@@ -269,7 +275,7 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                 if (this.stateTimer > 0) {
                     this.stateTimer--;
                     if (this.stateTimer <= 0) {
-                        this.entityData.set(ANIM_STATE, STATE_IDLE);
+                        this.setAnimState(STATE_IDLE);
                     }
                 } else if (this.getAnimState() == STATE_IDLE) {
                     if (--this.idleFlavorCooldown <= 0) {
@@ -286,9 +292,8 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         }
     }
 
-                        private double findGroundY() {
+    private double findGroundY() {
         net.minecraft.core.BlockPos.MutableBlockPos pos = this.blockPosition().mutable();
-        // Проверяем блоки под мобом вниз до 10 блоков
         for (int i = 0; i < 10; i++) {
             if (!this.level().getBlockState(pos).isAir()) {
                 net.minecraft.world.phys.shapes.VoxelShape shape = this.level().getBlockState(pos).getCollisionShape(this.level(), pos);
@@ -302,9 +307,8 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         return this.getY();
     }
 
-        private void applyNightForceField() {
+    private void applyNightForceField() {
         AABB searchBox = this.getBoundingBox().inflate(SHIELD_RADIUS, 3.5D, SHIELD_RADIUS);
-        // Фильтруем только враждебных мобов (Enemy) и снаряды, игнорируя служебные маркеры и невидимки
         List<Entity> entities = this.level().getEntities(this, searchBox,
                 e -> (e instanceof Projectile || e instanceof net.minecraft.world.entity.monster.Enemy)
                         && e.isAlive() && !e.isSpectator() && !e.isInvisible());
@@ -334,12 +338,11 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         }
     }
 
-            private int dematerializeTimer = -1;
+    private int dematerializeTimer = -1;
     private Player packingPlayer = null;
 
     private void packIntoCore(Player player) {
-        if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-            // Запуск дематериализации сверху вниз на 25 тиков
+        if (this.level() instanceof net.minecraft.server.level.ServerLevel) {
             this.setAnimState(STATE_DEMATERIALIZE, 25);
             this.dematerializeTimer = 25;
             this.packingPlayer = player;
@@ -386,7 +389,7 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
             phrase = randomThoughts[this.random.nextInt(randomThoughts.length)];
         }
 
-        nearbyPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6[Гид] §8" + phrase));
+        nearbyPlayer.sendSystemMessage(Component.literal("§6[Гид] §8" + phrase));
         serverLevel.sendParticles(ParticleTypes.ENCHANT, this.getX(), this.getY() + 1.6, this.getZ(), 4, 0.2, 0.2, 0.2, 0.05);
     }
 
