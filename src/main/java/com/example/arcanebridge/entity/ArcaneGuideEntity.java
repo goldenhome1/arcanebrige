@@ -239,9 +239,11 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                 return;
             }
 
-            boolean isNightTime = this.level().isNight();
+                        boolean isNightTime = this.level().isNight();
 
             if (isNightTime) {
+                this.dawnLingerTicks = DAWN_LINGER_DURATION;
+
                 if (this.getAnimState() != STATE_SHIELD_NIGHT) {
                     this.entityData.set(ANIM_STATE, STATE_SHIELD_NIGHT);
                     this.entityData.set(NIGHT_SHIELD_TICKS, 0);
@@ -264,27 +266,42 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
 
                 applyNightForceField();
             } else {
-                if (this.getAnimState() == STATE_SHIELD_NIGHT) {
-                    this.entityData.set(ANIM_STATE, STATE_IDLE);
-                    this.entityData.set(NIGHT_SHIELD_TICKS, 0);
-                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                            SoundEvents.BEACON_DEACTIVATE, SoundSource.NEUTRAL, 1.0F, 1.0F);
-                }
+                // Наступило утро: удерживаем активный щит еще 1 минуту, пока не истечет таймер
+                if (this.getAnimState() == STATE_SHIELD_NIGHT && this.dawnLingerTicks > 0) {
+                    this.dawnLingerTicks--;
 
-                if (this.stateTimer > 0) {
-                    this.stateTimer--;
-                    if (this.stateTimer <= 0) {
-                        this.setAnimState(STATE_IDLE);
+                    double actualGroundY = findGroundY();
+                    double targetY = actualGroundY + TARGET_HOVER_HEIGHT;
+                    double diffY = targetY - this.getY();
+
+                    this.setDeltaMovement(this.getDeltaMovement().x * 0.5D, diffY * 0.2D, this.getDeltaMovement().z * 0.5D);
+                    this.hasImpulse = true;
+                    this.fallDistance = 0.0F;
+
+                    applyNightForceField();
+                } else {
+                    if (this.getAnimState() == STATE_SHIELD_NIGHT) {
+                        this.entityData.set(ANIM_STATE, STATE_IDLE);
+                        this.entityData.set(NIGHT_SHIELD_TICKS, 0);
+                        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                                SoundEvents.BEACON_DEACTIVATE, SoundSource.NEUTRAL, 1.0F, 1.0F);
                     }
-                } else if (this.getAnimState() == STATE_IDLE) {
-                    if (--this.idleFlavorCooldown <= 0) {
-                        this.idleFlavorCooldown = 3000 + this.random.nextInt(3000);
-                        if (this.random.nextBoolean()) {
-                            this.setAnimState(STATE_PONDER, 60);
-                        } else {
-                            this.setAnimState(STATE_CALIBRATE, 30);
+
+                    if (this.stateTimer > 0) {
+                        this.stateTimer--;
+                        if (this.stateTimer <= 0) {
+                            this.setAnimState(STATE_IDLE);
                         }
-                        triggerAmbientBehavior();
+                    } else if (this.getAnimState() == STATE_IDLE) {
+                        if (--this.idleFlavorCooldown <= 0) {
+                            this.idleFlavorCooldown = 3000 + this.random.nextInt(3000);
+                            if (this.random.nextBoolean()) {
+                                this.setAnimState(STATE_PONDER, 60);
+                            } else {
+                                this.setAnimState(STATE_CALIBRATE, 30);
+                            }
+                            triggerAmbientBehavior();
+                        }
                     }
                 }
             }
