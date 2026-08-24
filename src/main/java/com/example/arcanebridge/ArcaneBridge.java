@@ -3,6 +3,7 @@ package com.example.arcanebridge;
 import com.example.arcanebridge.capability.ResonanceProvider;
 import com.example.arcanebridge.entity.ModEntities;
 import com.example.arcanebridge.hex.ArcaneHexRegistry;
+import com.example.arcanebridge.item.ModItems;
 import com.example.arcanebridge.logic.ResonanceEngine;
 import com.example.arcanebridge.network.NetworkHandler;
 import com.example.arcanebridge.raid.RaidConfig;
