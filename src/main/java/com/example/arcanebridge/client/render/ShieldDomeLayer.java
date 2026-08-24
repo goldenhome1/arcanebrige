@@ -178,7 +178,23 @@ public class ShieldDomeLayer extends GeoRenderLayer<ArcaneGuideEntity> {
                     BufferUploader.drawWithShader(buffer.end());
                 }
 
-                private static void drawFresnelEnergySphere(Matrix4f matrix4f, float radius,
+                    private static void drawHologramScanPlane(Matrix4f matrix4f, float radius, float time) {
+        BufferBuilder buffer = Tesselator.getInstance().getBuilder();
+        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+
+        // Лазурно-фиолетовая светящаяся линия среза (как на скетче)
+        float r1 = 0.20F, g1 = 0.85F, b1 = 1.00F, a1 = 0.85F; // Циан
+        float r2 = 1.00F, g2 = 0.20F, b2 = 0.50F, a2 = 0.85F; // Маджента
+
+        buffer.vertex(matrix4f, -radius, 0.0F, -radius).color(r1, g1, b1, a1).endVertex();
+        buffer.vertex(matrix4f, -radius, 0.0F,  radius).color(r2, g2, b2, a2).endVertex();
+        buffer.vertex(matrix4f,  radius, 0.0F,  radius).color(r1, g1, b1, a1).endVertex();
+        buffer.vertex(matrix4f,  radius, 0.0F, -radius).color(r2, g2, b2, a2).endVertex();
+
+        BufferUploader.drawWithShader(buffer.end());
+    }
+
+    private static void drawFresnelEnergySphere(Matrix4f matrix4f, float radius,
                                                 float r, float g, float b, float baseAlpha,
                                                 int rings, int segments) {
                     BufferBuilder buffer = Tesselator.getInstance().getBuilder();
