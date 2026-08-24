@@ -174,13 +174,15 @@ public class GuideDialogueScreen extends Screen {
             }
         }
 
-        // Проигрывание озвучки реплики
-        if (node.has("sound_event")) {
+                // Проигрывание озвучки реплики (глушим при возврате назад)
+        if (playVoice && node.has("sound_event")) {
             playVoiceLine(node.get("sound_event").getAsString());
+        } else if (!playVoice) {
+            stopCurrentVoice();
         }
     }
 
-            private static SimpleSoundInstance currentVoiceInstance = null;
+    private static SimpleSoundInstance currentVoiceInstance = null;
 
     private void playVoiceLine(String soundEventId) {
         if (soundEventId == null || soundEventId.isEmpty()) return;
@@ -188,14 +190,30 @@ public class GuideDialogueScreen extends Screen {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player == null) return;
 
-            if (currentVoiceInstance != null) {
-                mc.getSoundManager().stop(currentVoiceInstance);
-                currentVoiceInstance = null;
-            }
+            stopCurrentVoice();
 
             ResourceLocation loc = new ResourceLocation(soundEventId);
-            SoundEvent sound = SoundEvent.createVariableRangeEvent(loc);
-            currentVoiceInstance = SimpleSoundInstance.forUI(sound, 1.0F, 1.0F);
+            if (this.guideEntity != null) {
+                // Звук позиционируется строго на координатах головы гида в мире
+                currentVoiceInstance = new SimpleSoundInstance(
+                        loc,
+                        SoundSource.PLAYERS,
+                        1.0F,
+                        1.0F,
+                        SoundInstance.createUnseededRandom(),
+                        false,
+                        0,
+                        SoundInstance.Attenuation.LINEAR,
+                        this.guideEntity.getX(),
+                        this.guideEntity.getEyeY(),
+                        this.guideEntity.getZ(),
+                        false
+                );
+            } else {
+                SoundEvent sound = SoundEvent.createVariableRangeEvent(loc);
+                currentVoiceInstance = SimpleSoundInstance.forUI(sound, 1.0F, 1.0F);
+            }
+
             mc.getSoundManager().play(currentVoiceInstance);
         } catch (Throwable t) {
             t.printStackTrace();
