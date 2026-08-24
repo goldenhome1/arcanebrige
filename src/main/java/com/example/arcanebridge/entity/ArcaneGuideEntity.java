@@ -108,6 +108,10 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         return this.entityData.get(ANIM_STATE);
     }
 
+    public void setAnimState(int state) {
+        this.setAnimState(state, 0);
+    }
+
     public void setAnimState(int state, int durationTicks) {
         this.entityData.set(ANIM_STATE, state);
         this.entityData.set(ACTION_TICKS, durationTicks);
