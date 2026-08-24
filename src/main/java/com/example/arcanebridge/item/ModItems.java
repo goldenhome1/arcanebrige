@@ -1,3 +1,21 @@
-// Добавить в список регистрации предметов:
-public static final RegistryObject<Item> GUIDE_CORE = ITEMS.register("guide_core",
-        () -> new GuideCoreItem(new Item.Properties().rarity(net.minecraft.world.item.Rarity.RARE)));
+package com.example.arcanebridge.item;
+
+import com.example.arcanebridge.ArcaneBridge;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+
+public class ModItems {
+    public static final DeferredRegister<Item> ITEMS =
+            DeferredRegister.create(ForgeRegistries.ITEMS, ArcaneBridge.MODID);
+
+    public static final RegistryObject<Item> GUIDE_CORE = ITEMS.register("guide_core",
+            () -> new GuideCoreItem(new Item.Properties().rarity(Rarity.RARE)));
+
+    public static void register(IEventBus eventBus) {
+        ITEMS.register(eventBus);
+    }
+}
