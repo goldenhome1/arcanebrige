@@ -46,28 +46,73 @@ public class ArcaneGuideModel extends GeoModel<ArcaneGuideEntity> {
             }
         }
 
-        // Цифровой глитч-эффект (горизонтальный джиттер и слайсинг)
+                // Послойная материализация снизу вверх / дематериализация сверху вниз
         int animState = animatable.getAnimState();
         if (animState == ArcaneGuideEntity.STATE_MATERIALIZE || animState == ArcaneGuideEntity.STATE_DEMATERIALIZE) {
-            float time = animatable.tickCount + animationState.getPartialTick();
-            float jitterStrength = animState == ArcaneGuideEntity.STATE_DEMATERIALIZE ? 0.35F : 0.20F;
+            int totalDuration = (animState == ArcaneGuideEntity.STATE_MATERIALIZE) ? 30 : 25;
+            int remaining = animatable.getActionTicks();
+            float partial = animationState.getPartialTick();
+            float current = (totalDuration - remaining) + partial;
+            float rawProgress = Mth.clamp(current / (float) totalDuration, 0.0F, 1.0F);
 
-            CoreGeoBone body = getAnimationProcessor().getBone("body2");
-            if (body != null) {
-                float glitchX = (float) Math.sin(time * 15.0F) * (float) Math.cos(time * 23.0F) * jitterStrength;
-                float glitchZ = (float) Math.cos(time * 19.0F) * jitterStrength;
-                body.setPosX(body.getPosX() + glitchX * 16.0F);
-                body.setPosZ(body.getPosZ() + glitchZ * 16.0F);
+            float progress = (animState == ArcaneGuideEntity.STATE_MATERIALIZE) ? rawProgress : (1.0F - rawProgress);
+            float time = animatable.tickCount + partial;
 
-                float scaleGlitch = 1.0F + (float) Math.sin(time * 30.0F) * 0.15F;
-                body.setScaleX(scaleGlitch);
-                body.setScaleZ(scaleGlitch);
-            }
+            applyProgressiveHologram(progress, time);
+        }
+    }
 
-            if (head != null) {
-                float headGlitchX = (float) Math.cos(time * 27.0F) * jitterStrength * 1.5F;
-                head.setPosX(head.getPosX() + headGlitchX * 16.0F);
-            }
+    private void applyProgressiveHologram(float progress, float time) {
+        CoreGeoBone rLeg = getAnimationProcessor().getBone("Right Leg");
+        CoreGeoBone lLeg = getAnimationProcessor().getBone("Left Leg");
+        CoreGeoBone body = getAnimationProcessor().getBone("body2");
+        CoreGeoBone rArm = getAnimationProcessor().getBone("Right Arm");
+        CoreGeoBone lArm = getAnimationProcessor().getBone("Left Arm");
+        CoreGeoBone head = getAnimationProcessor().getBone("Head");
+
+        // Фаза 1: Ноги (0.00 - 0.28)
+        applyBoneSlice(rLeg, progress, 0.00F, 0.28F, time);
+        applyBoneSlice(lLeg, progress, 0.00F, 0.28F, time);
+
+        // Фаза 2: Корпус (0.28 - 0.60)
+        applyBoneSlice(body, progress, 0.28F, 0.60F, time);
+
+        // Фаза 3: Руки (0.55 - 0.82)
+        applyBoneSlice(rArm, progress, 0.55F, 0.82F, time);
+        applyBoneSlice(lArm, progress, 0.55F, 0.82F, time);
+
+        // Фаза 4: Голова (0.80 - 1.00)
+        applyBoneSlice(head, progress, 0.80F, 1.00F, time);
+    }
+
+    private void applyBoneSlice(CoreGeoBone bone, float progress, float start, float end, float time) {
+        if (bone == null) return;
+
+        if (progress < start) {
+            // Слой еще не материализовался
+            bone.setScaleY(0.001F);
+            bone.setScaleX(0.001F);
+            bone.setScaleZ(0.001F);
+            bone.setPosX(0.0F);
+            bone.setPosZ(0.0F);
+        } else if (progress >= end) {
+            // Слой полностью материализован
+            bone.setScaleY(1.0F);
+            bone.setScaleX(1.0F);
+            bone.setScaleZ(1.0F);
+            bone.setPosX(0.0F);
+            bone.setPosZ(0.0F);
+        } else {
+            // Активная фаза сборки слоя со скан-глитчем
+            float sliceProgress = (progress - start) / (end - start);
+            float jitterX = (float) Math.sin(time * 25.0F) * 0.15F;
+            float jitterZ = (float) Math.cos(time * 31.0F) * 0.15F;
+
+            bone.setScaleY(Math.max(0.05F, sliceProgress));
+            bone.setScaleX(1.0F + jitterX);
+            bone.setScaleZ(1.0F + jitterZ);
+            bone.setPosX(jitterX * 6.0F);
+            bone.setPosZ(jitterZ * 6.0F);
         }
     }
 }
