@@ -29,6 +29,8 @@ public class GuideCoreItemRenderer extends GeoItemRenderer<GuideCoreItem> {
 
         switch (transformType) {
             case GUI -> {
+                // Смещение по X (-0.12) для идеального центрирования в ячейке
+                poseStack.translate(-0.12D, 0.0D, 0.0D);
                 poseStack.mulPose(Axis.XP.rotationDegrees(25.0F));
                 poseStack.mulPose(Axis.YP.rotationDegrees(45.0F));
                 poseStack.scale(1.30F, 1.30F, 1.30F);
