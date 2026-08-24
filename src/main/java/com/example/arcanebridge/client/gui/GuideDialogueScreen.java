@@ -249,7 +249,7 @@ public class GuideDialogueScreen extends Screen {
     }
 
 
-    private void selectOption(DialogueOption option) {
+        private void selectOption(DialogueOption option) {
 
         if (this.minecraft != null && this.minecraft.player != null) {
 
@@ -257,7 +257,8 @@ public class GuideDialogueScreen extends Screen {
 
         }
 
-        loadNode(option.targetNode());
+        boolean isBack = option.text().toLowerCase().contains("назад");
+        loadNode(option.targetNode(), !isBack);
 
     }
 
