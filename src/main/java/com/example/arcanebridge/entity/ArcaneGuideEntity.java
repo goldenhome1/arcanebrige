@@ -67,23 +67,8 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
     private int stateTimer = 0;
     private int idleFlavorCooldown = 200;
 
-        public ArcaneGuideEntity(EntityType<? extends PathfinderMob> type, Level level) {
+            public ArcaneGuideEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
-    }
-
-    @Override
-    public Component getName() {
-        return Component.translatableWithFallback(this.getType().getDescriptionId(), "Мастер Резонанса");
-    }
-
-    @Override
-    public Component getTypeName() {
-        return Component.translatableWithFallback(this.getType().getDescriptionId(), "Мастер Резонанса");
-    }
-
-    @Override
-    public Component getDisplayName() {
-        return Component.translatableWithFallback(this.getType().getDescriptionId(), "Мастер Резонанса");
     }
 
     @Override
