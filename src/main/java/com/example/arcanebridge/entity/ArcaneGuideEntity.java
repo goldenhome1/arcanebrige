@@ -61,11 +61,13 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
     private static final RawAnimation EXPLAIN_ANIM = RawAnimation.begin().thenLoop("explain");
     private static final RawAnimation CALIBRATE_ANIM = RawAnimation.begin().thenPlay("calibrate_eye");
 
-    private static final double SHIELD_RADIUS = 6.5D;
+        private static final double SHIELD_RADIUS = 6.5D;
     private static final double TARGET_HOVER_HEIGHT = 1.0D;
+    private static final int DAWN_LINGER_DURATION = 1200; // 60 секунд (1 минута) задержки на рассвете
 
     private int stateTimer = 0;
     private int idleFlavorCooldown = 200;
+    private int dawnLingerTicks = 0;
 
                 public ArcaneGuideEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
