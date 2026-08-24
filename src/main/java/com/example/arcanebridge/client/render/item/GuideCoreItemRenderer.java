@@ -19,7 +19,6 @@ public class GuideCoreItemRenderer extends GeoItemRenderer<GuideCoreItem> {
 
     @Override
     public RenderType getRenderType(GuideCoreItem animatable, ResourceLocation texture, MultiBufferSource bufferSource, float partialTick) {
-        // Включает полупрозрачность для стекла (альфа-канал PNG)
         return RenderType.entityTranslucent(texture);
     }
 
@@ -30,35 +29,35 @@ public class GuideCoreItemRenderer extends GeoItemRenderer<GuideCoreItem> {
 
         switch (transformType) {
             case GUI -> {
-                poseStack.translate(0.5D, 0.5D, 0.0D);
+                poseStack.translate(0.5D, 0.5D, 0.5D);
                 poseStack.mulPose(Axis.XP.rotationDegrees(25));
                 poseStack.mulPose(Axis.YP.rotationDegrees(45));
-                poseStack.scale(0.85F, 0.85F, 0.85F);
+                poseStack.scale(1.25F, 1.25F, 1.25F);
             }
             case FIRST_PERSON_RIGHT_HAND -> {
-                poseStack.translate(0.55D, 0.30D, -0.40D);
+                poseStack.translate(0.55D, 0.25D, -0.45D);
                 poseStack.mulPose(Axis.YP.rotationDegrees(35));
-                poseStack.scale(0.50F, 0.50F, 0.50F);
+                poseStack.scale(0.70F, 0.70F, 0.70F);
             }
             case FIRST_PERSON_LEFT_HAND -> {
-                poseStack.translate(-0.55D, 0.30D, -0.40D);
+                poseStack.translate(-0.55D, 0.25D, -0.45D);
                 poseStack.mulPose(Axis.YP.rotationDegrees(-35));
-                poseStack.scale(0.50F, 0.50F, 0.50F);
+                poseStack.scale(0.70F, 0.70F, 0.70F);
             }
             case THIRD_PERSON_RIGHT_HAND, THIRD_PERSON_LEFT_HAND -> {
-                poseStack.translate(0.0D, 0.25D, 0.05D);
-                poseStack.scale(0.40F, 0.40F, 0.40F);
+                poseStack.translate(0.0D, 0.20D, 0.05D);
+                poseStack.scale(0.55F, 0.55F, 0.55F);
             }
             case GROUND -> {
-                poseStack.translate(0.5D, 0.25D, 0.5D);
-                poseStack.scale(0.45F, 0.45F, 0.45F);
+                poseStack.translate(0.5D, 0.35D, 0.5D);
+                poseStack.scale(0.65F, 0.65F, 0.65F);
             }
             case FIXED -> {
                 poseStack.translate(0.5D, 0.5D, 0.5D);
-                poseStack.scale(0.65F, 0.65F, 0.65F);
+                poseStack.scale(0.85F, 0.85F, 0.85F);
             }
             default -> {
-                poseStack.scale(0.50F, 0.50F, 0.50F);
+                poseStack.scale(0.65F, 0.65F, 0.65F);
             }
         }
 
