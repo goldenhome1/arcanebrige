@@ -30,20 +30,22 @@ public class GuideCoreItemRenderer extends GeoItemRenderer<GuideCoreItem> {
         switch (transformType) {
             case GUI -> {
                 // Смещение по X (-0.12) для идеального центрирования в ячейке
-                poseStack.translate(-0.12D, 0.0D, 0.0D);
+                poseStack.translate(-0.35D, -0.05D, 0.0D);
                 poseStack.mulPose(Axis.XP.rotationDegrees(25.0F));
                 poseStack.mulPose(Axis.YP.rotationDegrees(45.0F));
-                poseStack.scale(1.30F, 1.30F, 1.30F);
+                poseStack.scale(1.20F, 1.20F, 1.20F);
             }
             case FIRST_PERSON_RIGHT_HAND -> {
-                poseStack.translate(0.50D, 0.20D, -0.45D);
-                poseStack.mulPose(Axis.YP.rotationDegrees(40.0F));
-                poseStack.scale(0.70F, 0.70F, 0.70F);
+                poseStack.translate(0.40D, 0.10D, -0.35D);
+                poseStack.mulPose(Axis.YP.rotationDegrees(45.0F));
+                poseStack.mulPose(Axis.XP.rotationDegrees(10.0F));
+                poseStack.scale(0.65F, 0.65F, 0.65F);
             }
             case FIRST_PERSON_LEFT_HAND -> {
-                poseStack.translate(-0.50D, 0.20D, -0.45D);
-                poseStack.mulPose(Axis.YP.rotationDegrees(-40.0F));
-                poseStack.scale(0.70F, 0.70F, 0.70F);
+                poseStack.translate(-0.10D, 0.10D, -0.35D);
+                poseStack.mulPose(Axis.YP.rotationDegrees(-45.0F));
+                poseStack.mulPose(Axis.XP.rotationDegrees(10.0F));
+                poseStack.scale(0.65F, 0.65F, 0.65F);
             }
             case THIRD_PERSON_RIGHT_HAND, THIRD_PERSON_LEFT_HAND -> {
                 poseStack.translate(0.0D, 0.15D, 0.05D);
