@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 
 public class ClientGuiOpener {
 
-    private static final ResourceLocation DIALOGUE_RES = new ResourceLocation("arcane", "dialogues/guide_dialogues.json");
+        private static final ResourceLocation DIALOGUE_RES = new ResourceLocation("arcane_bridge", "dialogues/guide_dialogues.json");
 
         public static void openGuideDialogue(int entityId) {
         Minecraft mc = Minecraft.getInstance();
