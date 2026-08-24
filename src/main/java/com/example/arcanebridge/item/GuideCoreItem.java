@@ -43,6 +43,11 @@ public class GuideCoreItem extends Item implements GeoItem {
     }
 
     @Override
+    public Component getName(ItemStack stack) {
+        return Component.translatableWithFallback(this.getDescriptionId(stack), "Проекционный модуль АРК-0");
+    }
+
+    @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
         if (level.isClientSide()) {
