@@ -2,14 +2,49 @@
   "start_node": "greeting",
   "nodes": {
     "greeting": {
-      "npc_text": "Приветствую, странник. Эфирные потоки спокойны, готов предоставить диагностику или данные локатора.",
+      "npc_text": "Приветствую. Частоты эфира стабильны, помех не наблюдается. Чем могу помочь?",
       "sound_event": "arcane_bridge:guide.greeting_01",
       "options": [
-        { "index": 1, "text": "Открыть журнал задач (Квестбук)", "target_node": "OPEN_FTB_QUESTS" },
-        { "index": 2, "text": "Что делать дальше? (Вектор прогрессии)", "target_node": "progression_hub" },
-        { "index": 3, "text": "Спектральный Локатор структур", "target_node": "locator_hub" },
-        { "index": 4, "text": "Проверь частоты резонанса.", "target_node": "resonance" },
-        { "index": 5, "text": "[Завершить диалог]", "target_node": "EXIT" }
+        { "index": 1, "text": "Кто ты такой? Расскажи о себе.", "target_node": "about_master" },
+        { "index": 2, "text": "Открыть журнал задач (Квестбук)", "target_node": "OPEN_FTB_QUESTS" },
+        { "index": 3, "text": "Что делать дальше? (Вектор прогрессии)", "target_node": "progression_hub" },
+        { "index": 4, "text": "Спектральный Локатор структур", "target_node": "locator_hub" },
+        { "index": 5, "text": "Проверь частоты резонанса.", "target_node": "resonance" },
+        { "index": 6, "text": "[Завершить диалог]", "target_node": "EXIT" }
+      ]
+    },
+    "about_master": {
+      "npc_text": "Когда-то я посвятил жизнь изучению границ между кинетикой машин и чистой магией. Теперь моё сознание связано с матрицей Резонанса, и я проецирую этот образ через передатчик, чтобы направлять инженеров и магов.",
+      "sound_event": "arcane_bridge:guide.explain",
+      "options": [
+        { "index": 1, "text": "Почему ты выглядишь как киборг-голограмма?", "target_node": "about_appearance" },
+        { "index": 2, "text": "Что такое Эфирный Резонанс на самом деле?", "target_node": "about_philosophy" },
+        { "index": 3, "text": "Какую помощь ты можешь мне оказать?", "target_node": "about_help" },
+        { "index": 4, "text": "[Назад в главное меню]", "target_node": "greeting" }
+      ]
+    },
+    "about_appearance": {
+      "npc_text": "Обычная биологическая плоть не выдерживает прямого контакта с высокочастотным эфиром. Нейроимпланты Cyberware удерживают стабильность разума, а оптический модуль позволяет видеть структуру пространства.",
+      "sound_event": "arcane_bridge:guide.analyze",
+      "options": [
+        { "index": 1, "text": "[Назад к вопросам о тебе]", "target_node": "about_master" },
+        { "index": 2, "text": "[Назад в главное меню]", "target_node": "greeting" }
+      ]
+    },
+    "about_philosophy": {
+      "npc_text": "Мир звучит на трёх частотах: Механика, Аркана и Стихии. Если ты надеваешь слишком много предметов одной природы без Настроечных Матриц — в теле возникает разрушительный шум. Моя цель — научить тебя гармонии.",
+      "sound_event": "arcane_bridge:guide.ponder",
+      "options": [
+        { "index": 1, "text": "[Назад к вопросам о тебе]", "target_node": "about_master" },
+        { "index": 2, "text": "[Назад в главное меню]", "target_node": "greeting" }
+      ]
+    },
+    "about_help": {
+      "npc_text": "Я сканирую спектральные сигналы древних подземелий, стабилизирую твои каналы при ранениях, а ночью могу развернуть защитное силовое поле вокруг ядра.",
+      "sound_event": "arcane_bridge:guide.explain",
+      "options": [
+        { "index": 1, "text": "[Назад к вопросам о тебе]", "target_node": "about_master" },
+        { "index": 2, "text": "[Назад в главное меню]", "target_node": "greeting" }
       ]
     },
     "greeting_injured": {
