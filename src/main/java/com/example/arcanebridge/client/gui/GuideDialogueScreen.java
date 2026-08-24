@@ -55,8 +55,8 @@ public class GuideDialogueScreen extends Screen {
 
     public record DialogueOption(int index, String text, String targetNode) {}
 
-        public GuideDialogueScreen(Entity guideEntity, String jsonContent) {
-        super(Component.literal("ARC-0 Dialogue"));
+                public GuideDialogueScreen(Entity guideEntity, String jsonContent) {
+        super(Component.literal("Мастер Резонанса"));
         this.guideEntity = guideEntity;
         try {
             this.dialogueTree = JsonParser.parseString(jsonContent).getAsJsonObject();
@@ -248,9 +248,9 @@ public class GuideDialogueScreen extends Screen {
         graphics.fill(30, boxY, this.width - 30, boxY + 2, 0xFF7A6855); // латунный кант
 
 
-        // Заголовок моба
+                // Заголовок моба
 
-        graphics.drawString(this.font, "§6[Гид]", 42, boxY + 8, 0xFFFFFF, false);
+        graphics.drawString(this.font, "§6[Мастер Резонанса]", 42, boxY + 8, 0xFFFFFF, false);
 
 
         // Текст реплики NPC с динамическим переносом строк
