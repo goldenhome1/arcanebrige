@@ -201,14 +201,40 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         }
     }
 
-            @Override
+                @Override
     public void tick() {
         super.tick();
 
         if (!this.level().isClientSide()) {
+            // Тикер синхронизированного таймера анимаций
+            int actionRemaining = this.entityData.get(ACTION_TICKS);
+            if (actionRemaining > 0) {
+                this.entityData.set(ACTION_TICKS, actionRemaining - 1);
+            }
+
+            // Обработка дематериализации перед удалением
+            if (this.dematerializeTimer > 0) {
+                this.dematerializeTimer--;
+                if (this.dematerializeTimer <= 0) {
+                    finishPacking();
+                }
+                return; // Полностью блокируем ночной режим на время сворачивания
+            }
+
+            // Завершение фазы материализации
+            if (this.getAnimState() == STATE_MATERIALIZE) {
+                if (this.stateTimer > 0) {
+                    this.stateTimer--;
+                    if (this.stateTimer <= 0) {
+                        this.setAnimState(STATE_GREETING, 45);
+                    }
+                }
+                return;
+            }
+
             boolean isNightTime = this.level().isNight();
 
-                        if (isNightTime) {
+            if (isNightTime) {
                 if (this.getAnimState() != STATE_SHIELD_NIGHT) {
                     this.entityData.set(ANIM_STATE, STATE_SHIELD_NIGHT);
                     this.entityData.set(NIGHT_SHIELD_TICKS, 0);
@@ -226,7 +252,7 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                 double targetY = actualGroundY + TARGET_HOVER_HEIGHT;
                 double diffY = targetY - this.getY();
 
-                // Плавная стабилизация по Y (подъем или спуск)
+                // Плавная стабилизация по Y
                 this.setDeltaMovement(this.getDeltaMovement().x * 0.5D, diffY * 0.2D, this.getDeltaMovement().z * 0.5D);
                 this.hasImpulse = true;
                 this.fallDistance = 0.0F;
@@ -240,14 +266,6 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                             SoundEvents.BEACON_DEACTIVATE, SoundSource.NEUTRAL, 1.0F, 1.0F);
                 }
 
-                                                if (this.dematerializeTimer > 0) {
-                    this.dematerializeTimer--;
-                    if (this.dematerializeTimer <= 0) {
-                        finishPacking();
-                        return;
-                    }
-                }
-
                 if (this.stateTimer > 0) {
                     this.stateTimer--;
                     if (this.stateTimer <= 0) {
@@ -255,7 +273,6 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
                     }
                 } else if (this.getAnimState() == STATE_IDLE) {
                     if (--this.idleFlavorCooldown <= 0) {
-                        // Раз в 2.5–5 минут (3000-6000 тиков)
                         this.idleFlavorCooldown = 3000 + this.random.nextInt(3000);
                         if (this.random.nextBoolean()) {
                             this.setAnimState(STATE_PONDER, 60);
