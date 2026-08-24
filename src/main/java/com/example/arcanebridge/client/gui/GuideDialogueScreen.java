@@ -71,13 +71,31 @@ public class GuideDialogueScreen extends Screen {
         return false;
     }
 
-    private void closeSafely() {
+        private void closeSafely() {
+        stopCurrentVoice();
         if (this.minecraft != null) {
             this.onClose();
         }
     }
 
+    @Override
+    public void onClose() {
+        stopCurrentVoice();
+        super.onClose();
+    }
+
+    private void stopCurrentVoice() {
+        if (currentVoiceInstance != null && this.minecraft != null) {
+            this.minecraft.getSoundManager().stop(currentVoiceInstance);
+            currentVoiceInstance = null;
+        }
+    }
+
     public void loadNode(String nodeKey) {
+        loadNode(nodeKey, true);
+    }
+
+    public void loadNode(String nodeKey, boolean playVoice) {
         if ("EXIT".equalsIgnoreCase(nodeKey) || this.dialogueTree == null) {
             closeSafely();
             return;
