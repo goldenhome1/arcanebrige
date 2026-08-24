@@ -26,56 +26,121 @@
       }
     ]
   },
-  "guide.greeting_01": {
+    "guide.greeting_01": {
     "category": "player",
-    "sounds": [ "arcane_bridge:guide/greeting_01" ]
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/greeting_01",
+        "type": "file"
+      }
+    ]
   },
   "guide.greeting_injured": {
     "category": "player",
-    "sounds": [ "arcane_bridge:guide/greeting_injured" ]
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/greeting_injured",
+        "type": "file"
+      }
+    ]
   },
   "guide.resonance_warning": {
     "category": "player",
-    "sounds": [ "arcane_bridge:guide/resonance_warning" ]
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/resonance_warning",
+        "type": "file"
+      }
+    ]
   },
   "guide.about_master": {
     "category": "player",
-    "sounds": [ "arcane_bridge:guide/about_master" ]
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/about_master",
+        "type": "file"
+      }
+    ]
   },
   "guide.about_appearance": {
     "category": "player",
-    "sounds": [ "arcane_bridge:guide/about_appearance" ]
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/about_appearance",
+        "type": "file"
+      }
+    ]
   },
   "guide.about_philosophy": {
     "category": "player",
-    "sounds": [ "arcane_bridge:guide/about_philosophy" ]
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/about_philosophy",
+        "type": "file"
+      }
+    ]
   },
   "guide.about_help": {
     "category": "player",
-    "sounds": [ "arcane_bridge:guide/about_help" ]
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/about_help",
+        "type": "file"
+      }
+    ]
   },
   "guide.progression_nether": {
     "category": "player",
-    "sounds": [ "arcane_bridge:guide/progression_nether" ]
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/progression_nether",
+        "type": "file"
+      }
+    ]
   },
   "guide.boss_hints": {
     "category": "player",
-    "sounds": [ "arcane_bridge:guide/boss_hints" ]
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/boss_hints",
+        "type": "file"
+      }
+    ]
   },
   "guide.tactics_wroughtnaut": {
     "category": "player",
-    "sounds": [ "arcane_bridge:guide/tactics_wroughtnaut" ]
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/tactics_wroughtnaut",
+        "type": "file"
+      }
+    ]
   },
   "guide.tactics_nameless": {
     "category": "player",
-    "sounds": [ "arcane_bridge:guide/tactics_nameless" ]
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/tactics_nameless",
+        "type": "file"
+      }
+    ]
   },
   "guide.assembly_tips": {
     "category": "player",
-    "sounds": [ "arcane_bridge:guide/assembly_tips" ]
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/assembly_tips",
+        "type": "file"
+      }
+    ]
   },
   "guide.locator_menu": {
     "category": "player",
-    "sounds": [ "arcane_bridge:guide/locator_menu" ]
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/locator_menu",
+        "type": "file"
+      }
+    ]
   }
 }
