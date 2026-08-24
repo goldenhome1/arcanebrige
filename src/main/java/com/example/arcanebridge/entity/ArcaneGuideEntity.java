@@ -72,15 +72,20 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         super(type, level);
     }
 
-        @Override
+            @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(ANIM_STATE, STATE_IDLE);
         this.entityData.define(NIGHT_SHIELD_TICKS, 0);
+        this.entityData.define(ACTION_TICKS, 0);
     }
 
     public int getNightShieldTicks() {
         return this.entityData.get(NIGHT_SHIELD_TICKS);
+    }
+
+    public int getActionTicks() {
+        return this.entityData.get(ACTION_TICKS);
     }
 
     public int getAnimState() {
@@ -89,6 +94,7 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
 
     public void setAnimState(int state, int durationTicks) {
         this.entityData.set(ANIM_STATE, state);
+        this.entityData.set(ACTION_TICKS, durationTicks);
         this.stateTimer = durationTicks;
     }
 
