@@ -320,14 +320,14 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
         private int dematerializeTimer = -1;
     private Player packingPlayer = null;
 
-    private void packIntoCore(Player player) {
+        private void packIntoCore(Player player) {
         if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-            // Включаем режим глитч-сворачивания на 20 тиков (1 секунда)
-            this.setAnimState(STATE_DEMATERIALIZE, 20);
-            this.dematerializeTimer = 20;
+            // Запуск дематериализации сверху вниз на 25 тиков
+            this.setAnimState(STATE_DEMATERIALIZE, 25);
+            this.dematerializeTimer = 25;
             this.packingPlayer = player;
-            
-            this.level().playSound(null, this.blockPosition(), SoundEvents.CHORUS_FRUIT_TELEPORT, SoundSource.PLAYERS, 1.0F, 1.8F);
+
+            this.level().playSound(null, this.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 0.9F, 1.6F);
             this.level().playSound(null, this.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 1.0F, 1.5F);
         }
     }
