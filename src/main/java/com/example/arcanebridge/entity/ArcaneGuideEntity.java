@@ -46,8 +46,10 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
     public static final int STATE_ANALYZE = 3;
     public static final int STATE_PONDER = 4;
     public static final int STATE_EXPLAIN = 5;
-    public static final int STATE_CALIBRATE = 6;
+        public static final int STATE_CALIBRATE = 6;
     public static final int STATE_SHIELD_NIGHT = 7;
+    public static final int STATE_MATERIALIZE = 8;
+    public static final int STATE_DEMATERIALIZE = 9;
 
     private static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
     private static final RawAnimation CHARGE_ANIM = RawAnimation.begin().thenPlay("charge");
