@@ -37,7 +37,9 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
 
             private static final EntityDataAccessor<Integer> ANIM_STATE =
             SynchedEntityData.defineId(ArcaneGuideEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> NIGHT_SHIELD_TICKS =
+        private static final EntityDataAccessor<Integer> NIGHT_SHIELD_TICKS =
+            SynchedEntityData.defineId(ArcaneGuideEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> ACTION_TICKS =
             SynchedEntityData.defineId(ArcaneGuideEntity.class, EntityDataSerializers.INT);
 
     public static final int STATE_IDLE = 0;
