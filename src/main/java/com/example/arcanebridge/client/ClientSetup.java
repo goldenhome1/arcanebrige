@@ -1,7 +1,7 @@
 package com.example.arcanebridge.client;
 
 import com.example.arcanebridge.ArcaneBridge;
-import com.example.arcanebridge.client.render.ArcaneGuideRenderer;
+import com.example.arcanebridge.client.renderer.ArcaneGuideRenderer;
 import com.example.arcanebridge.entity.ModEntities;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
