@@ -28,9 +28,10 @@ public class ArcaneBridge {
     public ArcaneBridge() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
-        NetworkHandler.register();
+                NetworkHandler.register();
         ModSounds.register(modEventBus);
         ArcaneHexRegistry.register(modEventBus);
+        ModItems.register(modEventBus);
         ModEntities.register(modEventBus);
 
         modEventBus.addListener(this::commonSetup);
