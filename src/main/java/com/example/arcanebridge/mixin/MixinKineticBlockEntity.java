@@ -20,24 +20,41 @@ public abstract class MixinKineticBlockEntity extends BlockEntity {
     }
 
     /**
-     * Вал-приемник признается генератором внутри графа Create
+     * 1. Вал-приемник объявляет Create скорость генерации (RPM)
      */
-    @Inject(method = "isSource", at = @At("HEAD"), cancellable = true)
-    private void arcaneBridge$isSource(CallbackInfoReturnable<Boolean> cir) {
+    @Inject(method = "getGeneratedSpeed", at = @At("HEAD"), cancellable = true)
+    private void arcaneBridge$getGeneratedSpeed(CallbackInfoReturnable<Float> cir) {
         if (this.level != null && !this.level.isClientSide) {
             MinecraftServer server = this.level.getServer();
             if (server != null) {
                 PhaseNetworkManager manager = PhaseNetworkManager.get(server);
                 PhaseNetworkManager.PhaseChannel channel = manager.getChannelByReceiver(this.level.dimension(), this.worldPosition);
                 if (channel != null && Math.abs(channel.currentSpeed) > 0.01f) {
-                    cir.setReturnValue(true);
+                    cir.setReturnValue(channel.currentSpeed);
                 }
             }
         }
     }
 
     /**
-     * Вал-передатчик нагружает свою сеть стрессом от удаленных станков
+     * 2. Вал-приемник транслирует доступную мощность (SU) от генераторов передатчика
+     */
+    @Inject(method = "calculateAddedStressCapacity", at = @At("HEAD"), cancellable = true)
+    private void arcaneBridge$calculateAddedStressCapacity(CallbackInfoReturnable<Float> cir) {
+        if (this.level != null && !this.level.isClientSide) {
+            MinecraftServer server = this.level.getServer();
+            if (server != null) {
+                PhaseNetworkManager manager = PhaseNetworkManager.get(server);
+                PhaseNetworkManager.PhaseChannel channel = manager.getChannelByReceiver(this.level.dimension(), this.worldPosition);
+                if (channel != null && Math.abs(channel.currentSpeed) > 0.01f) {
+                    cir.setReturnValue(channel.txCapacity > 0 ? channel.txCapacity : 102400.0f);
+                }
+            }
+        }
+    }
+
+    /**
+     * 3. Вал-передатчик забирает нагрузку удаленной сети станков
      */
     @Inject(method = "calculateStressApplied", at = @At("HEAD"), cancellable = true)
     private void arcaneBridge$calculateStressApplied(CallbackInfoReturnable<Float> cir) {
