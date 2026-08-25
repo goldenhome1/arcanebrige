@@ -59,9 +59,9 @@ public class PhaseRelayRenderer extends KineticBlockEntityRenderer<PhaseRelayBlo
             case Y -> ms.mulPose(Axis.XP.rotationDegrees(90.0F));
         }
 
-                // Плавное вращение глифа в 5 раз медленнее вала (без мыла и стробоскопа на высоких RPM)
+                        // Замедление еще в 5 раз (суммарно в 25 раз медленнее вала): глиф сохраняет четкость даже на 256 RPM
         float time = (be.getLevel() != null ? be.getLevel().getGameTime() : 0) + partialTicks;
-        float angle = (speed != 0) ? (time * (speed / 50.0F) * 3.0F) % 360.0F : (float) Math.sin(time * 0.04F) * 6.0F;
+        float angle = (speed != 0) ? (time * (speed / 250.0F) * 3.0F) % 360.0F : (float) Math.sin(time * 0.03F) * 5.0F;
         ms.mulPose(Axis.ZP.rotationDegrees(angle));
 
         // Дыхание эфирного поля
