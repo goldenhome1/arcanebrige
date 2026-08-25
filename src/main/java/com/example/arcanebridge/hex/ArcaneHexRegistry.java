@@ -15,35 +15,24 @@ public class ArcaneHexRegistry {
     public static final DeferredRegister<ActionRegistryEntry> ACTIONS =
             DeferredRegister.create(HexRegistries.ACTION, "arcane_bridge");
 
-        public static final RegistryObject<ActionRegistryEntry> READ_BLOCK_TAG =
+    public static final RegistryObject<ActionRegistryEntry> READ_BLOCK_TAG =
             ACTIONS.register("read_block_tag", () -> new ActionRegistryEntry(
                     HexPattern.fromAngles("qawq", HexDir.NORTH_EAST),
                     new OpReadBlockTag()
             ));
 
     // 🌌 Великий Гекс Фазового Передатчика (TX / Открытие канала)
-
     public static final RegistryObject<ActionRegistryEntry> BIND_PHASE_TRANSMITTER =
-
             ACTIONS.register("bind_phase_transmitter", () -> new ActionRegistryEntry(
-
                     HexPattern.fromAngles("dadadada", HexDir.EAST),
-
                     new OpCastPhaseTransmitter()
-
             ));
 
-
     // 🔮 Великий Гекс Фазового Приемника (RX / Замыкание контура)
-
     public static final RegistryObject<ActionRegistryEntry> BIND_PHASE_RECEIVER =
-
             ACTIONS.register("bind_phase_receiver", () -> new ActionRegistryEntry(
-
                     HexPattern.fromAngles("dadadadad", HexDir.EAST),
-
                     new OpCastPhaseReceiver()
-
             ));
 
     public static void register(IEventBus modEventBus) {
