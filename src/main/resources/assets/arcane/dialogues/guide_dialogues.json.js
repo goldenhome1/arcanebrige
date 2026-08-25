@@ -105,11 +105,11 @@
         { "index": 1, "text": "[Назад]", "target_node": "progression_hub" }
       ]
     },
-    "locator_hub": {
+        "locator_hub": {
       "npc_text": "Укажи целевой энергетический след для калибровки спектрального сенсора:",
       "sound_event": "arcane_bridge:guide.locator_menu",
       "options": [
-        { "index": 1, "text": "Подземелье Кователя (Wroughtnaut Chamber)", "target_node": "ACTION_LOCATE:mowziesmobs:wroughtnaut_chamber" },
+        { "index": 1, "text": "Подземелье Кователя (Wrought Chamber)", "target_node": "ACTION_LOCATE:mowziesmobs:wrought_chamber" },
         { "index": 2, "text": "Древняя Фабрика (Ancient Factory / Harbinger)", "target_node": "ACTION_LOCATE:cataclysm:ancient_factory" },
         { "index": 3, "text": "Пылающая Арена (Burning Arena / Ignis)", "target_node": "ACTION_LOCATE:cataclysm:burning_arena" },
         { "index": 4, "text": "[Назад]", "target_node": "greeting" }
