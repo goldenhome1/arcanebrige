@@ -1,7 +1,24 @@
 {
-  "parent": "minecraft:block/cube_column",
+  "credit": "Arcane Bridge - Hex Shaft Node",
+  "parent": "block/block",
   "textures": {
-    "end": "minecraft:block/amethyst_block",
-    "side": "create:block/brass_casing"
-  }
+    "particle": "create:block/axis",
+    "axis": "create:block/axis",
+    "axis_top": "create:block/axis_top"
+  },
+  "elements": [
+    {
+      "name": "CentralShaft",
+      "from": [6, 0, 6],
+      "to": [10, 16, 10],
+      "faces": {
+        "north": { "uv": [6, 0, 10, 16], "texture": "#axis" },
+        "south": { "uv": [6, 0, 10, 16], "texture": "#axis" },
+        "east":  { "uv": [6, 0, 10, 16], "texture": "#axis" },
+        "west":  { "uv": [6, 0, 10, 16], "texture": "#axis" },
+        "up":    { "uv": [6, 6, 10, 10], "texture": "#axis_top" },
+        "down":  { "uv": [6, 6, 10, 10], "texture": "#axis_top" }
+      }
+    }
+  ]
 }
