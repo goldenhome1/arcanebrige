@@ -40,30 +40,21 @@ public class KineticValidationHelper {
     }
 
     /**
-     * Безопасная перестройка графа Create через RotationPropagator
+     * Запуск нативного пересчета физики Create для узла-генератора
      */
-    public static void refreshKinetic(Level level, BlockPos pos) {
-        if (level == null || pos == null) return;
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be == null || !isKineticBlock(level, pos)) return;
-
+    public static void updateGeneratedRotation(BlockEntity be) {
+        if (be == null) return;
         try {
-            Class<?> rpClass = Class.forName("com.simibubi.create.content.kinetics.RotationPropagator");
-            Class<?> kbeClass = Class.forName("com.simibubi.create.content.kinetics.base.KineticBlockEntity");
-
-            Method handleRemoved = rpClass.getMethod("handleRemoved", Level.class, BlockPos.class, kbeClass);
-            handleRemoved.invoke(null, level, pos, be);
-
-            Method handleAdded = rpClass.getMethod("handleAdded", Level.class, BlockPos.class, kbeClass);
-            handleAdded.invoke(null, level, pos, be);
-
+            Method updateGen = be.getClass().getMethod("updateGeneratedRotation");
+            updateGen.invoke(be);
+        } catch (Throwable t) {
             try {
-                Method sendData = be.getClass().getMethod("sendData");
-                sendData.invoke(be);
+                Method detach = be.getClass().getMethod("detachKinetics");
+                Method attach = be.getClass().getMethod("attachKinetics");
+                detach.invoke(be);
+                attach.invoke(be);
             } catch (Throwable ignored) {}
-
-            be.setChanged();
-        } catch (Throwable ignored) {}
+        }
     }
 
     public static float getNetworkStress(BlockEntity be) {
@@ -96,13 +87,5 @@ public class KineticValidationHelper {
             }
         } catch (Throwable ignored) {}
         return 0.0f;
-    }
-
-    public static void updateNetwork(BlockEntity be) {
-        if (be == null) return;
-        try {
-            Method updateNet = be.getClass().getMethod("updateNetwork");
-            updateNet.invoke(be);
-        } catch (Throwable ignored) {}
     }
 }
