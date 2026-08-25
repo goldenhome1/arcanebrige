@@ -1,16 +1,7 @@
 {
   "variants": {
-    "axis=y": {
-      "model": "arcane_bridge:block/phase_relay"
-    },
-    "axis=z": {
-      "model": "arcane_bridge:block/phase_relay",
-      "x": 90
-    },
-    "axis=x": {
-      "model": "arcane_bridge:block/phase_relay",
-      "x": 90,
-      "y": 90
-    }
+    "axis=x": { "model": "arcane_bridge:block/phase_relay" },
+    "axis=y": { "model": "arcane_bridge:block/phase_relay" },
+    "axis=z": { "model": "arcane_bridge:block/phase_relay" }
   }
 }
