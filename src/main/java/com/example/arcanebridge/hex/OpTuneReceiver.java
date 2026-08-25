@@ -4,6 +4,8 @@ import at.petrak.hexcasting.api.casting.ParticleSpray;
 import at.petrak.hexcasting.api.casting.RenderedSpell;
 import at.petrak.hexcasting.api.casting.castables.SpellAction;
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
+import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
+import at.petrak.hexcasting.api.casting.eval.vm.SpellContinuation;
 import at.petrak.hexcasting.api.casting.iota.DoubleIota;
 import at.petrak.hexcasting.api.casting.iota.Iota;
 import at.petrak.hexcasting.api.casting.iota.Vec3Iota;
@@ -34,7 +36,7 @@ public class OpTuneReceiver implements SpellAction {
     }
 
     @Override
-    public Result execute(List<? extends Iota> args, CastingEnvironment ctx) {
+    public SpellAction.Result execute(List<? extends Iota> args, CastingEnvironment ctx) {
         if (!(args.get(0) instanceof Vec3Iota vecIota)) {
             throw new MishapInvalidIota(args.get(0), 1, null);
         }
@@ -60,10 +62,10 @@ public class OpTuneReceiver implements SpellAction {
         double channel = numIota.getDouble();
         long cost = isCreateShaft ? MediaConstants.SHARD_UNIT : MediaConstants.DUST_UNIT;
 
-        return new Result(
+        return new SpellAction.Result(
                 new Spell(targetPos, channel, isCreateShaft, targetState),
                 cost,
-                List.of(ParticleSpray.cloud(Vec3.atCenterOf(targetPos), 1.5D))
+                List.of(ParticleSpray.cloud(Vec3.atCenterOf(targetPos), 1.5D, 20))
         );
     }
 
@@ -77,15 +79,20 @@ public class OpTuneReceiver implements SpellAction {
                         ? oldState.getValue(PhaseRelayBlock.AXIS)
                         : Direction.Axis.Y;
 
-                BlockState newState = ModBlocks.PHASE_RELAY_BLOCK.get().defaultBlockState()
+                BlockState newState = ModBlocks.PHASE_RELAY.get().defaultBlockState()
                         .setValue(PhaseRelayBlock.AXIS, axis);
                 level.setBlock(pos, newState, Block.UPDATE_ALL);
             }
 
             if (level.getBlockEntity(pos) instanceof PhaseRelayBlockEntity relay) {
-                relay.tuneChannel(channel, true); // true = RX (Приёмник)
+                relay.tuneChannel(channel, true);
                 level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 1.0F, 0.8F);
             }
+        }
+
+        @Override
+        public void cast(CastingEnvironment ctx, CastingImage image) {
+            cast(ctx);
         }
     }
 }
