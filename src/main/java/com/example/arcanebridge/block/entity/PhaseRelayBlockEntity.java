@@ -1,5 +1,6 @@
 package com.example.arcanebridge.block.entity;
 
+import com.example.arcanebridge.registry.ModBlockEntities;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -13,8 +14,14 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
     public double channelId = 0.0D;
     public boolean isLinked = false;
 
+    // Конструктор по умолчанию для реестра
     public PhaseRelayBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
+    }
+
+    // Перегруженный конструктор для удобного создания
+    public PhaseRelayBlockEntity(BlockPos pos, BlockState state) {
+        super(ModBlockEntities.PHASE_RELAY.get(), pos, state);
     }
 
     public void tuneChannel(double channel, boolean receiver) {
@@ -28,10 +35,30 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
         }
     }
 
+    public void registerInNetwork() {
+        this.isLinked = true;
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            updateGeneratedRotation();
+        }
+    }
+
+    public void unregisterFromNetwork() {
+        this.isLinked = false;
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            updateGeneratedRotation();
+        }
+    }
+
+    @Override
+    public void updateGeneratedRotation() {
+        super.updateGeneratedRotation();
+    }
+
     @Override
     public float getGeneratedSpeed() {
         if (isReceiver && isLinked) {
-            // Приемник генерирует скорость из фазового канала
             return PhaseNetworkManager.getChannelSpeed(level, channelId);
         }
         return 0.0F;
@@ -42,7 +69,6 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
         super.tick();
         if (level != null && !level.isClientSide) {
             if (!isReceiver && isLinked) {
-                // Передатчик транслирует свою скорость в канал
                 PhaseNetworkManager.updateChannelSpeed(level, channelId, getSpeed());
             }
         }
