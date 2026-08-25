@@ -22,10 +22,6 @@ public class PhaseNetworkManager {
         CHANNELS.put(channel, new ChannelData(speed, capacity));
     }
 
-    public static void updateChannelSpeed(Level level, double channel, float speed) {
-        CHANNELS.compute(channel, (k, v) -> v == null ? new ChannelData(speed, 0.0F) : new ChannelData(speed, v.capacity));
-    }
-
     public static float getChannelSpeed(Level level, double channel) {
         ChannelData data = CHANNELS.get(channel);
         return data != null ? data.speed : 0.0F;
