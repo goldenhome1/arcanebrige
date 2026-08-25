@@ -2,8 +2,9 @@ package com.example.arcanebridge.client.render;
 
 import com.example.arcanebridge.block.entity.PhaseRelayBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.simibubi.create.AllPartialModels;
+import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
+import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
 import net.createmod.catnip.render.CachedBuffers;
 import net.createmod.catnip.render.SuperByteBuffer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -20,14 +21,15 @@ public class PhaseRelayRenderer extends KineticBlockEntityRenderer<PhaseRelayBlo
     @Override
     protected void renderSafe(PhaseRelayBlockEntity be, float partialTicks, PoseStack ms, MultiBufferSource buffer,
                               int light, int overlay) {
-        // Рендерим вал принудительно (без отсечки Flywheel)
         BlockState state = be.getBlockState();
         renderRotatingBuffer(be, getRotatedModel(be, state), ms, buffer.getBuffer(RenderType.solid()), light);
     }
 
     @Override
     protected SuperByteBuffer getRotatedModel(PhaseRelayBlockEntity be, BlockState state) {
-        // getRotatedModel суперкласса правильно ориентирует и вращает модель вала по оси блока
-        return CachedBuffers.partial(AllPartialModels.SHAFT, state);
+        // Берем запеченную модель вала Create с правильной ориентацией оси (X, Y или Z)
+        BlockState shaftState = AllBlocks.SHAFT.get().defaultBlockState()
+                .setValue(RotatedPillarKineticBlock.AXIS, state.getValue(RotatedPillarKineticBlock.AXIS));
+        return CachedBuffers.block(shaftState);
     }
 }
