@@ -29,7 +29,7 @@ import java.util.List;
 
 public class OpTuneReceiver implements ConstMediaAction {
 
-        @Override
+    @Override
     public int getArgc() {
         return 2;
     }
@@ -37,11 +37,6 @@ public class OpTuneReceiver implements ConstMediaAction {
     @Override
     public long getMediaCost() {
         return 0;
-    }
-
-    @Override
-    public OperationResult operate(CastingEnvironment env, CastingImage image, SpellContinuation continuation) {
-        return ConstMediaAction.DefaultImpls.operate(this, env, image, continuation);
     }
 
     @Override
@@ -92,5 +87,15 @@ public class OpTuneReceiver implements ConstMediaAction {
         }
 
         return List.of();
+    }
+
+    @Override
+    public ConstMediaAction.CostMediaActionResult executeWithOpCount(List<? extends Iota> args, CastingEnvironment env) {
+        return ConstMediaAction.DefaultImpls.executeWithOpCount(this, args, env);
+    }
+
+    @Override
+    public OperationResult operate(CastingEnvironment env, CastingImage image, SpellContinuation continuation) {
+        return ConstMediaAction.DefaultImpls.operate(this, env, image, continuation);
     }
 }
