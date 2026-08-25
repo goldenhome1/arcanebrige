@@ -4,7 +4,6 @@ import com.example.arcanebridge.block.entity.PhaseRelayBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.AllPartialModels;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
-import dev.engine_room.flywheel.api.visualization.VisualizationManager;
 import net.createmod.catnip.render.CachedBuffers;
 import net.createmod.catnip.render.SuperByteBuffer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -21,10 +20,7 @@ public class PhaseRelayRenderer extends KineticBlockEntityRenderer<PhaseRelayBlo
     @Override
     protected void renderSafe(PhaseRelayBlockEntity be, float partialTicks, PoseStack ms, MultiBufferSource buffer,
                               int light, int overlay) {
-        if (VisualizationManager.supportsVisualization(be.getLevel())) return;
-
         BlockState state = be.getBlockState();
-        // Нативный рендер вращающегося вала Create
         renderRotatingBuffer(be, getRotatedModel(be, state), ms, buffer.getBuffer(RenderType.solid()), light);
     }
 
