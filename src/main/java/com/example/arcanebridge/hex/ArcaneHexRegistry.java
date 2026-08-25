@@ -19,17 +19,17 @@ public class ArcaneHexRegistry {
                     new OpReadBlockTag()
             ));
 
-    // Великий Гекс Передатчика (TX): Траектория "qaqawa"
+        // 🌌 Великий Гекс Фазового Передатчика (Открытие канала): траектория из Hex Studio
     public static final RegistryObject<ActionRegistryEntry> BIND_PHASE_TRANSMITTER =
             ACTIONS.register("bind_phase_transmitter", () -> new ActionRegistryEntry(
-                    HexPattern.fromAngles("qaqawa", HexDir.EAST),
+                    HexPattern.fromAngles("qwdwqqqdqqqdqdqqwdwqqqdqqqqdqawqeeww", HexDir.EAST),
                     new OpCastPhaseTransmitter()
             ));
 
-    // Великий Гекс Приемника (RX): Траектория "edeada"
+    // 🔮 Великий Гекс Фазового Приемника (Закрытие контура): траектория из Hex Studio
     public static final RegistryObject<ActionRegistryEntry> BIND_PHASE_RECEIVER =
             ACTIONS.register("bind_phase_receiver", () -> new ActionRegistryEntry(
-                    HexPattern.fromAngles("edeada", HexDir.WEST),
+                    HexPattern.fromAngles("qwdwqqqdqqqdqdqqwdwqqqdqqqqdqawqedqqdeqw", HexDir.EAST),
                     new OpCastPhaseReceiver()
             ));
 
