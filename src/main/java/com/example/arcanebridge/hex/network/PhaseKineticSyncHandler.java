@@ -1,7 +1,6 @@
 package com.example.arcanebridge.hex.network;
 
 import com.example.arcanebridge.hex.util.KineticValidationHelper;
-import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -30,22 +29,23 @@ public class PhaseKineticSyncHandler {
                     BlockEntity txBe = txLevel.getBlockEntity(channel.transmitter.pos);
                     BlockEntity rxBe = rxLevel.getBlockEntity(channel.receiver.pos);
 
-                    if (txBe instanceof KineticBlockEntity txKbe && rxBe instanceof KineticBlockEntity rxKbe) {
-                        float txSpeed = txKbe.getSpeed();
+                    if (txBe != null && rxBe != null && 
+                        KineticValidationHelper.isKineticBlock(txLevel, channel.transmitter.pos) && 
+                        KineticValidationHelper.isKineticBlock(rxLevel, channel.receiver.pos)) {
+                        
+                        float txSpeed = KineticValidationHelper.getSpeed(txBe);
 
-                        // 1. Если скорость на источнике изменилась — запускаем пересчет графа RX
+                        // 1. При изменении скорости источника — обновляем граф приемника
                         if (Math.abs(txSpeed - channel.currentSpeed) > 0.05f) {
                             channel.currentSpeed = txSpeed;
-                            rxKbe.updateGeneratedRotation();
+                            KineticValidationHelper.updateKineticSource(rxBe);
                         }
 
-                        // 2. Считываем реальный стресс сети станков на RX и передаем на TX
-                        if (rxKbe.getOrCreateNetwork() != null) {
-                            float currentRxStress = rxKbe.getOrCreateNetwork().calculateStress();
-                            if (Math.abs(currentRxStress - channel.rxStress) > 0.1f) {
-                                channel.rxStress = currentRxStress;
-                                txKbe.updateGeneratedRotation();
-                            }
+                        // 2. Считываем стресс сети станков на RX и транслируем на передатчик
+                        float currentRxStress = KineticValidationHelper.getNetworkStress(rxBe);
+                        if (Math.abs(currentRxStress - channel.rxStress) > 0.1f) {
+                            channel.rxStress = currentRxStress;
+                            KineticValidationHelper.updateKineticSource(txBe);
                         }
 
                         // 3. Эфирные частицы
