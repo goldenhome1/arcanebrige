@@ -280,7 +280,14 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
     public void tick() {
         super.tick();
 
-        if (!this.level().isClientSide()) {
+                if (!this.level().isClientSide()) {
+            // Защита от падения в Бездну: возвращаем наверх при Y < -60
+            if (this.getY() < -60.0D) {
+                this.setDeltaMovement(0, 0, 0);
+                double groundY = findGroundY();
+                this.teleportTo(this.getX(), Math.max(64.0D, groundY + TARGET_HOVER_HEIGHT), this.getZ());
+            }
+
             int actionRemaining = this.entityData.get(ACTION_TICKS);
             if (actionRemaining > 0) {
                 this.entityData.set(ACTION_TICKS, actionRemaining - 1);
