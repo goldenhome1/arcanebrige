@@ -4,6 +4,7 @@ import at.petrak.hexcasting.api.casting.ParticleSpray;
 import at.petrak.hexcasting.api.casting.castables.Action;
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
 import at.petrak.hexcasting.api.casting.eval.OperationResult;
+import at.petrak.hexcasting.api.casting.eval.sideeffects.OperatorSideEffect;
 import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
 import at.petrak.hexcasting.api.casting.eval.vm.SpellContinuation;
 import at.petrak.hexcasting.api.casting.iota.DoubleIota;
@@ -13,6 +14,7 @@ import at.petrak.hexcasting.api.casting.mishaps.MishapBadBlock;
 import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota;
 import at.petrak.hexcasting.api.casting.mishaps.MishapNotEnoughArgs;
 import at.petrak.hexcasting.api.misc.MediaConstants;
+import at.petrak.hexcasting.common.lib.hex.HexEvalMarker;
 import com.example.arcanebridge.block.PhaseRelayBlock;
 import com.example.arcanebridge.block.entity.PhaseRelayBlockEntity;
 import com.example.arcanebridge.registry.ModBlocks;
@@ -84,7 +86,11 @@ public class OpTuneTransmitter implements Action {
             level.playSound(null, targetPos, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 1.0F, 1.2F);
         }
 
-        CastingImage newImage = image.copy(stack, image.getParenChildren(), image.getEscapeNext(), image.getOpsConsumed() + 1, image.getUserData());
-        return new OperationResult(newImage, List.of(ParticleSpray.cloud(Vec3.atCenterOf(targetPos), 1.5D, 20)), continuation, null);
+        CastingImage newImage = image.withStack(stack);
+        List<OperatorSideEffect> sideEffects = List.of(
+                new OperatorSideEffect.Particles(ParticleSpray.cloud(Vec3.atCenterOf(targetPos), 1.5D, 20))
+        );
+
+        return new OperationResult(newImage, sideEffects, continuation, HexEvalMarker.NORMAL);
     }
 }
