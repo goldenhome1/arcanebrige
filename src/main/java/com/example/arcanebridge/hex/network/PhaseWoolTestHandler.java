@@ -30,7 +30,6 @@ public class PhaseWoolTestHandler {
         Player player = event.getEntity();
         ServerLevel serverLevel = (ServerLevel) level;
 
-        // 1. Белая шерсть — Передатчик (TX)
         if (state.is(Blocks.WHITE_WOOL)) {
             BlockPos kineticPos = KineticValidationHelper.findAdjacentKineticPos(level, clickedPos);
             if (kineticPos != null) {
@@ -40,26 +39,37 @@ public class PhaseWoolTestHandler {
                 PhaseNetworkManager manager = PhaseNetworkManager.get(serverLevel.getServer());
                 manager.registerTransmitter(TEST_CHANNEL, level.dimension(), kineticPos);
 
-                player.sendSystemMessage(Component.literal("§f[TX: Белая Шерсть] §aУспешно привязана к валу: §e" + kineticPos.toShortString() + " §7(Текущая скорость: §b" + speed + " RPM§7)"));
+                var channel = manager.getChannel(TEST_CHANNEL);
+                if (channel != null) {
+                    channel.currentSpeed = speed;
+                    if (channel.receiver != null) {
+                        ServerLevel rxLevel = serverLevel.getServer().getLevel(channel.receiver.dimension);
+                        if (rxLevel != null && rxLevel.isLoaded(channel.receiver.pos)) {
+                            KineticValidationHelper.refreshKinetic(rxLevel, channel.receiver.pos);
+                        }
+                    }
+                }
+
+                player.sendSystemMessage(Component.literal("§f[TX: Белая Шерсть] §aПривязана к валу: §e" + kineticPos.toShortString() + " §7(Скорость: §b" + speed + " RPM§7)"));
                 serverLevel.playSound(null, clickedPos, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 0.8F, 1.8F);
                 event.setCanceled(true);
             } else {
-                player.sendSystemMessage(Component.literal("§f[TX: Белая Шерсть] §cРядом не найден вал Create! Установите шерсть вплотную к валу."));
+                player.sendSystemMessage(Component.literal("§f[TX: Белая Шерсть] §cРядом не найден вал Create!"));
             }
-        }
-
-        // 2. Красная шерсть — Приемник (RX)
-        else if (state.is(Blocks.RED_WOOL)) {
+        } else if (state.is(Blocks.RED_WOOL)) {
             BlockPos kineticPos = KineticValidationHelper.findAdjacentKineticPos(level, clickedPos);
             if (kineticPos != null) {
                 PhaseNetworkManager manager = PhaseNetworkManager.get(serverLevel.getServer());
                 manager.registerReceiver(TEST_CHANNEL, level.dimension(), kineticPos);
 
-                player.sendSystemMessage(Component.literal("§c[RX: Красная Шерсть] §aУспешно привязана к целевому валу: §e" + kineticPos.toShortString() + " §7на Канале §61.0"));
+                // Мгновенная инициализация графа Create на стороне приемника
+                KineticValidationHelper.refreshKinetic(serverLevel, kineticPos);
+
+                player.sendSystemMessage(Component.literal("§c[RX: Красная Шерсть] §aПривязана к валу: §e" + kineticPos.toShortString() + " §7на Канале §61.0"));
                 serverLevel.playSound(null, clickedPos, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 0.9F, 1.4F);
                 event.setCanceled(true);
             } else {
-                player.sendSystemMessage(Component.literal("§c[RX: Красная Шерсть] §cРядом не найден вал Create! Установите шерсть вплотную к валу."));
+                player.sendSystemMessage(Component.literal("§c[RX: Красная Шерсть] §cРядом не найден вал Create!"));
             }
         }
     }
