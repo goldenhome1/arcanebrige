@@ -128,6 +128,14 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
         return new AABB(this.worldPosition).inflate(1.0D);
     }
 
+        @Override
+    public CompoundTag getUpdateTag() {
+        CompoundTag tag = super.getUpdateTag();
+        tag.putDouble("ChannelId", channelId);
+        tag.putBoolean("IsReceiver", isReceiver);
+        return tag;
+    }
+
     @Override
     public void write(CompoundTag tag, boolean clientPacket) {
         super.write(tag, clientPacket);
