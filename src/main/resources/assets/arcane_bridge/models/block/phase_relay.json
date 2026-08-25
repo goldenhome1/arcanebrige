@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:block/cube_column",
   "textures": {
-    "end": "create:block/axis",
+    "end": "minecraft:block/amethyst_block",
     "side": "create:block/brass_casing"
   }
 }
