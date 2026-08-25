@@ -15,7 +15,7 @@ public class PhaseKineticSyncHandler {
     public static void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         MinecraftServer server = event.getServer();
-        if (server == null || server.getTickCount() % 5 != 0) return;
+        if (server == null || server.getTickCount() % 2 != 0) return;
 
         PhaseNetworkManager manager = PhaseNetworkManager.get(server);
 
@@ -30,27 +30,29 @@ public class PhaseKineticSyncHandler {
                     BlockEntity rxBlock = rxLevel.getBlockEntity(channel.receiver.pos());
 
                     if (txBlock != null && rxBlock != null) {
-                        float speed = KineticValidationHelper.getSpeed(txBlock);
-                        float currentRxSpeed = KineticValidationHelper.getSpeed(rxBlock);
+                        float txSpeed = KineticValidationHelper.getSpeed(txBlock);
+                        float rxSpeed = KineticValidationHelper.getSpeed(rxBlock);
 
-                        if (Math.abs(currentRxSpeed - speed) > 0.1f) {
-                            KineticValidationHelper.setSpeed(rxBlock, speed);
+                        // Передаем скорость на приемник
+                        if (Math.abs(rxSpeed - txSpeed) > 0.1f) {
+                            KineticValidationHelper.setSpeed(rxBlock, txSpeed);
                         }
 
-                        if (Math.abs(speed) > 0.1f) {
+                        // Рабочие частицы при ненулевом вращении
+                        if (Math.abs(txSpeed) > 0.1f && server.getTickCount() % 10 == 0) {
                             txLevel.sendParticles(
                                     net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK,
                                     channel.transmitter.pos().getX() + 0.5,
                                     channel.transmitter.pos().getY() + 0.5,
                                     channel.transmitter.pos().getZ() + 0.5,
-                                    2, 0.25, 0.25, 0.25, 0.02
+                                    3, 0.2, 0.2, 0.2, 0.05
                             );
                             rxLevel.sendParticles(
                                     net.minecraft.core.particles.ParticleTypes.PORTAL,
                                     channel.receiver.pos().getX() + 0.5,
                                     channel.receiver.pos().getY() + 0.5,
                                     channel.receiver.pos().getZ() + 0.5,
-                                    3, 0.25, 0.25, 0.25, 0.05
+                                    4, 0.2, 0.2, 0.2, 0.1
                             );
                         }
                     }
