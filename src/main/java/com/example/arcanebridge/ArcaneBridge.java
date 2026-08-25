@@ -3,6 +3,7 @@ package com.example.arcanebridge;
 import com.example.arcanebridge.capability.ResonanceProvider;
 import com.example.arcanebridge.entity.ModEntities;
 import com.example.arcanebridge.hex.ArcaneHexRegistry;
+import com.example.arcanebridge.hex.ModHexActions;
 import com.example.arcanebridge.item.ModItems;
 import com.example.arcanebridge.logic.ResonanceEngine;
 import com.example.arcanebridge.network.NetworkHandler;
@@ -38,7 +39,7 @@ public class ArcaneBridge {
         ModBlocks.register(modEventBus);
         ModBlockEntities.register(modEventBus);
         modEventBus.addListener(this::commonSetup);
-
+        ModHexActions.register(FMLJavaModLoadingContext.get().getModEventBus());
         MinecraftForge.EVENT_BUS.register(this);
     }
 
