@@ -2,8 +2,8 @@ package com.example.arcanebridge.hex.actions;
 
 import at.petrak.hexcasting.api.casting.castables.Action;
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
-import at.petrak.hexcasting.api.casting.eval.CastingImage;
 import at.petrak.hexcasting.api.casting.eval.OperationResult;
+import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
 import at.petrak.hexcasting.api.casting.eval.vm.SpellContinuation;
 import at.petrak.hexcasting.api.casting.iota.DoubleIota;
 import at.petrak.hexcasting.api.casting.iota.Iota;
@@ -54,7 +54,7 @@ public class OpCastPhaseReceiver implements Action {
             return buildResult(image, continuation, newStack);
         }
 
-                // 2. Регистрируем вал как Приемник
+        // 2. Регистрируем вал как Приемник
         PhaseNetworkManager manager = PhaseNetworkManager.get(level.getServer());
         manager.registerReceiver(channelId, level.dimension(), targetPos);
 
@@ -72,10 +72,15 @@ public class OpCastPhaseReceiver implements Action {
 
     private OperationResult buildResult(CastingImage image, SpellContinuation continuation, List<Iota> newStack) {
         try {
-            CastingImage nextImage = (CastingImage) image.getClass().getMethod("withStack", List.class).invoke(image, newStack);
+            CastingImage nextImage = image;
+            try {
+                nextImage = (CastingImage) image.getClass().getMethod("withStack", List.class).invoke(image, newStack);
+            } catch (Exception ignored) {}
+
             for (java.lang.reflect.Constructor<?> c : OperationResult.class.getConstructors()) {
                 if (c.getParameterCount() == 4) {
-                    return (OperationResult) c.newInstance(nextImage, continuation, new ArrayList<>(), null);
+                    try { return (OperationResult) c.newInstance(nextImage, continuation, new ArrayList<>(), null); } catch (Exception ignored) {}
+                    try { return (OperationResult) c.newInstance(nextImage, new ArrayList<>(), continuation, null); } catch (Exception ignored) {}
                 }
             }
         } catch (Exception ignored) {}
