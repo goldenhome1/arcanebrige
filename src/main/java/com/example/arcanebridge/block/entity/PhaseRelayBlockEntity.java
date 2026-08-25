@@ -23,6 +23,43 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     @Override
+    public void onLoad() {
+        super.onLoad();
+        registerInNetwork();
+    }
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        unregisterFromNetwork();
+    }
+
+    public void registerInNetwork() {
+        if (this.level != null && !this.level.isClientSide && this.level.getServer() != null) {
+            PhaseNetworkManager manager = PhaseNetworkManager.get(this.level.getServer());
+            if (isReceiver) {
+                manager.registerReceiver(channelId, this.level.dimension(), this.worldPosition);
+            } else {
+                manager.registerTransmitter(channelId, this.level.dimension(), this.worldPosition);
+            }
+        }
+    }
+
+    public void unregisterFromNetwork() {
+        if (this.level != null && !this.level.isClientSide && this.level.getServer() != null) {
+            PhaseNetworkManager manager = PhaseNetworkManager.get(this.level.getServer());
+            var channel = manager.getChannel(channelId);
+            if (channel != null) {
+                if (isReceiver && channel.receiver != null && channel.receiver.pos.equals(this.worldPosition)) {
+                    channel.receiver = null;
+                } else if (!isReceiver && channel.transmitter != null && channel.transmitter.pos.equals(this.worldPosition)) {
+                    channel.transmitter = null;
+                }
+            }
+        }
+    }
+
+    @Override
     public float getGeneratedSpeed() {
         if (!isReceiver) return 0.0f;
         if (this.level != null && !this.level.isClientSide) {
