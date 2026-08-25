@@ -32,13 +32,13 @@ public class PhaseKineticSyncHandler {
                     if (txBe instanceof PhaseRelayBlockEntity txRelay && rxBe instanceof PhaseRelayBlockEntity rxRelay) {
                         float txSpeed = txRelay.getSpeed();
 
-                        // 1. Передача скорости на RX и пересчет физики Create
+                        // 1. Передача скорости от колеса/мотора на приемник
                         if (Math.abs(txSpeed - channel.currentSpeed) > 0.05f || Math.abs(rxRelay.getSpeed() - txSpeed) > 0.05f) {
                             channel.currentSpeed = txSpeed;
                             rxRelay.updateGeneratedRotation();
                         }
 
-                        // 2. Двусторонняя синхронизация стресса и емкости
+                        // 2. Двусторонняя синхронизация нагрузки
                         if (rxRelay.getOrCreateNetwork() != null && txRelay.getOrCreateNetwork() != null) {
                             float rxStress = rxRelay.getOrCreateNetwork().calculateStress();
                             float txCapacity = txRelay.getOrCreateNetwork().calculateCapacity();
@@ -46,7 +46,7 @@ public class PhaseKineticSyncHandler {
                             if (Math.abs(rxStress - channel.rxStress) > 0.1f || Math.abs(txCapacity - channel.txCapacity) > 0.1f) {
                                 channel.rxStress = rxStress;
                                 channel.txCapacity = txCapacity;
-                                txRelay.updateGeneratedRotation();
+                                txRelay.updateNetwork();
                             }
                         }
 
