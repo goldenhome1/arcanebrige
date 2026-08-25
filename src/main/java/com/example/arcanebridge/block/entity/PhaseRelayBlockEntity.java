@@ -1,25 +1,23 @@
 package com.example.arcanebridge.block.entity;
 
 import com.example.arcanebridge.registry.ModBlockEntities;
-import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class PhaseRelayBlockEntity extends KineticBlockEntity {
+public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
 
     public boolean isReceiver = false;
     public double channelId = 0.0D;
     public boolean isLinked = false;
 
-    // Конструктор по умолчанию для реестра
     public PhaseRelayBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
 
-    // Перегруженный конструктор для удобного создания
     public PhaseRelayBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.PHASE_RELAY.get(), pos, state);
     }
@@ -58,7 +56,7 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
 
     @Override
     public float getGeneratedSpeed() {
-        if (isReceiver && isLinked) {
+        if (isReceiver && isLinked && level != null) {
             return PhaseNetworkManager.getChannelSpeed(level, channelId);
         }
         return 0.0F;
