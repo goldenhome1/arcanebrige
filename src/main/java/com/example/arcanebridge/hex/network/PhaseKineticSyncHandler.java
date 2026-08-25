@@ -15,7 +15,7 @@ public class PhaseKineticSyncHandler {
     public static void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         MinecraftServer server = event.getServer();
-        if (server == null || server.getTickCount() % 5 != 0) return;
+        if (server == null || server.getTickCount() % 2 != 0) return;
 
         PhaseNetworkManager manager = PhaseNetworkManager.get(server);
 
@@ -32,16 +32,19 @@ public class PhaseKineticSyncHandler {
                     if (txBe != null && rxBe != null) {
                         float txSpeed = KineticValidationHelper.getSpeed(txBe);
 
-                        // 1. При изменении скорости источника передаем вращение по всему графу Create
+                        // 1. При изменении скорости генератора плавно перестраиваем удаленный граф Create
                         if (Math.abs(txSpeed - channel.currentSpeed) > 0.05f) {
                             channel.currentSpeed = txSpeed;
-                            KineticValidationHelper.applyPhaseSource(rxLevel, channel.receiver.pos, txSpeed);
+                            KineticValidationHelper.refreshKinetic(rxLevel, channel.receiver.pos);
                         }
 
-                        // 2. Считываем суммарный стресс сети станков на RX и пробрасываем на TX
-                        float currentRxStress = KineticValidationHelper.getNetworkStress(rxBe);
-                        if (Math.abs(currentRxStress - channel.rxStress) > 0.1f) {
-                            channel.rxStress = currentRxStress;
+                        // 2. Двусторонняя синхронизация стресса и мощности
+                        float rxStress = KineticValidationHelper.getNetworkStress(rxBe);
+                        float txCapacity = KineticValidationHelper.getNetworkCapacity(txBe);
+
+                        if (Math.abs(rxStress - channel.rxStress) > 0.1f || Math.abs(txCapacity - channel.txCapacity) > 0.1f) {
+                            channel.rxStress = rxStress;
+                            channel.txCapacity = txCapacity;
                             KineticValidationHelper.updateNetwork(txBe);
                         }
 
