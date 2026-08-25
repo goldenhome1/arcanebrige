@@ -55,9 +55,17 @@ public class OpCastPhaseTransmitter implements Action {
             return buildResult(image, continuation, newStack);
         }
 
-        // 2. Регистрируем вал как Передатчик
+                // 2. Регистрируем вал как Передатчик
         PhaseNetworkManager manager = PhaseNetworkManager.get(level.getServer());
         manager.registerTransmitter(channelId, level.dimension(), targetPos);
+
+        // Визуальный и звуковой отклик каста
+        double px = targetPos.getX() + 0.5D;
+        double py = targetPos.getY() + 0.5D;
+        double pz = targetPos.getZ() + 0.5D;
+        level.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, px, py, pz, 16, 0.35, 0.35, 0.35, 0.1);
+        level.sendParticles(net.minecraft.core.particles.ParticleTypes.ENCHANT, px, py, pz, 20, 0.4, 0.4, 0.4, 0.2);
+        level.playSound(null, targetPos, net.minecraft.sounds.SoundEvents.BEACON_ACTIVATE, net.minecraft.sounds.SoundSource.BLOCKS, 0.8F, 1.6F);
 
         newStack.add(new DoubleIota(channelId));
         return buildResult(image, continuation, newStack);
