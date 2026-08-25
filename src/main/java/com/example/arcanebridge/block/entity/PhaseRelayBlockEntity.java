@@ -14,8 +14,8 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
     public double channelId = 0.0D;
     public boolean isLinked = false;
 
-    private float lastObservedSpeed = 0.0F;
-    private float lastObservedCapacity = 0.0F;
+    private float lastObservedSpeed = Float.NaN;
+    private float lastObservedCapacity = Float.NaN;
 
     public PhaseRelayBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -29,7 +29,8 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
         this.channelId = channel;
         this.isReceiver = receiver;
         this.isLinked = true;
-        this.lastObservedSpeed = Float.NaN; // Сброс для мгновенного обновления сети
+        this.lastObservedSpeed = Float.NaN;
+        this.lastObservedCapacity = Float.NaN;
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -40,6 +41,7 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
     public void registerInNetwork() {
         this.isLinked = true;
         this.lastObservedSpeed = Float.NaN;
+        this.lastObservedCapacity = Float.NaN;
         setChanged();
         if (level != null && !level.isClientSide) {
             updateGeneratedRotation();
@@ -65,13 +67,15 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
     @Override
     public float calculateAddedStressCapacity() {
         if (isReceiver && isLinked && level != null) {
-            float speed = getGeneratedSpeed();
-            if (speed != 0.0F) {
-                float cap = PhaseNetworkManager.getChannelCapacity(level, channelId);
-                // Если передатчик передает емкость — используем её, иначе даем базовую емкость для стабильной работы механизмов
-                float effectiveCap = cap > 0 ? cap : 16384.0F;
-                this.lastCapacityProvided = effectiveCap;
-                return effectiveCap;
+            float speed = Math.abs(getGeneratedSpeed());
+            if (speed > 0.0F) {
+                float totalCap = PhaseNetworkManager.getChannelCapacity(level, channelId);
+                float effectiveCap = totalCap > 0.0F ? totalCap : 2048.0F;
+                
+                // Переводим общую мощность сети (SU) в удельную мощность на 1 RPM (SU/RPM)
+                float capPerRpm = effectiveCap / speed;
+                this.lastCapacityProvided = capPerRpm;
+                return capPerRpm;
             }
         }
         this.lastCapacityProvided = 0.0F;
@@ -85,9 +89,13 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
 
         if (isLinked) {
             if (!isReceiver) {
-                // ПЕРЕДАТЧИК (TX): считывает скорость и мощность от моторов/колес и транслирует в канал
+                // ПЕРЕДАТЧИК (TX): передает скорость и полную мощность источника
                 float currentSpeed = getSpeed();
-                float currentCapacity = (getOrCreateNetwork() != null) ? getOrCreateNetwork().calculateCapacity() : 0.0F;
+                float currentCapacity = 0.0F;
+
+                if (getOrCreateNetwork() != null) {
+                    currentCapacity = getOrCreateNetwork().calculateCapacity();
+                }
 
                 if (Math.abs(currentSpeed - lastObservedSpeed) > 0.01F || Math.abs(currentCapacity - lastObservedCapacity) > 0.1F) {
                     lastObservedSpeed = currentSpeed;
@@ -95,7 +103,7 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
                     PhaseNetworkManager.updateChannel(channelId, currentSpeed, currentCapacity);
                 }
             } else {
-                // ПРИЕМНИК (RX): слушает канал и при любом изменении сам без кликов триггерит пересчет физики Create
+                // ПРИЕМНИК (RX): слушает изменения скорости и мощности из эфира
                 float targetSpeed = PhaseNetworkManager.getChannelSpeed(level, channelId);
                 float targetCapacity = PhaseNetworkManager.getChannelCapacity(level, channelId);
 
