@@ -3,7 +3,6 @@ package com.example.arcanebridge.hex;
 import at.petrak.hexcasting.api.casting.ParticleSpray;
 import at.petrak.hexcasting.api.casting.castables.Action;
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
-import at.petrak.hexcasting.api.casting.eval.HexEvalMarker;
 import at.petrak.hexcasting.api.casting.eval.OperationResult;
 import at.petrak.hexcasting.api.casting.eval.sideeffects.OperatorSideEffect;
 import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
@@ -91,6 +90,6 @@ public class OpTuneTransmitter implements Action {
                 new OperatorSideEffect.Particles(ParticleSpray.cloud(Vec3.atCenterOf(targetPos), 1.5D, 20))
         );
 
-        return new OperationResult(newImage, sideEffects, continuation, HexEvalMarker.NORMAL);
+                return new OperationResult(newImage, sideEffects, continuation);
     }
 }
