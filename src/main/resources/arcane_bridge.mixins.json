@@ -5,7 +5,8 @@
   "refmap": "arcane_bridge.refmap.json",
   "mixins": [
     "PlayerMixin",
-    "GogglesItemMixin"
+    "GogglesItemMixin",
+    "MixinKineticBlockEntity"
   ],
   "injectors": { "defaultRequire": 1 }
 }
