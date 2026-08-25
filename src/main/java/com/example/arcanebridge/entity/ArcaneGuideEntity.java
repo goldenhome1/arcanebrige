@@ -69,8 +69,45 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
     private int idleFlavorCooldown = 200;
     private int dawnLingerTicks = 0;
 
-                public ArcaneGuideEntity(EntityType<? extends PathfinderMob> type, Level level) {
+                    public ArcaneGuideEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
+        this.setPersistenceRequired();
+        this.setInvulnerable(true);
+    }
+
+    @Override
+    public boolean isInvulnerableTo(net.minecraft.world.damagesource.DamageSource source) {
+        return true;
+    }
+
+    @Override
+    public boolean isInvulnerable() {
+        return true;
+    }
+
+    @Override
+    public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
+        return false;
+    }
+
+    @Override
+    protected void actuallyHurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
+        // Полностью глушим расчет урона
+    }
+
+    @Override
+    public void die(net.minecraft.world.damagesource.DamageSource source) {
+        // Блокируем триггер смерти
+    }
+
+    @Override
+    public boolean removeWhenFarAway(double distanceToClosestPlayer) {
+        return false;
+    }
+
+    @Override
+    public boolean isPushable() {
+        return false;
     }
 
     @Override
