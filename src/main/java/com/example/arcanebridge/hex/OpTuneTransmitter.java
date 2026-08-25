@@ -1,18 +1,12 @@
 package com.example.arcanebridge.hex;
 
-import at.petrak.hexcasting.api.casting.ParticleSpray;
-import at.petrak.hexcasting.api.casting.castables.Action;
+import at.petrak.hexcasting.api.casting.castables.ConstMediaAction;
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
-import at.petrak.hexcasting.api.casting.eval.OperationResult;
-import at.petrak.hexcasting.api.casting.eval.sideeffects.OperatorSideEffect;
-import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
-import at.petrak.hexcasting.api.casting.eval.vm.SpellContinuation;
 import at.petrak.hexcasting.api.casting.iota.DoubleIota;
 import at.petrak.hexcasting.api.casting.iota.Iota;
 import at.petrak.hexcasting.api.casting.iota.Vec3Iota;
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadBlock;
 import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota;
-import at.petrak.hexcasting.api.casting.mishaps.MishapNotEnoughArgs;
 import at.petrak.hexcasting.api.misc.MediaConstants;
 import com.example.arcanebridge.block.PhaseRelayBlock;
 import com.example.arcanebridge.block.entity.PhaseRelayBlockEntity;
@@ -28,20 +22,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class OpTuneTransmitter implements Action {
+public class OpTuneTransmitter implements ConstMediaAction {
 
     @Override
-    public OperationResult operate(CastingEnvironment env, CastingImage image, SpellContinuation continuation) {
-        List<Iota> stack = new ArrayList<>(image.getStack());
-        if (stack.size() < 2) {
-            throw new MishapNotEnoughArgs(2, stack.size());
-        }
+    public int getArgc() {
+        return 2;
+    }
 
-        Iota numIota = stack.remove(stack.size() - 1);
-        Iota vecIota = stack.remove(stack.size() - 1);
+    @Override
+    public List<Iota> execute(List<? extends Iota> args, CastingEnvironment env) {
+        Iota vecIota = args.get(0);
+        Iota numIota = args.get(1);
 
         if (!(vecIota instanceof Vec3Iota vIota)) {
             throw new MishapInvalidIota(vecIota, 1, null);
@@ -85,11 +78,6 @@ public class OpTuneTransmitter implements Action {
             level.playSound(null, targetPos, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 1.0F, 1.2F);
         }
 
-        CastingImage newImage = image.withStack(stack);
-        List<OperatorSideEffect> sideEffects = List.of(
-                new OperatorSideEffect.Particles(ParticleSpray.cloud(Vec3.atCenterOf(targetPos), 1.5D, 20))
-        );
-
-                return new OperationResult(newImage, sideEffects, continuation);
+        return List.of();
     }
 }
