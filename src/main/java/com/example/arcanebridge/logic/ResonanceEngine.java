@@ -148,15 +148,23 @@ public class ResonanceEngine {
         if (arcaneOverloaded) totalOverload += (currentCounts.get("arcane") - dynamicLimits[1]);
         if (eleOverloaded) totalOverload += (currentCounts.get("elemental") - dynamicLimits[2]);
 
-        final int finalOverload = totalOverload;
+                final int finalOverload = totalOverload;
         final float[] currentStability = new float[]{100.0f};
 
         player.getCapability(ResonanceProvider.RESONANCE).ifPresent(res -> {
-            if (finalOverload > 0) {
-                res.addStability(-finalOverload * 2.5f);
-            } else {
-                res.addStability(1.0f);
+            float curStab = res.getStability();
+            // Расчет планки: 1 перегруз -> 75%, 2 -> 50%, 3 -> 25%, 4+ -> 0%
+            float targetStability = Math.max(0.0f, 100.0f - (finalOverload * 25.0f));
+            float diff = targetStability - curStab;
+
+            if (diff < 0) {
+                // Плавно опускаем стабильность до планки targetStability
+                res.addStability(Math.max(diff, -1.25f * finalOverload));
+            } else if (diff > 0) {
+                // Плавно восстанавливаем, если сняли броню или надели матрицу
+                res.addStability(Math.min(diff, 1.0f));
             }
+
             currentStability[0] = res.getStability();
             ResonancePenalties.apply(player, currentStability[0], mechOverloaded, arcaneOverloaded, eleOverloaded);
         });
