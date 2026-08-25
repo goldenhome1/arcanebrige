@@ -18,8 +18,7 @@ public class ModBlocks {
     public static final RegistryObject<Block> PHASE_RELAY = BLOCKS.register("phase_relay",
             () -> new PhaseRelayBlock(BlockBehaviour.Properties.of()
                     .strength(2.0F, 6.0F)
-                    .sound(SoundType.AMETHYST)
-                    .noOcclusion()));
+                    .sound(SoundType.AMETHYST)));
 
     public static final RegistryObject<Item> PHASE_RELAY_ITEM = ITEMS.register("phase_relay",
             () -> new BlockItem(PHASE_RELAY.get(), new Item.Properties()));
