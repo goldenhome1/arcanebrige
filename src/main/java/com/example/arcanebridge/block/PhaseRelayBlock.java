@@ -10,17 +10,35 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class PhaseRelayBlock extends RotatedPillarKineticBlock implements IBE<PhaseRelayBlockEntity> {
 
-        public PhaseRelayBlock(Properties properties) {
-        super(properties.noOcclusion().isSuffocating((s, g, p) -> false).isViewBlocking((s, g, p) -> false));
+    // Хитбоксы вала Create по трем осям
+    protected static final VoxelShape X_AXIS_AABB = Block.box(0, 6, 6, 16, 10, 10);
+    protected static final VoxelShape Y_AXIS_AABB = Block.box(6, 0, 6, 10, 16, 10);
+    protected static final VoxelShape Z_AXIS_AABB = Block.box(6, 6, 0, 10, 10, 16);
+
+    public PhaseRelayBlock(Properties properties) {
+        super(properties.noOcclusion());
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        return switch (state.getValue(AXIS)) {
+            case X -> X_AXIS_AABB;
+            case Z -> Z_AXIS_AABB;
+            case Y -> Y_AXIS_AABB;
+        };
     }
 
     @Override
