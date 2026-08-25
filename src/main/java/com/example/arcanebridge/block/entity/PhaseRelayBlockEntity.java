@@ -14,7 +14,7 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
     public double channelId = 0.0D;
     public boolean isLinked = false;
 
-    // Клиентские поля для рендера и подсказок Goggles
+    // Синхронизированные данные для подсказок Goggles на клиенте
     private float syncedSpeed = 0.0F;
     private float syncedCapacity = 0.0F;
     private float syncedStress = 0.0F;
@@ -42,6 +42,12 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
         if (level != null && !level.isClientSide) {
             detachKinetics();
             attachKinetics();
+            if (isReceiver) {
+                updateGeneratedRotation();
+            } else if (hasNetwork()) {
+                getOrCreateNetwork().updateStress();
+                getOrCreateNetwork().updateCapacity();
+            }
             notifyUpdate();
         }
     }
@@ -55,6 +61,12 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
         if (level != null && !level.isClientSide) {
             detachKinetics();
             attachKinetics();
+            if (isReceiver) {
+                updateGeneratedRotation();
+            } else if (hasNetwork()) {
+                getOrCreateNetwork().updateStress();
+                getOrCreateNetwork().updateCapacity();
+            }
             notifyUpdate();
         }
     }
@@ -90,7 +102,7 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
 
     @Override
     public float calculateAddedStressCapacity() {
-        // Добавляет ёмкость (SU) ТОЛЬКО Приёмник (RX)
+        // Ёмкость сети (SU) генерирует ИСКЛЮЧИТЕЛЬНО Приёмник (RX)
         if (isReceiver && isLinked) {
             float speed = Math.abs(getTheoreticalSpeed());
             if (speed == 0.0F) {
@@ -114,7 +126,7 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
 
     @Override
     public float calculateStressApplied() {
-        // Создаёт нагрузку (SU) ТОЛЬКО Передатчик (TX)
+        // Нагрузку на вал источника прикладывает ИСКЛЮЧИТЕЛЬНО Передатчик (TX)
         if (!isReceiver && isLinked) {
             float speed = Math.abs(getTheoreticalSpeed());
             if (speed == 0.0F) {
@@ -146,12 +158,13 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
             if (!isReceiver) {
                 // ==========================================
                 // ПЕРЕДАТЧИК (TX):
+                // 1. Считывает скорость и ёмкость водяного колеса/мотора
+                // 2. Получает стресс от RX и прикладывает его к сети источника
                 // ==========================================
                 float currentSpeed = getTheoreticalSpeed() != 0.0F ? getTheoreticalSpeed() : getSpeed();
                 float currentCapacity = 0.0F;
 
                 if (hasNetwork()) {
-                    // Чистая ёмкость генераторов линии TX (без учёта нашей же наложенной нагрузки)
                     currentCapacity = getOrCreateNetwork().calculateCapacity();
                 }
 
@@ -165,14 +178,17 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
                 float targetRxStress = PhaseNetworkManager.getChannelStress(level, channelId);
                 if (Math.abs(targetRxStress - lastObservedStress) > 0.1F) {
                     lastObservedStress = targetRxStress;
-                    // ПРИНУДИТЕЛЬНЫЙ ПЕРЕСЧЁТ СЕТИ CREATE ПРИ СМЕНЕ НАГРУЗКИ
-                    detachKinetics();
-                    attachKinetics();
+                    // Мгновенный пересчёт стресса сети Create без разрушения соединения
+                    if (hasNetwork()) {
+                        getOrCreateNetwork().updateStress();
+                    }
                     notifyUpdate();
                 }
             } else {
                 // ==========================================
                 // ПРИЁМНИК (RX):
+                // 1. Измеряет потребление всех станков в своей линии
+                // 2. Считывает скорость и ёмкость источника
                 // ==========================================
                 float currentRxStress = 0.0F;
                 if (hasNetwork()) {
@@ -190,8 +206,11 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
                 if (Math.abs(targetSpeed - lastObservedSpeed) > 0.01F || Math.abs(targetCapacity - lastObservedCapacity) > 0.1F) {
                     lastObservedSpeed = targetSpeed;
                     lastObservedCapacity = targetCapacity;
-                    detachKinetics();
-                    attachKinetics();
+                    updateGeneratedRotation();
+                    if (hasNetwork()) {
+                        getOrCreateNetwork().updateCapacity();
+                        getOrCreateNetwork().updateStress();
+                    }
                     notifyUpdate();
                 }
             }
