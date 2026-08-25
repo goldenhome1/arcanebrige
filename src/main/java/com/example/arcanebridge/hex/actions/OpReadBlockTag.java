@@ -19,124 +19,116 @@ import java.util.List;
 
 public class OpReadBlockTag implements Action {
 
-    @NotNull
-    @Override
-    public OperationResult operate(@NotNull CastingEnvironment env, @NotNull CastingImage image, @NotNull SpellContinuation continuation) {
-        List<Iota> stack = new ArrayList<>();
-        try {
-            stack = (List<Iota>) image.getClass().getMethod("getStack").invoke(image);
-        } catch (Exception ignored) {}
 
-        List<Iota> newStack = new ArrayList<>(stack);
+    @NotNull
+
+    @Override
+
+    public OperationResult operate(@NotNull CastingEnvironment env, @NotNull CastingImage image, @NotNull SpellContinuation continuation) {
+
+        List<Iota> newStack = new ArrayList<>(image.getStack());
+
 
         if (newStack.size() < 2) {
+
             newStack.add(new NullIota());
-            return createResult(image, continuation, newStack);
+
+            return createResult(image, newStack);
+
         }
+
 
         Iota second = newStack.remove(newStack.size() - 1);
+
         Iota first = newStack.remove(newStack.size() - 1);
 
+
         if (!(first instanceof Vec3Iota)) {
+
             newStack.add(new NullIota());
-            return createResult(image, continuation, newStack);
+
+            return createResult(image, newStack);
+
         }
+
 
         Vec3 position = ((Vec3Iota) first).getVec3();
+
         BlockPos blockPos = BlockPos.containing(position);
 
+
         String tagName = "";
+
         try {
+
             tagName = (String) second.getClass().getMethod("getString").invoke(second);
+
         } catch (Exception e) {
+
             tagName = second.toString();
+
         }
+
 
         BlockEntity be = env.getWorld().getBlockEntity(blockPos);
 
+
         if (be != null) {
+
             CompoundTag nbt = be.saveWithId();
 
+
             if (nbt.contains(tagName)) {
+
                 byte type = nbt.getTagType(tagName);
 
+
                 if (type >= Tag.TAG_BYTE && type <= Tag.TAG_DOUBLE) {
+
                     newStack.add(new DoubleIota(nbt.getDouble(tagName)));
-                }
-                else if (type == Tag.TAG_STRING) {
-                    try {
-                        Iota strIota = (Iota) second.getClass().getConstructor(String.class).newInstance(nbt.getString(tagName));
-                        newStack.add(strIota);
-                    } catch (Exception e) {
-                        newStack.add(new NullIota());
-                    }
-                }
-                else {
+
+                } else {
+
                     newStack.add(new NullIota());
+
                 }
+
             } else {
+
                 newStack.add(new NullIota());
+
             }
+
         } else {
+
             newStack.add(new NullIota());
+
         }
 
-        return createResult(image, continuation, newStack);
+
+        return createResult(image, newStack);
+
     }
 
-        private OperationResult createResult(CastingImage image, SpellContinuation continuation, List<Iota> newStack) {
-        CastingImage nextImage = image;
-        try {
-            for (java.lang.reflect.Method m : image.getClass().getMethods()) {
-                if (("copy".equals(m.getName()) || "withStack".equals(m.getName())) && m.getParameterCount() > 0) {
-                    if (List.class.isAssignableFrom(m.getParameterTypes()[0])) {
-                        Object[] args = new Object[m.getParameterCount()];
-                        args[0] = newStack;
-                        Class<?>[] pTypes = m.getParameterTypes();
-                        for (int i = 1; i < pTypes.length; i++) {
-                            for (java.lang.reflect.Field f : image.getClass().getDeclaredFields()) {
-                                if (pTypes[i].isAssignableFrom(f.getType())) {
-                                    f.setAccessible(true);
-                                    args[i] = f.get(image);
-                                    break;
-                                }
-                            }
-                        }
-                        nextImage = (CastingImage) m.invoke(image, args);
-                        break;
-                    }
-                }
-            }
-        } catch (Throwable ignored) {}
 
-        for (java.lang.reflect.Constructor<?> c : OperationResult.class.getConstructors()) {
-            try {
-                c.setAccessible(true);
-                Class<?>[] pTypes = c.getParameterTypes();
-                Object[] args = new Object[pTypes.length];
-                for (int i = 0; i < pTypes.length; i++) {
-                    if (CastingImage.class.isAssignableFrom(pTypes[i])) {
-                        args[i] = nextImage;
-                    } else if (SpellContinuation.class.isAssignableFrom(pTypes[i])) {
-                        args[i] = continuation;
-                    } else if (List.class.isAssignableFrom(pTypes[i])) {
-                        args[i] = new ArrayList<>();
-                    } else if (pTypes[i] == boolean.class) {
-                        args[i] = false;
-                    } else if (pTypes[i] == int.class) {
-                        args[i] = 0;
-                    } else if (pTypes[i] == long.class) {
-                        args[i] = 0L;
-                    } else {
-                        args[i] = null;
-                    }
-                }
-                OperationResult res = (OperationResult) c.newInstance(args);
-                if (res != null) {
-                    return res;
-                }
-            } catch (Throwable ignored) {}
-        }
-        return null;
+    private OperationResult createResult(CastingImage image, List<Iota> newStack) {
+
+        CastingImage nextImage = image.copy(
+
+                newStack,
+
+                image.getParenChildren(),
+
+                image.getEscapeNext(),
+
+                image.getOpsConsumed(),
+
+                image.getUserData()
+
+        );
+
+        return new OperationResult(nextImage, new ArrayList<>());
+
     }
+
 }
