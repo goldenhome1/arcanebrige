@@ -19,8 +19,8 @@ import net.minecraft.world.phys.BlockHitResult;
 
 public class PhaseRelayBlock extends RotatedPillarKineticBlock implements IBE<PhaseRelayBlockEntity> {
 
-    public PhaseRelayBlock(Properties properties) {
-        super(properties);
+        public PhaseRelayBlock(Properties properties) {
+        super(properties.noOcclusion().isSuffocating((s, g, p) -> false).isViewBlocking((s, g, p) -> false));
     }
 
     @Override
