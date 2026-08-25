@@ -21,11 +21,12 @@ public class PhaseRelayRenderer extends KineticBlockEntityRenderer<PhaseRelayBlo
     protected void renderSafe(PhaseRelayBlockEntity be, float partialTicks, PoseStack ms, MultiBufferSource buffer,
                               int light, int overlay) {
         BlockState state = be.getBlockState();
+        // Рендерим и вращаем вал через нативный пайплайн Create
         renderRotatingBuffer(be, getRotatedModel(be, state), ms, buffer.getBuffer(RenderType.solid()), light);
     }
 
     @Override
     protected SuperByteBuffer getRotatedModel(PhaseRelayBlockEntity be, BlockState state) {
-        return CachedBuffers.partialFacing(AllPartialModels.SHAFT, state);
+        return CachedBuffers.partial(AllPartialModels.SHAFT, state);
     }
 }
