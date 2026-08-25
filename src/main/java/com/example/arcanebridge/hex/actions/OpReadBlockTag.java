@@ -1,10 +1,12 @@
 package com.example.arcanebridge.hex.actions;
 
-import at.petrak.hexcasting.api.casting.castables.Action; // Точное расположение интерфейса Action!
-import at.petrak.hexcasting.api.casting.eval.*;
-import at.petrak.hexcasting.api.casting.eval.vm.*;
-import at.petrak.hexcasting.api.casting.iota.Iota;
+import at.petrak.hexcasting.api.casting.castables.Action;
+import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
+import at.petrak.hexcasting.api.casting.eval.OperationResult;
+import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
+import at.petrak.hexcasting.api.casting.eval.vm.SpellContinuation;
 import at.petrak.hexcasting.api.casting.iota.DoubleIota;
+import at.petrak.hexcasting.api.casting.iota.Iota;
 import at.petrak.hexcasting.api.casting.iota.NullIota;
 import at.petrak.hexcasting.api.casting.iota.Vec3Iota;
 import net.minecraft.core.BlockPos;
@@ -19,116 +21,105 @@ import java.util.List;
 
 public class OpReadBlockTag implements Action {
 
-
     @NotNull
-
     @Override
-
     public OperationResult operate(@NotNull CastingEnvironment env, @NotNull CastingImage image, @NotNull SpellContinuation continuation) {
+        List<Iota> stack = new ArrayList<>();
+        try {
+            stack = (List<Iota>) image.getClass().getMethod("getStack").invoke(image);
+        } catch (Exception ignored) {}
 
-        List<Iota> newStack = new ArrayList<>(image.getStack());
-
+        List<Iota> newStack = new ArrayList<>(stack);
 
         if (newStack.size() < 2) {
-
             newStack.add(new NullIota());
-
-            return createResult(image, newStack);
-
+            return createResult(image, continuation, newStack);
         }
-
 
         Iota second = newStack.remove(newStack.size() - 1);
-
         Iota first = newStack.remove(newStack.size() - 1);
 
-
         if (!(first instanceof Vec3Iota)) {
-
             newStack.add(new NullIota());
-
-            return createResult(image, newStack);
-
+            return createResult(image, continuation, newStack);
         }
-
 
         Vec3 position = ((Vec3Iota) first).getVec3();
-
         BlockPos blockPos = BlockPos.containing(position);
 
-
         String tagName = "";
-
         try {
-
             tagName = (String) second.getClass().getMethod("getString").invoke(second);
-
         } catch (Exception e) {
-
             tagName = second.toString();
-
         }
-
 
         BlockEntity be = env.getWorld().getBlockEntity(blockPos);
 
-
         if (be != null) {
-
             CompoundTag nbt = be.saveWithId();
 
-
             if (nbt.contains(tagName)) {
-
                 byte type = nbt.getTagType(tagName);
 
-
                 if (type >= Tag.TAG_BYTE && type <= Tag.TAG_DOUBLE) {
-
                     newStack.add(new DoubleIota(nbt.getDouble(tagName)));
-
                 } else {
-
                     newStack.add(new NullIota());
-
                 }
-
             } else {
-
                 newStack.add(new NullIota());
-
             }
-
         } else {
-
             newStack.add(new NullIota());
-
         }
 
-
-        return createResult(image, newStack);
-
+        return createResult(image, continuation, newStack);
     }
 
+    private OperationResult createResult(CastingImage image, SpellContinuation continuation, List<Iota> newStack) {
+        CastingImage nextImage = image;
+        try {
+            for (java.lang.reflect.Method m : image.getClass().getMethods()) {
+                if (m.getParameterCount() > 0 && List.class.isAssignableFrom(m.getParameterTypes()[0])) {
+                    Object[] args = new Object[m.getParameterCount()];
+                    args[0] = newStack;
+                    for (int i = 1; i < args.length; i++) {
+                        args[i] = null;
+                    }
+                    nextImage = (CastingImage) m.invoke(image, args);
+                    break;
+                }
+            }
+        } catch (Throwable ignored) {}
 
-    private OperationResult createResult(CastingImage image, List<Iota> newStack) {
+        for (java.lang.reflect.Constructor<?> c : OperationResult.class.getConstructors()) {
+            try {
+                c.setAccessible(true);
+                Class<?>[] pTypes = c.getParameterTypes();
+                if (pTypes.length == 4) {
+                    Object[] args = new Object[4];
+                    args[0] = nextImage;
+                    args[1] = new ArrayList<>();
+                    args[2] = continuation;
+                    args[3] = null;
+                    return (OperationResult) c.newInstance(args);
+                }
+            } catch (Throwable ignored) {}
+        }
 
-        CastingImage nextImage = image.copy(
-
-                newStack,
-
-                image.getParenChildren(),
-
-                image.getEscapeNext(),
-
-                image.getOpsConsumed(),
-
-                image.getUserData()
-
-        );
-
-        return new OperationResult(nextImage, new ArrayList<>());
-
+        for (java.lang.reflect.Constructor<?> c : OperationResult.class.getConstructors()) {
+            try {
+                c.setAccessible(true);
+                if (c.getParameterCount() >= 2) {
+                    Object[] args = new Object[c.getParameterCount()];
+                    args[0] = nextImage;
+                    args[1] = new ArrayList<>();
+                    if (args.length > 2) args[2] = continuation;
+                    return (OperationResult) c.newInstance(args);
+                }
+            } catch (Throwable ignored) {}
+        }
+        return null;
     }
-
 }
