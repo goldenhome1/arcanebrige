@@ -10,6 +10,7 @@ import net.createmod.catnip.render.SuperByteBuffer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class PhaseRelayRenderer extends KineticBlockEntityRenderer<PhaseRelayBlockEntity> {
 
@@ -22,12 +23,13 @@ public class PhaseRelayRenderer extends KineticBlockEntityRenderer<PhaseRelayBlo
                               int light, int overlay) {
         if (VisualizationManager.supportsVisualization(be.getLevel())) return;
 
+        BlockState state = be.getBlockState();
         // Нативный рендер вращающегося вала Create
-        renderRotatingBuffer(be, getRotatedModel(be), ms, buffer.getBuffer(RenderType.solid()), light);
+        renderRotatingBuffer(be, getRotatedModel(be, state), ms, buffer.getBuffer(RenderType.solid()), light);
     }
 
     @Override
-    protected SuperByteBuffer getRotatedModel(PhaseRelayBlockEntity be) {
-        return CachedBuffers.partialFacing(AllPartialModels.SHAFT, be.getBlockState());
+    protected SuperByteBuffer getRotatedModel(PhaseRelayBlockEntity be, BlockState state) {
+        return CachedBuffers.partialFacing(AllPartialModels.SHAFT, state);
     }
 }
