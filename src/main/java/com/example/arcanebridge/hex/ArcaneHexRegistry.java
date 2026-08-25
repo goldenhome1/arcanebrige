@@ -21,7 +21,7 @@ public class ArcaneHexRegistry {
                     new OpReadBlockTag()
             ));
 
-            // 🌌 Великий Гекс Фазового Передатчика (TX / Открытие канала)
+                // 🌌 Великий Гекс Фазового Передатчика (TX / Открытие канала)
     public static final RegistryObject<ActionRegistryEntry> BIND_PHASE_TRANSMITTER =
             ACTIONS.register("bind_phase_transmitter", () -> new ActionRegistryEntry(
                     HexPattern.fromAngles("qqwdwqqqdqqqdqdqqwdwqqqdqqqqdaqweewq", HexDir.EAST),
@@ -31,7 +31,7 @@ public class ArcaneHexRegistry {
     // 🔮 Великий Гекс Фазового Приемника (RX / Замыкание контура)
     public static final RegistryObject<ActionRegistryEntry> BIND_PHASE_RECEIVER =
             ACTIONS.register("bind_phase_receiver", () -> new ActionRegistryEntry(
-                    HexPattern.fromAngles("qwdwqqqdqqqdqdqqwdwqqqdqqqqdqawqedqqdeqw", HexDir.EAST),
+                    HexPattern.fromAngles("qqwdwqqqdqqqdqdqqwdwqqqdqqqqdaqwedqqdeqw", HexDir.EAST),
                     new OpCastPhaseReceiver()
             ));
 
