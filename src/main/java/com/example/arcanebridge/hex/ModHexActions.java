@@ -12,17 +12,17 @@ public class ModHexActions {
     public static final DeferredRegister<ActionRegistryEntry> ACTIONS =
             DeferredRegister.create(HexRegistries.ACTION, "arcane_bridge");
 
-    // Паттерн TX (Передатчик) из Hex-Studio (start_dir: 0b -> NORTH_EAST)
+    // Паттерн TX (Передатчик / Открытие канала)
     public static final RegistryObject<ActionRegistryEntry> TUNE_TRANSMITTER = ACTIONS.register("tune_transmitter",
             () -> new ActionRegistryEntry(
                     HexPattern.fromAngles("adaeadaeadaeadaeadaeadawwqwqwqwqwqw", HexDir.NORTH_EAST),
                     new OpTuneTransmitter()
             ));
 
-    // Паттерн RX (Приёмник)
+    // Паттерн RX (Приёмник / Подключение к каналу)
     public static final RegistryObject<ActionRegistryEntry> TUNE_RECEIVER = ACTIONS.register("tune_receiver",
             () -> new ActionRegistryEntry(
-                    HexPattern.fromAngles("adaeadaeadaeadaeadaeadawwqwqwqwqwaeqqqqq", HexDir.NORTH_EAST),
+                    HexPattern.fromAngles("adaeadaeadaeadaeadaeadawwqwqwqwqwqwaeqqqqq", HexDir.NORTH_EAST),
                     new OpTuneReceiver()
             ));
 
