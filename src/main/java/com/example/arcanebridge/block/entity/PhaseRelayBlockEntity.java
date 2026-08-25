@@ -14,7 +14,7 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
     public double channelId = 0.0D;
     public boolean isLinked = false;
 
-    // Синхронизированные данные для подсказок Goggles на клиенте
+    // Синхронизированные данные для очков (Goggles) на клиенте
     private float syncedSpeed = 0.0F;
     private float syncedCapacity = 0.0F;
     private float syncedStress = 0.0F;
@@ -158,15 +158,9 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
             if (!isReceiver) {
                 // ==========================================
                 // ПЕРЕДАТЧИК (TX):
-                // 1. Считывает скорость и ёмкость водяного колеса/мотора
-                // 2. Получает стресс от RX и прикладывает его к сети источника
                 // ==========================================
                 float currentSpeed = getTheoreticalSpeed() != 0.0F ? getTheoreticalSpeed() : getSpeed();
-                float currentCapacity = 0.0F;
-
-                if (hasNetwork()) {
-                    currentCapacity = getOrCreateNetwork().calculateCapacity();
-                }
+                float currentCapacity = (hasNetwork()) ? getOrCreateNetwork().calculateCapacity() : 0.0F;
 
                 if (Math.abs(currentSpeed - lastObservedSpeed) > 0.01F || Math.abs(currentCapacity - lastObservedCapacity) > 0.1F) {
                     lastObservedSpeed = currentSpeed;
@@ -178,7 +172,11 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
                 float targetRxStress = PhaseNetworkManager.getChannelStress(level, channelId);
                 if (Math.abs(targetRxStress - lastObservedStress) > 0.1F) {
                     lastObservedStress = targetRxStress;
-                    // Мгновенный пересчёт стресса сети Create без разрушения соединения
+                    
+                    // 1. Принудительно пересчитываем поле stress у самого блока в реальном времени
+                    this.stress = calculateStressApplied();
+                    
+                    // 2. Уведомляем KineticNetwork о смене стресса для обновления Стрессометра
                     if (hasNetwork()) {
                         getOrCreateNetwork().updateStress();
                     }
@@ -187,13 +185,10 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
             } else {
                 // ==========================================
                 // ПРИЁМНИК (RX):
-                // 1. Измеряет потребление всех станков в своей линии
-                // 2. Считывает скорость и ёмкость источника
                 // ==========================================
-                float currentRxStress = 0.0F;
-                if (hasNetwork()) {
-                    currentRxStress = getOrCreateNetwork().calculateStress();
-                }
+                // Считаем чистый стресс станков на приёмнике (без учёта самого реле)
+                float currentRxStress = (hasNetwork()) ? (getOrCreateNetwork().calculateStress() - this.stress) : 0.0F;
+                currentRxStress = Math.max(0.0F, currentRxStress);
 
                 if (Math.abs(currentRxStress - lastObservedStress) > 0.1F) {
                     lastObservedStress = currentRxStress;
