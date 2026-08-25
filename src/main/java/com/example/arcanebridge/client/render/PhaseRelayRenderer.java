@@ -80,10 +80,10 @@ public class PhaseRelayRenderer extends KineticBlockEntityRenderer<PhaseRelayBlo
         Matrix4f posMat = ms.last().pose();
         Matrix3f normMat = ms.last().normal();
 
-        float size = 0.65F;       // Размер торцевых крышек
+                float size = 0.65F;       // Размер торцевых крышек
         float halfLen = 0.48F;    // Полудлина (Z)
-        float yOffset = 0.259F;   // Радиальный вынос граней от центра
-        float halfWidth = 0.152F; // Полуширина грани (X)
+        float yOffset = 0.58F;    // Радиальный вынос точно под внешние пики звезды
+        float halfWidth = 0.65F;  // Полный размах 1:1 по холсту 256x256
 
         // --- ПРОХОД 1: Торцевые крышки (+Z и -Z) ---
         VertexConsumer capConsumer = buffer.getBuffer(RenderType.entityTranslucent(texture));
