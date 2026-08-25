@@ -38,7 +38,7 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
         setChanged();
         if (level != null && !level.isClientSide) {
             if (isReceiver) {
-                applyNewGeneratedSpeed();
+                updateGeneratedRotation();
             }
             notifyUpdate();
         }
@@ -51,7 +51,7 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
         setChanged();
         if (level != null && !level.isClientSide) {
             if (isReceiver) {
-                applyNewGeneratedSpeed();
+                updateGeneratedRotation();
             }
             notifyUpdate();
         }
@@ -64,7 +64,7 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
         setChanged();
         if (level != null && !level.isClientSide) {
             if (isReceiver) {
-                applyNewGeneratedSpeed();
+                updateGeneratedRotation();
             }
             notifyUpdate();
         }
@@ -131,7 +131,7 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
                 if (Math.abs(targetSpeed - lastObservedSpeed) > 0.01F || Math.abs(targetCapacity - lastObservedCapacity) > 0.1F) {
                     lastObservedSpeed = targetSpeed;
                     lastObservedCapacity = targetCapacity;
-                    applyNewGeneratedSpeed();
+                    updateGeneratedRotation();
                     notifyUpdate();
                 }
             }
