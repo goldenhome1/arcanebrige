@@ -70,20 +70,59 @@ public class OpCastPhaseReceiver implements Action {
         return buildResult(image, continuation, newStack);
     }
 
-    private OperationResult buildResult(CastingImage image, SpellContinuation continuation, List<Iota> newStack) {
+        private OperationResult buildResult(CastingImage image, SpellContinuation continuation, List<Iota> newStack) {
+        CastingImage nextImage = image;
         try {
-            CastingImage nextImage = image;
-            try {
-                nextImage = (CastingImage) image.getClass().getMethod("withStack", List.class).invoke(image, newStack);
-            } catch (Exception ignored) {}
-
-            for (java.lang.reflect.Constructor<?> c : OperationResult.class.getConstructors()) {
-                if (c.getParameterCount() == 4) {
-                    try { return (OperationResult) c.newInstance(nextImage, continuation, new ArrayList<>(), null); } catch (Exception ignored) {}
-                    try { return (OperationResult) c.newInstance(nextImage, new ArrayList<>(), continuation, null); } catch (Exception ignored) {}
+            for (java.lang.reflect.Method m : image.getClass().getMethods()) {
+                if (("copy".equals(m.getName()) || "withStack".equals(m.getName())) && m.getParameterCount() > 0) {
+                    if (List.class.isAssignableFrom(m.getParameterTypes()[0])) {
+                        Object[] args = new Object[m.getParameterCount()];
+                        args[0] = newStack;
+                        Class<?>[] pTypes = m.getParameterTypes();
+                        for (int i = 1; i < pTypes.length; i++) {
+                            for (java.lang.reflect.Field f : image.getClass().getDeclaredFields()) {
+                                if (pTypes[i].isAssignableFrom(f.getType())) {
+                                    f.setAccessible(true);
+                                    args[i] = f.get(image);
+                                    break;
+                                }
+                            }
+                        }
+                        nextImage = (CastingImage) m.invoke(image, args);
+                        break;
+                    }
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Throwable ignored) {}
+
+        for (java.lang.reflect.Constructor<?> c : OperationResult.class.getConstructors()) {
+            try {
+                c.setAccessible(true);
+                Class<?>[] pTypes = c.getParameterTypes();
+                Object[] args = new Object[pTypes.length];
+                for (int i = 0; i < pTypes.length; i++) {
+                    if (CastingImage.class.isAssignableFrom(pTypes[i])) {
+                        args[i] = nextImage;
+                    } else if (SpellContinuation.class.isAssignableFrom(pTypes[i])) {
+                        args[i] = continuation;
+                    } else if (List.class.isAssignableFrom(pTypes[i])) {
+                        args[i] = new ArrayList<>();
+                    } else if (pTypes[i] == boolean.class) {
+                        args[i] = false;
+                    } else if (pTypes[i] == int.class) {
+                        args[i] = 0;
+                    } else if (pTypes[i] == long.class) {
+                        args[i] = 0L;
+                    } else {
+                        args[i] = null;
+                    }
+                }
+                OperationResult res = (OperationResult) c.newInstance(args);
+                if (res != null) {
+                    return res;
+                }
+            } catch (Throwable ignored) {}
+        }
         return null;
     }
 }
