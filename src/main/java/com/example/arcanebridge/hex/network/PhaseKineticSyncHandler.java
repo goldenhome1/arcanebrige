@@ -38,7 +38,7 @@ public class PhaseKineticSyncHandler {
                             rxRelay.updateGeneratedRotation();
                         }
 
-                        // 2. Двусторонняя синхронизация нагрузки
+                                                // 2. Двусторонняя синхронизация нагрузки
                         if (rxRelay.getOrCreateNetwork() != null && txRelay.getOrCreateNetwork() != null) {
                             float rxStress = rxRelay.getOrCreateNetwork().calculateStress();
                             float txCapacity = txRelay.getOrCreateNetwork().calculateCapacity();
@@ -46,7 +46,7 @@ public class PhaseKineticSyncHandler {
                             if (Math.abs(rxStress - channel.rxStress) > 0.1f || Math.abs(txCapacity - channel.txCapacity) > 0.1f) {
                                 channel.rxStress = rxStress;
                                 channel.txCapacity = txCapacity;
-                                txRelay.updateNetwork();
+                                txRelay.updateGeneratedRotation();
                             }
                         }
 
