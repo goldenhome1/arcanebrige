@@ -11,18 +11,22 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
 public class PhaseRelayRenderer implements BlockEntityRenderer<PhaseRelayBlockEntity> {
 
+    private static final ResourceLocation AMETHYST_TEX = 
+            new ResourceLocation("minecraft", "textures/block/amethyst_block.png");
+
     public PhaseRelayRenderer(BlockEntityRendererProvider.Context context) {}
 
     @Override
     public void render(PhaseRelayBlockEntity relay, float partialTick, PoseStack poseStack,
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        
+
         BlockState state = relay.getBlockState();
         if (!(state.getBlock() instanceof PhaseRelayBlock)) return;
 
@@ -32,43 +36,46 @@ public class PhaseRelayRenderer implements BlockEntityRenderer<PhaseRelayBlockEn
         poseStack.pushPose();
         poseStack.translate(0.5D, 0.5D, 0.5D);
 
-        // 1. Ориентация по оси вала (X, Y или Z)
+        // 1. Поворот системы координат по оси вала
         switch (axis) {
             case X -> poseStack.mulPose(Axis.ZP.rotationDegrees(90.0F));
             case Z -> poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
             case Y -> {}
         }
 
-        // 2. Вращение гексагонального кристалла синхронно с RPM вала
+        // 2. Вращение гексагона вместе с валом
         float time = (relay.getLevel() != null ? relay.getLevel().getGameTime() : 0) + partialTick;
         float angle = (time * (speed / 10.0F) * 3.0F) % 360.0F;
         poseStack.mulPose(Axis.YP.rotationDegrees(angle));
 
         // 3. Пульсация эфирного поля
-        float pulse = 1.0F + (float) Math.sin(time * 0.12F) * 0.05F;
+        float pulse = 1.0F + (float) Math.sin(time * 0.1F) * 0.04F;
         poseStack.scale(pulse, pulse, pulse);
 
         Matrix4f posMat = poseStack.last().pose();
         Matrix3f normMat = poseStack.last().normal();
 
-        // 4. Цветовая палитра Hex Casting: Розово-пурпурная (TX) / Насыщенная фиолетовая (RX)
-        float r = relay.isReceiver ? 0.95F : 1.0F;
-        float g = relay.isReceiver ? 0.30F : 0.65F;
-        float b = relay.isReceiver ? 0.85F : 0.90F;
+        // Цвета Hex: Розовый (TX) / Фиолетовый (RX)
+        float r = relay.isReceiver ? 0.90F : 1.0F;
+        float g = relay.isReceiver ? 0.30F : 0.60F;
+        float b = relay.isReceiver ? 1.0F : 0.85F;
 
-        // Внутреннее полупрозрачное тело призмы
-        VertexConsumer transConsumer = bufferSource.getBuffer(RenderType.translucentNoCrumbling());
-        drawHexPrism(posMat, normMat, transConsumer, 0.42F, 0.55F, r, g, b, 0.45F, 15728880);
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityTranslucent(AMETHYST_TEX));
 
-        // Внешний контур ребер (wireframe каркас)
-        VertexConsumer lineConsumer = bufferSource.getBuffer(RenderType.lines());
-        drawHexWireframe(posMat, normMat, lineConsumer, 0.43F, 0.56F, r, g, b, 0.90F);
+        // 4. Отрисовка объемного гексагонального кристалла (радиус 0.48, высота 0.65)
+        drawHexPrismDoubleSided(posMat, normMat, consumer, 0.48F, 0.65F, r, g, b, 0.65F);
+
+        // Внутреннее светящееся ядро (противоход)
+        poseStack.pushPose();
+        poseStack.mulPose(Axis.YP.rotationDegrees(-angle * 1.5F));
+        drawHexPrismDoubleSided(poseStack.last().pose(), poseStack.last().normal(), consumer, 0.28F, 0.45F, 1.0F, 1.0F, 1.0F, 0.85F);
+        poseStack.popPose();
 
         poseStack.popPose();
     }
 
-    private void drawHexPrism(Matrix4f matrix, Matrix3f normal, VertexConsumer builder,
-                              float radius, float height, float r, float g, float b, float a, int light) {
+    private void drawHexPrismDoubleSided(Matrix4f matrix, Matrix3f normal, VertexConsumer builder,
+                                         float radius, float height, float r, float g, float b, float a) {
         float halfH = height / 2.0F;
         float[] hx = new float[6];
         float[] hz = new float[6];
@@ -79,53 +86,47 @@ public class PhaseRelayRenderer implements BlockEntityRenderer<PhaseRelayBlockEn
             hz[i] = (float) (Math.sin(rad) * radius);
         }
 
-        // 6 боковых граней гексагона
+        // 6 боковых граней (двухсторонние)
         for (int i = 0; i < 6; i++) {
             int next = (i + 1) % 6;
-            builder.vertex(matrix, hx[i], -halfH, hz[i]).color(r, g, b, a).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
-            builder.vertex(matrix, hx[next], -halfH, hz[next]).color(r, g, b, a).uv(1, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
-            builder.vertex(matrix, hx[next], halfH, hz[next]).color(r, g, b, a).uv(1, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
-            builder.vertex(matrix, hx[i], halfH, hz[i]).color(r, g, b, a).uv(0, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
+            // Лицевая сторона
+            addV(builder, matrix, normal, hx[i], -halfH, hz[i], 0.0F, 0.0F, r, g, b, a);
+            addV(builder, matrix, normal, hx[next], -halfH, hz[next], 1.0F, 0.0F, r, g, b, a);
+            addV(builder, matrix, normal, hx[next], halfH, hz[next], 1.0F, 1.0F, r, g, b, a);
+            addV(builder, matrix, normal, hx[i], halfH, hz[i], 0.0F, 1.0F, r, g, b, a);
+
+            // Обратная сторона
+            addV(builder, matrix, normal, hx[i], halfH, hz[i], 0.0F, 1.0F, r, g, b, a);
+            addV(builder, matrix, normal, hx[next], halfH, hz[next], 1.0F, 1.0F, r, g, b, a);
+            addV(builder, matrix, normal, hx[next], -halfH, hz[next], 1.0F, 0.0F, r, g, b, a);
+            addV(builder, matrix, normal, hx[i], -halfH, hz[i], 0.0F, 0.0F, r, g, b, a);
         }
 
-        // Верхняя и нижняя крышки (Hexagon caps)
+        // Верхняя и нижняя крышки гексагона
         for (int i = 1; i < 5; i++) {
-            builder.vertex(matrix, hx[0], halfH, hz[0]).color(r, g, b, a).uv(0.5F, 0.5F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
-            builder.vertex(matrix, hx[i], halfH, hz[i]).color(r, g, b, a).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
-            builder.vertex(matrix, hx[i + 1], halfH, hz[i + 1]).color(r, g, b, a).uv(1, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
-            builder.vertex(matrix, hx[0], halfH, hz[0]).color(r, g, b, a).uv(0.5F, 0.5F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
+            // Верх
+            addV(builder, matrix, normal, hx[0], halfH, hz[0], 0.5F, 0.5F, r, g, b, a);
+            addV(builder, matrix, normal, hx[i], halfH, hz[i], 0.0F, 0.0F, r, g, b, a);
+            addV(builder, matrix, normal, hx[i + 1], halfH, hz[i + 1], 1.0F, 0.0F, r, g, b, a);
+            addV(builder, matrix, normal, hx[0], halfH, hz[0], 0.5F, 0.5F, r, g, b, a);
 
-            builder.vertex(matrix, hx[0], -halfH, hz[0]).color(r, g, b, a).uv(0.5F, 0.5F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, -1, 0).endVertex();
-            builder.vertex(matrix, hx[i + 1], -halfH, hz[i + 1]).color(r, g, b, a).uv(1, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, -1, 0).endVertex();
-            builder.vertex(matrix, hx[i], -halfH, hz[i]).color(r, g, b, a).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, -1, 0).endVertex();
-            builder.vertex(matrix, hx[0], -halfH, hz[0]).color(r, g, b, a).uv(0.5F, 0.5F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, -1, 0).endVertex();
+            // Низ
+            addV(builder, matrix, normal, hx[0], -halfH, hz[0], 0.5F, 0.5F, r, g, b, a);
+            addV(builder, matrix, normal, hx[i + 1], -halfH, hz[i + 1], 1.0F, 0.0F, r, g, b, a);
+            addV(builder, matrix, normal, hx[i], -halfH, hz[i], 0.0F, 0.0F, r, g, b, a);
+            addV(builder, matrix, normal, hx[0], -halfH, hz[0], 0.5F, 0.5F, r, g, b, a);
         }
     }
 
-    private void drawHexWireframe(Matrix4f matrix, Matrix3f normal, VertexConsumer builder,
-                                  float radius, float height, float r, float g, float b, float a) {
-        float halfH = height / 2.0F;
-        float[] hx = new float[6];
-        float[] hz = new float[6];
-
-        for (int i = 0; i < 6; i++) {
-            double rad = Math.toRadians(i * 60.0);
-            hx[i] = (float) (Math.cos(rad) * radius);
-            hz[i] = (float) (Math.sin(rad) * radius);
-        }
-
-        for (int i = 0; i < 6; i++) {
-            int next = (i + 1) % 6;
-            // Верхний и нижний периметры
-            builder.vertex(matrix, hx[i], halfH, hz[i]).color(r, g, b, a).normal(normal, 0, 1, 0).endVertex();
-            builder.vertex(matrix, hx[next], halfH, hz[next]).color(r, g, b, a).normal(normal, 0, 1, 0).endVertex();
-
-            builder.vertex(matrix, hx[i], -halfH, hz[i]).color(r, g, b, a).normal(normal, 0, -1, 0).endVertex();
-            builder.vertex(matrix, hx[next], -halfH, hz[next]).color(r, g, b, a).normal(normal, 0, -1, 0).endVertex();
-
-            // Вертикальные стойки
-            builder.vertex(matrix, hx[i], -halfH, hz[i]).color(r, g, b, a).normal(normal, 0, 1, 0).endVertex();
-            builder.vertex(matrix, hx[i], halfH, hz[i]).color(r, g, b, a).normal(normal, 0, 1, 0).endVertex();
-        }
+    private void addV(VertexConsumer builder, Matrix4f mat, Matrix3f norm,
+                      float x, float y, float z, float u, float v,
+                      float r, float g, float b, float a) {
+        builder.vertex(mat, x, y, z)
+                .color(r, g, b, a)
+                .uv(u, v)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(15728880) // Максимальная яркость свечения (0xF000F0)
+                .normal(norm, 0, 1, 0)
+                .endVertex();
     }
 }
