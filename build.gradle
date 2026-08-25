@@ -57,6 +57,7 @@ dependencies {
     implementation name: 'create-1.20.1-6.0.8'
     implementation name: 'geckolib-forge-1.20.1-4.8.4'
     implementation name: 'Ponder-Forge-1.20.1-1.0.91'
+    implementation name: 'flywheel-forge-1.20.1-1.0.5'
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
