@@ -1,6 +1,6 @@
 package com.example.arcanebridge.hex.network;
 
-import com.example.arcanebridge.hex.util.KineticValidationHelper;
+import com.example.arcanebridge.block.entity.PhaseRelayBlockEntity;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -30,42 +30,35 @@ public class PhaseKineticSyncHandler {
                     BlockEntity txBe = txLevel.getBlockEntity(channel.transmitter.pos);
                     BlockEntity rxBe = rxLevel.getBlockEntity(channel.receiver.pos);
 
-                    if (txBe != null && rxBe != null) {
-                        float txSpeed = KineticValidationHelper.getSpeed(txBe);
-                        float rxSpeed = KineticValidationHelper.getSpeed(rxBe);
+                    if (txBe instanceof PhaseRelayBlockEntity txRelay && rxBe instanceof PhaseRelayBlockEntity rxRelay) {
+                        float txSpeed = txRelay.getSpeed();
 
-                        // 1. Если скорость изменилась или приемник рассинхронизировался — обновляем генерацию RX
-                        if (Math.abs(txSpeed - channel.currentSpeed) > 0.05f || Math.abs(rxSpeed - txSpeed) > 0.05f) {
+                        // 1. Передача скорости на RX
+                        if (Math.abs(txSpeed - channel.currentSpeed) > 0.05f) {
                             channel.currentSpeed = txSpeed;
-                            KineticValidationHelper.updateGeneratedRotation(rxBe);
+                            rxRelay.updateGeneratedRotation();
                         }
 
-                        // 2. Двусторонняя синхронизация стресса и мощности
-                        float rxStress = KineticValidationHelper.getNetworkStress(rxBe);
-                        float txCapacity = KineticValidationHelper.getNetworkCapacity(txBe);
+                        // 2. Считывание стресса и мощности
+                        if (rxRelay.getOrCreateNetwork() != null && txRelay.getOrCreateNetwork() != null) {
+                            float rxStress = rxRelay.getOrCreateNetwork().calculateStress();
+                            float txCapacity = txRelay.getOrCreateNetwork().calculateCapacity();
 
-                        if (Math.abs(rxStress - channel.rxStress) > 0.1f || Math.abs(txCapacity - channel.txCapacity) > 0.1f) {
-                            channel.rxStress = rxStress;
-                            channel.txCapacity = txCapacity;
-                            KineticValidationHelper.updateGeneratedRotation(txBe);
+                            if (Math.abs(rxStress - channel.rxStress) > 0.1f || Math.abs(txCapacity - channel.txCapacity) > 0.1f) {
+                                channel.rxStress = rxStress;
+                                channel.txCapacity = txCapacity;
+                                txRelay.updateGeneratedRotation();
+                            }
                         }
 
                         // 3. Эфирные частицы
                         if (Math.abs(txSpeed) > 0.1f && server.getTickCount() % 20 == 0) {
-                            txLevel.sendParticles(
-                                    ParticleTypes.ELECTRIC_SPARK,
-                                    channel.transmitter.pos.getX() + 0.5,
-                                    channel.transmitter.pos.getY() + 0.5,
-                                    channel.transmitter.pos.getZ() + 0.5,
-                                    3, 0.2, 0.2, 0.2, 0.05
-                            );
-                            rxLevel.sendParticles(
-                                    ParticleTypes.PORTAL,
-                                    channel.receiver.pos.getX() + 0.5,
-                                    channel.receiver.pos.getY() + 0.5,
-                                    channel.receiver.pos.getZ() + 0.5,
-                                    4, 0.2, 0.2, 0.2, 0.1
-                            );
+                            txLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK,
+                                    channel.transmitter.pos.getX() + 0.5, channel.transmitter.pos.getY() + 0.5, channel.transmitter.pos.getZ() + 0.5,
+                                    3, 0.2, 0.2, 0.2, 0.05);
+                            rxLevel.sendParticles(ParticleTypes.PORTAL,
+                                    channel.receiver.pos.getX() + 0.5, channel.receiver.pos.getY() + 0.5, channel.receiver.pos.getZ() + 0.5,
+                                    4, 0.2, 0.2, 0.2, 0.1);
                         }
                     }
                 }
