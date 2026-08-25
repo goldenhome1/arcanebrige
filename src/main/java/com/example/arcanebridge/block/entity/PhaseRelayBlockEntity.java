@@ -23,14 +23,20 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     @Override
-    public void onLoad() {
-        super.onLoad();
+    public void initialize() {
+        super.initialize();
         registerInNetwork();
     }
 
     @Override
-    public void setRemoved() {
-        super.setRemoved();
+    public void destroy() {
+        super.destroy();
+        unregisterFromNetwork();
+    }
+
+    @Override
+    public void invalidate() {
+        super.invalidate();
         unregisterFromNetwork();
     }
 
