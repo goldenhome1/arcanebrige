@@ -1,6 +1,7 @@
 package com.example.arcanebridge.hex.actions;
 
-import at.petrak.hexcasting.api.casting.castables.Action;
+import at.petrak.hexcasting.api.casting.OperatorUtils;
+import at.petrak.hexcasting.api.casting.castables.ConstMediaAction;
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
 import at.petrak.hexcasting.api.casting.eval.OperationResult;
 import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
@@ -8,7 +9,6 @@ import at.petrak.hexcasting.api.casting.eval.vm.SpellContinuation;
 import at.petrak.hexcasting.api.casting.iota.DoubleIota;
 import at.petrak.hexcasting.api.casting.iota.Iota;
 import at.petrak.hexcasting.api.casting.iota.NullIota;
-import at.petrak.hexcasting.api.casting.iota.Vec3Iota;
 import com.example.arcanebridge.hex.network.PhaseNetworkManager;
 import com.example.arcanebridge.hex.util.KineticValidationHelper;
 import net.minecraft.core.BlockPos;
@@ -16,7 +16,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class OpCastPhaseReceiver implements ConstMediaAction {
@@ -34,8 +33,8 @@ public class OpCastPhaseReceiver implements ConstMediaAction {
     @NotNull
     @Override
     public List<Iota> execute(@NotNull List<? extends Iota> args, @NotNull CastingEnvironment env) {
-        Vec3 targetVec = at.petrak.hexcasting.api.casting.OperatorUtils.getVec3(args, 0, getArgc());
-        double channelId = at.petrak.hexcasting.api.casting.OperatorUtils.getDouble(args, 1, getArgc());
+        Vec3 targetVec = OperatorUtils.getVec3(args, 0, getArgc());
+        double channelId = OperatorUtils.getDouble(args, 1, getArgc());
         BlockPos targetPos = BlockPos.containing(targetVec);
         ServerLevel level = env.getWorld();
 
