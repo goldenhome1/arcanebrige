@@ -29,14 +29,11 @@ public class PhaseKineticSyncHandler {
                     BlockEntity txBlock = txLevel.getBlockEntity(channel.transmitter.pos());
                     BlockEntity rxBlock = rxLevel.getBlockEntity(channel.receiver.pos());
 
-                    if (txBlock != null && rxBlock != null) {
+                                        if (txBlock != null && rxBlock != null) {
                         float txSpeed = KineticValidationHelper.getSpeed(txBlock);
-                        float rxSpeed = KineticValidationHelper.getSpeed(rxBlock);
 
-                        // Передаем скорость на приемник
-                        if (Math.abs(rxSpeed - txSpeed) > 0.1f) {
-                            KineticValidationHelper.setSpeed(rxBlock, txSpeed);
-                        }
+                        // Передаем скорость по всей цепочке соединенных валов
+                        KineticValidationHelper.propagateSpeedToNetwork(rxLevel, channel.receiver.pos(), txSpeed);
 
                         // Рабочие частицы при ненулевом вращении
                         if (Math.abs(txSpeed) > 0.1f && server.getTickCount() % 10 == 0) {
