@@ -45,7 +45,7 @@ public class PhaseWoolTestHandler {
                     if (channel.receiver != null) {
                         ServerLevel rxLevel = serverLevel.getServer().getLevel(channel.receiver.dimension);
                         if (rxLevel != null && rxLevel.isLoaded(channel.receiver.pos)) {
-                            KineticValidationHelper.refreshKinetic(rxLevel, channel.receiver.pos);
+                            KineticValidationHelper.updateGeneratedRotation(rxLevel.getBlockEntity(channel.receiver.pos));
                         }
                     }
                 }
@@ -62,8 +62,8 @@ public class PhaseWoolTestHandler {
                 PhaseNetworkManager manager = PhaseNetworkManager.get(serverLevel.getServer());
                 manager.registerReceiver(TEST_CHANNEL, level.dimension(), kineticPos);
 
-                // Мгновенная инициализация графа Create на стороне приемника
-                KineticValidationHelper.refreshKinetic(serverLevel, kineticPos);
+                // Запуск генерации вращения на стороне приемника
+                KineticValidationHelper.updateGeneratedRotation(serverLevel.getBlockEntity(kineticPos));
 
                 player.sendSystemMessage(Component.literal("§c[RX: Красная Шерсть] §aПривязана к валу: §e" + kineticPos.toShortString() + " §7на Канале §61.0"));
                 serverLevel.playSound(null, clickedPos, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 0.9F, 1.4F);
