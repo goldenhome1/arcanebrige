@@ -34,7 +34,9 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-            updateGeneratedRotation();
+            if (isReceiver) {
+                updateGeneratedRotation();
+            }
         }
     }
 
@@ -43,7 +45,7 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
         this.lastObservedSpeed = Float.NaN;
         this.lastObservedCapacity = Float.NaN;
         setChanged();
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide && isReceiver) {
             updateGeneratedRotation();
         }
     }
@@ -51,9 +53,15 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
     public void unregisterFromNetwork() {
         this.isLinked = false;
         setChanged();
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide && isReceiver) {
             updateGeneratedRotation();
         }
+    }
+
+    @Override
+    public boolean isSource() {
+        // Источником вращения в Create выступает ИСКЛЮЧИТЕЛЬНО Приемник (RX)
+        return isReceiver && isLinked && getGeneratedSpeed() != 0.0F;
     }
 
     @Override
@@ -89,7 +97,7 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
 
         if (isLinked) {
             if (!isReceiver) {
-                // ПЕРЕДАТЧИК (TX): передает скорость и полную мощность источника
+                // ПЕРЕДАТЧИК (TX): пассивно считывает реальную скорость и мощность линии
                 float currentSpeed = getSpeed();
                 float currentCapacity = 0.0F;
 
@@ -103,7 +111,7 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
                     PhaseNetworkManager.updateChannel(channelId, currentSpeed, currentCapacity);
                 }
             } else {
-                // ПРИЕМНИК (RX): слушает изменения скорости и мощности из эфира
+                // ПРИЕМНИК (RX): слушает изменения частоты в эфире и мгновенно пересчитывает сеть Create
                 float targetSpeed = PhaseNetworkManager.getChannelSpeed(level, channelId);
                 float targetCapacity = PhaseNetworkManager.getChannelCapacity(level, channelId);
 
