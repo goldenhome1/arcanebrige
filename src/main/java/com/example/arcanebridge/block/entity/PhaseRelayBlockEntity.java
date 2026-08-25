@@ -8,6 +8,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 
 public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
 
@@ -20,6 +21,15 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
 
     public PhaseRelayBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.PHASE_RELAY.get(), pos, state);
+    }
+
+    /**
+     * Блок признается генератором ТОЛЬКО если он в режиме RX и имеет ненулевую скорость.
+     * В режиме TX он работает как обычный пассивный потребитель/вал.
+     */
+    @Override
+    public boolean isSource() {
+        return isReceiver && Math.abs(getGeneratedSpeed()) > 0.01f;
     }
 
     @Override
@@ -111,6 +121,11 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
             }
         }
         return 0.0f;
+    }
+
+    @Override
+    public AABB getRenderBoundingBox() {
+        return new AABB(this.worldPosition).inflate(1.0D);
     }
 
     @Override
