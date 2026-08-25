@@ -37,72 +37,101 @@ public class PhaseRelayRenderer extends KineticBlockEntityRenderer<PhaseRelayBlo
         BlockState state = be.getBlockState();
         if (state == null || !(state.getBlock() instanceof PhaseRelayBlock)) return;
 
-        // 1. Отрисовка вращающегося вала Create
+        // 1. Отрисовка рабочего вала Create
         renderRotatingBuffer(be, getRotatedModel(be, state), ms, buffer.getBuffer(RenderType.solid()), light);
 
-        // 2. Отрисовка парящего магического глифа Hex Casting
-        renderHexGlyph(be, state, partialTicks, ms, buffer);
+        // 2. Отрисовка объёмной 3D-призмы глифа Hex Casting
+        renderHexGlyphPrism(be, state, partialTicks, ms, buffer);
     }
 
-    private void renderHexGlyph(PhaseRelayBlockEntity be, BlockState state, float partialTicks,
-                                PoseStack ms, MultiBufferSource buffer) {
+    private void renderHexGlyphPrism(PhaseRelayBlockEntity be, BlockState state, float partialTicks,
+                                     PoseStack ms, MultiBufferSource buffer) {
         Direction.Axis axis = state.getValue(PhaseRelayBlock.AXIS);
         float speed = be.getSpeed();
 
         ms.pushPose();
         ms.translate(0.5D, 0.5D, 0.5D);
 
-        // Ориентация плоскости глифа перпендикулярно оси вращения вала
+        // Ориентация призмы вдоль оси вращения вала
         switch (axis) {
             case X -> ms.mulPose(Axis.YP.rotationDegrees(90.0F));
             case Z -> {}
             case Y -> ms.mulPose(Axis.XP.rotationDegrees(90.0F));
         }
 
-                        // Замедление еще в 5 раз (суммарно в 25 раз медленнее вала): глиф сохраняет четкость даже на 256 RPM
+        // Замедленное вращение (в 25 раз медленнее оборотов вала)
         float time = (be.getLevel() != null ? be.getLevel().getGameTime() : 0) + partialTicks;
         float angle = (speed != 0) ? (time * (speed / 250.0F) * 3.0F) % 360.0F : (float) Math.sin(time * 0.03F) * 5.0F;
         ms.mulPose(Axis.ZP.rotationDegrees(angle));
 
-        // Дыхание эфирного поля
+        // Эфирное дыхание
         float pulse = 1.0F + (float) Math.sin(time * 0.1F) * 0.04F;
         ms.scale(pulse, pulse, pulse);
 
-        // Выбор текстуры и неонового цвета: Розовый (TX) / Фиолетовый (RX)
+        // Цветовой профиль: Розовый (TX) / Фиолетовый (RX)
         ResourceLocation texture = be.isReceiver ? GLYPH_RX : GLYPH_TX;
         float r = be.isReceiver ? 0.75F : 1.0F;
         float g = be.isReceiver ? 0.35F : 0.30F;
         float b = be.isReceiver ? 1.0F : 0.75F;
         float a = 0.90F;
 
-        VertexConsumer consumer = buffer.getBuffer(RenderType.entityTranslucent(texture));
         Matrix4f posMat = ms.last().pose();
         Matrix3f normMat = ms.last().normal();
 
-        // Радиус глифа (0.65 блока)
-        float size = 0.65F;
+        float size = 0.65F;    // Размер глифа
+        float halfLength = 0.48F; // Смещение торцов вдоль вала (+/- Z)
 
-        // Двухсторонний светящийся квад глифа
-        drawGlyphQuad(posMat, normMat, consumer, size, r, g, b, a);
+        // --- ПРОХОД 1: Передний и задний торцевые глифы ---
+        VertexConsumer glyphConsumer = buffer.getBuffer(RenderType.entityTranslucent(texture));
+        drawGlyphCap(posMat, normMat, glyphConsumer, size, halfLength, r, g, b, a);   // Передний торец (+Z)
+        drawGlyphCap(posMat, normMat, glyphConsumer, size, -halfLength, r, g, b, a);  // Задний торец (-Z)
+
+        // --- ПРОХОД 2: 12 продольных рёбер по вершинам лучей ---
+        VertexConsumer lineConsumer = buffer.getBuffer(RenderType.lines());
+        drawPrismEdges(posMat, normMat, lineConsumer, size, halfLength, r, g, b, a * 0.85F);
 
         ms.popPose();
     }
 
-    private void drawGlyphQuad(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder,
-                               float s, float r, float g, float b, float a) {
-        int fullLight = 15728880; // Максимальная яркость свечения (0xF000F0)
+    private void drawGlyphCap(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder,
+                              float s, float z, float r, float g, float b, float a) {
+        int fullLight = 15728880;
 
         // Лицевая сторона
-        builder.vertex(posMat, -s, -s, 0.0F).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, 1).endVertex();
-        builder.vertex(posMat,  s, -s, 0.0F).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, 1).endVertex();
-        builder.vertex(posMat,  s,  s, 0.0F).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, 1).endVertex();
-        builder.vertex(posMat, -s,  s, 0.0F).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, 1).endVertex();
+        builder.vertex(posMat, -s, -s, z).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, 1).endVertex();
+        builder.vertex(posMat,  s, -s, z).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, 1).endVertex();
+        builder.vertex(posMat,  s,  s, z).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, 1).endVertex();
+        builder.vertex(posMat, -s,  s, z).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, 1).endVertex();
 
         // Обратная сторона
-        builder.vertex(posMat, -s,  s, 0.0F).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, -1).endVertex();
-        builder.vertex(posMat,  s,  s, 0.0F).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, -1).endVertex();
-        builder.vertex(posMat,  s, -s, 0.0F).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, -1).endVertex();
-        builder.vertex(posMat, -s, -s, 0.0F).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, -1).endVertex();
+        builder.vertex(posMat, -s,  s, z).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, -1).endVertex();
+        builder.vertex(posMat,  s,  s, z).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, -1).endVertex();
+        builder.vertex(posMat,  s, -s, z).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, -1).endVertex();
+        builder.vertex(posMat, -s, -s, z).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0, 0, -1).endVertex();
+    }
+
+    private void drawPrismEdges(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder,
+                                float size, float halfLength, float r, float g, float b, float a) {
+        // Радиус до вершин 12 лучей относительно размера квада (размах ~94% от size)
+        float vertexRadius = size * 0.94F;
+
+        for (int i = 0; i < 12; i++) {
+            // Угол каждого из 12 пиков (0°, 30°, 60° ... 330°)
+            double angleRad = Math.toRadians(i * 30.0D);
+            float vx = (float) (Math.cos(angleRad) * vertexRadius);
+            float vy = (float) (Math.sin(angleRad) * vertexRadius);
+
+            // Линия между вершиной заднего торца (-halfLength) и переднего (+halfLength)
+            builder.vertex(posMat, vx, vy, -halfLength)
+                    .color(r, g, b, a)
+                    .normal(normMat, 0.0F, 0.0F, 1.0F)
+                    .endVertex();
+
+            builder.vertex(posMat, vx, vy, halfLength)
+                    .color(r, g, b, a)
+                    .normal(normMat, 0.0F, 0.0F, 1.0F)
+                    .endVertex();
+        }
     }
 
     @Override
