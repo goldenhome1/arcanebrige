@@ -28,10 +28,10 @@ public class ArcaneHexRegistry {
                     new OpCastPhaseTransmitter()
             ));
 
-    // 🔮 Великий Гекс Фазового Приемника (RX / Замыкание контура)
+        // 🔮 Великий Гекс Фазового Приемника (RX / Замыкание контура)
     public static final RegistryObject<ActionRegistryEntry> BIND_PHASE_RECEIVER =
             ACTIONS.register("bind_phase_receiver", () -> new ActionRegistryEntry(
-                    HexPattern.fromAngles("qqwdwqqqdqqqdqdqqwdwqqqdqqqqdaqwedqqdeqw", HexDir.EAST),
+                    HexPattern.fromAngles("qwdwqqqdqqqdqdqqwdwqqqdqqqqdqawqedqqdeqw", HexDir.EAST),
                     new OpCastPhaseReceiver()
             ));
 
