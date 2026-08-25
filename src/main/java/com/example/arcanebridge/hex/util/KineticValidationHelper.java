@@ -4,8 +4,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 public class KineticValidationHelper {
@@ -45,60 +45,72 @@ public class KineticValidationHelper {
         try {
             Method setSpeedMethod = be.getClass().getMethod("setSpeed", float.class);
             setSpeedMethod.invoke(be, speed);
+        } catch (Throwable ignored) {}
+    }
 
+    public static void setBlockEntitySource(BlockEntity be, BlockPos sourcePos) {
+        if (be == null) return;
+        Class<?> clazz = be.getClass();
+        while (clazz != null && clazz != Object.class) {
             try {
-                Method onSpeedChangedMethod = be.getClass().getMethod("onSpeedChanged", float.class);
-                onSpeedChangedMethod.invoke(be, 0.0f);
+                Field sourceField = clazz.getDeclaredField("source");
+                sourceField.setAccessible(true);
+                sourceField.set(be, sourcePos);
+                return;
+            } catch (NoSuchFieldException e) {
+                clazz = clazz.getSuperclass();
             } catch (Throwable ignored) {
-                try {
-                    Method onSpeedChangedNoArg = be.getClass().getMethod("onSpeedChanged");
-                    onSpeedChangedNoArg.invoke(be);
-                } catch (Throwable ignored2) {}
+                break;
             }
+        }
+    }
 
-            try {
-                Method sendDataMethod = be.getClass().getMethod("sendData");
-                sendDataMethod.invoke(be);
-            } catch (Throwable ignored) {}
+    public static void invokeRotationPropagator(Level level, BlockPos pos, BlockEntity be, boolean added) {
+        if (level == null || pos == null || be == null) return;
+        try {
+            Class<?> rpClass = Class.forName("com.simibubi.create.content.kinetics.RotationPropagator");
+            Class<?> kbeClass = Class.forName("com.simibubi.create.content.kinetics.base.KineticBlockEntity");
+            String methodName = added ? "handleAdded" : "handleRemoved";
+            Method m = rpClass.getMethod(methodName, Level.class, BlockPos.class, kbeClass);
+            m.invoke(null, level, pos, be);
         } catch (Throwable ignored) {}
     }
 
     /**
-     * Принудительный триггер пересчета графа физики Create для узла-источника
+     * Превращает вал-приемник в активный генератор Create и перестраивает граф физики
      */
-    public static void updateKineticSource(BlockEntity be) {
-        if (be == null) return;
+    public static void applyPhaseSource(Level level, BlockPos pos, float speed) {
+        if (level == null || pos == null) return;
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be == null || !isKineticBlock(level, pos)) return;
+
         try {
-            try {
-                Method updateGen = be.getClass().getMethod("updateGeneratedRotation");
-                updateGen.invoke(be);
-                return;
-            } catch (NoSuchMethodException ignored) {}
+            // 1. Снимаем старый граф кинетики
+            invokeRotationPropagator(level, pos, be, false);
 
-            try {
-                Method detach = be.getClass().getMethod("detachKinetics");
-                Method attach = be.getClass().getMethod("attachKinetics");
-                detach.invoke(be);
-                attach.invoke(be);
-            } catch (NoSuchMethodException ignored) {}
+            if (Math.abs(speed) > 0.01f) {
+                // 2. Объявляем блок источником
+                setBlockEntitySource(be, pos);
+                setSpeed(be, speed);
 
-            try {
-                Method onSpeedChanged = be.getClass().getMethod("onSpeedChanged", float.class);
-                onSpeedChanged.invoke(be, 0.0f);
-            } catch (NoSuchMethodException ignored) {}
+                // 3. Запускаем пересчет Create для шестеренок, коробок передач и станков
+                invokeRotationPropagator(level, pos, be, true);
+            } else {
+                setBlockEntitySource(be, null);
+                setSpeed(be, 0.0f);
+                invokeRotationPropagator(level, pos, be, true);
+            }
 
+            // 4. Синхронизируем клиент для визуального вращения
             try {
-                Method sendData = be.getClass().getMethod("sendData");
-                sendData.invoke(be);
-            } catch (NoSuchMethodException ignored) {}
+                Method sendDataMethod = be.getClass().getMethod("sendData");
+                sendDataMethod.invoke(be);
+            } catch (Throwable ignored) {}
 
             be.setChanged();
         } catch (Throwable ignored) {}
     }
 
-    /**
-     * Считывание суммарной нагрузки (Stress Units) с кинетической сети блока
-     */
     public static float getNetworkStress(BlockEntity be) {
         if (be == null) return 0.0f;
         try {
@@ -113,5 +125,13 @@ public class KineticValidationHelper {
             }
         } catch (Throwable ignored) {}
         return 0.0f;
+    }
+
+    public static void updateNetwork(BlockEntity be) {
+        if (be == null) return;
+        try {
+            Method updateNet = be.getClass().getMethod("updateNetwork");
+            updateNet.invoke(be);
+        } catch (Throwable ignored) {}
     }
 }
