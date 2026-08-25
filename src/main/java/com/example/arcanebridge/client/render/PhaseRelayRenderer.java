@@ -5,10 +5,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.AllPartialModels;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import dev.engine_room.flywheel.api.visualization.VisualizationManager;
+import net.createmod.catnip.render.CachedBuffers;
+import net.createmod.catnip.render.SuperByteBuffer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.world.level.block.state.BlockState;
 
 public class PhaseRelayRenderer extends KineticBlockEntityRenderer<PhaseRelayBlockEntity> {
 
@@ -21,12 +22,12 @@ public class PhaseRelayRenderer extends KineticBlockEntityRenderer<PhaseRelayBlo
                               int light, int overlay) {
         if (VisualizationManager.supportsVisualization(be.getLevel())) return;
 
-        BlockState state = be.getBlockState();
-        renderRotatingBuffer(be, getRotatedModel(be, state), ms, buffer.getBuffer(RenderType.solid()), light);
+        // Нативный рендер вращающегося вала Create
+        renderRotatingBuffer(be, getRotatedModel(be), ms, buffer.getBuffer(RenderType.solid()), light);
     }
 
     @Override
-    protected com.simibubi.create.foundation.render.SuperByteBuffer getRotatedModel(PhaseRelayBlockEntity be, BlockState state) {
-        return com.simibubi.create.foundation.render.CachedBufferer.partialFacing(AllPartialModels.SHAFT, state);
+    protected SuperByteBuffer getRotatedModel(PhaseRelayBlockEntity be) {
+        return CachedBuffers.partialFacing(AllPartialModels.SHAFT, be.getBlockState());
     }
 }
