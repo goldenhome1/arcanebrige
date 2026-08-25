@@ -30,11 +30,29 @@ public class PhaseKineticSyncHandler {
                     KineticBlockEntity txBlock = KineticValidationHelper.getKineticBlockEntity(txLevel, channel.transmitter.pos());
                     KineticBlockEntity rxBlock = KineticValidationHelper.getKineticBlockEntity(rxLevel, channel.receiver.pos());
 
-                    if (txBlock != null && rxBlock != null) {
+                                        if (txBlock != null && rxBlock != null) {
                         float speed = txBlock.getSpeed();
                         if (Math.abs(rxBlock.getSpeed() - speed) > 0.1f) {
                             rxBlock.setSpeed(speed);
                             rxBlock.onSpeedChanged(0);
+                        }
+
+                        // Если валы крутятся — генерируем рабочие частицы эфира
+                        if (Math.abs(speed) > 0.1f) {
+                            txLevel.sendParticles(
+                                    net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK,
+                                    channel.transmitter.pos().getX() + 0.5,
+                                    channel.transmitter.pos().getY() + 0.5,
+                                    channel.transmitter.pos().getZ() + 0.5,
+                                    2, 0.25, 0.25, 0.25, 0.02
+                            );
+                            rxLevel.sendParticles(
+                                    net.minecraft.core.particles.ParticleTypes.PORTAL,
+                                    channel.receiver.pos().getX() + 0.5,
+                                    channel.receiver.pos().getY() + 0.5,
+                                    channel.receiver.pos().getZ() + 0.5,
+                                    3, 0.25, 0.25, 0.25, 0.05
+                            );
                         }
                     }
                 }
