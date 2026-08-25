@@ -7,6 +7,8 @@ import com.example.arcanebridge.item.ModItems;
 import com.example.arcanebridge.logic.ResonanceEngine;
 import com.example.arcanebridge.network.NetworkHandler;
 import com.example.arcanebridge.raid.RaidConfig;
+import com.example.arcanebridge.registry.ModBlockEntities;
+import com.example.arcanebridge.registry.ModBlocks;
 import com.example.arcanebridge.sound.ModSounds;
 
 import net.minecraft.resources.ResourceLocation;
@@ -33,7 +35,8 @@ public class ArcaneBridge {
         ArcaneHexRegistry.register(modEventBus);
         ModItems.register(modEventBus);
         ModEntities.register(modEventBus);
-
+        ModBlocks.register(modEventBus);
+        ModBlockEntities.register(modEventBus);
         modEventBus.addListener(this::commonSetup);
 
         MinecraftForge.EVENT_BUS.register(this);
