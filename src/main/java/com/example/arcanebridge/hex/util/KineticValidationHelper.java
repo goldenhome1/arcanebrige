@@ -11,15 +11,13 @@ import java.lang.reflect.Method;
 public class KineticValidationHelper {
 
     public static boolean isKineticBlock(Level level, BlockPos pos) {
+        if (level == null || pos == null) return false;
         BlockEntity be = level.getBlockEntity(pos);
         if (be == null) return false;
         String className = be.getClass().getName();
         return className.contains("create") && (className.contains("Kinetic") || className.contains("Shaft"));
     }
 
-    /**
-     * Поиск первого прилегающего кинетического блока Create вокруг указанных координат
-     */
     public static BlockPos findAdjacentKineticPos(Level level, BlockPos centerPos) {
         for (Direction dir : Direction.values()) {
             BlockPos checkPos = centerPos.relative(dir);
@@ -42,7 +40,7 @@ public class KineticValidationHelper {
         return 0.0f;
     }
 
-        public static void setSpeed(BlockEntity be, float speed) {
+    public static void setSpeed(BlockEntity be, float speed) {
         if (be == null) return;
         try {
             Method setSpeedMethod = be.getClass().getMethod("setSpeed", float.class);
@@ -66,58 +64,54 @@ public class KineticValidationHelper {
     }
 
     /**
-     * Волновое распространение скорости по всей соединенной кинетической линии
+     * Принудительный триггер пересчета графа физики Create для узла-источника
      */
-    public static void propagateSpeedToNetwork(Level level, BlockPos startPos, float targetSpeed) {
-        java.util.Set<BlockPos> visited = new java.util.HashSet<>();
-        java.util.Queue<BlockPos> queue = new java.util.ArrayDeque<>();
+    public static void updateKineticSource(BlockEntity be) {
+        if (be == null) return;
+        try {
+            try {
+                Method updateGen = be.getClass().getMethod("updateGeneratedRotation");
+                updateGen.invoke(be);
+                return;
+            } catch (NoSuchMethodException ignored) {}
 
-        queue.add(startPos);
-        visited.add(startPos);
+            try {
+                Method detach = be.getClass().getMethod("detachKinetics");
+                Method attach = be.getClass().getMethod("attachKinetics");
+                detach.invoke(be);
+                attach.invoke(be);
+            } catch (NoSuchMethodException ignored) {}
 
-        while (!queue.isEmpty() && visited.size() < 128) {
-            BlockPos currentPos = queue.poll();
-            BlockEntity currentBe = level.getBlockEntity(currentPos);
-            if (currentBe == null || !isKineticBlock(level, currentPos)) continue;
+            try {
+                Method onSpeedChanged = be.getClass().getMethod("onSpeedChanged", float.class);
+                onSpeedChanged.invoke(be, 0.0f);
+            } catch (NoSuchMethodException ignored) {}
 
-            float currentSpeed = getSpeed(currentBe);
-            if (Math.abs(currentSpeed - targetSpeed) > 0.05f) {
-                setSpeed(currentBe, targetSpeed);
-            }
+            try {
+                Method sendData = be.getClass().getMethod("sendData");
+                sendData.invoke(be);
+            } catch (NoSuchMethodException ignored) {}
 
-            BlockState currentState = currentBe.getBlockState();
+            be.setChanged();
+        } catch (Throwable ignored) {}
+    }
 
-            for (Direction dir : Direction.values()) {
-                BlockPos neighborPos = currentPos.relative(dir);
-                if (visited.contains(neighborPos)) continue;
-
-                if (isKineticBlock(level, neighborPos)) {
-                    BlockEntity neighborBe = level.getBlockEntity(neighborPos);
-                    if (neighborBe != null) {
-                        BlockState neighborState = neighborBe.getBlockState();
-
-                        // Проверка соосности валов вдоль направления dir
-                        boolean isConnected = false;
-                        if (currentState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS)) {
-                            Direction.Axis axisA = currentState.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS);
-                            if (dir.getAxis() == axisA) {
-                                if (neighborState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS)) {
-                                    isConnected = (neighborState.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS) == axisA);
-                                } else {
-                                    isConnected = true;
-                                }
-                            }
-                        } else {
-                            isConnected = true;
-                        }
-
-                        if (isConnected) {
-                            visited.add(neighborPos);
-                            queue.add(neighborPos);
-                        }
-                    }
+    /**
+     * Считывание суммарной нагрузки (Stress Units) с кинетической сети блока
+     */
+    public static float getNetworkStress(BlockEntity be) {
+        if (be == null) return 0.0f;
+        try {
+            Method getNet = be.getClass().getMethod("getOrCreateNetwork");
+            Object net = getNet.invoke(be);
+            if (net != null) {
+                Method calcStress = net.getClass().getMethod("calculateStress");
+                Object res = calcStress.invoke(net);
+                if (res instanceof Number num) {
+                    return num.floatValue();
                 }
             }
-        }
+        } catch (Throwable ignored) {}
+        return 0.0f;
     }
 }
