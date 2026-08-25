@@ -1,6 +1,7 @@
 package com.example.arcanebridge.hex.network;
 
 import com.example.arcanebridge.hex.util.KineticValidationHelper;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -31,11 +32,12 @@ public class PhaseKineticSyncHandler {
 
                     if (txBe != null && rxBe != null) {
                         float txSpeed = KineticValidationHelper.getSpeed(txBe);
+                        float rxSpeed = KineticValidationHelper.getSpeed(rxBe);
 
-                        // 1. При изменении скорости генератора плавно перестраиваем удаленный граф Create
-                        if (Math.abs(txSpeed - channel.currentSpeed) > 0.05f) {
+                        // 1. Если скорость изменилась или приемник рассинхронизировался — обновляем генерацию RX
+                        if (Math.abs(txSpeed - channel.currentSpeed) > 0.05f || Math.abs(rxSpeed - txSpeed) > 0.05f) {
                             channel.currentSpeed = txSpeed;
-                            KineticValidationHelper.refreshKinetic(rxLevel, channel.receiver.pos);
+                            KineticValidationHelper.updateGeneratedRotation(rxBe);
                         }
 
                         // 2. Двусторонняя синхронизация стресса и мощности
@@ -45,20 +47,20 @@ public class PhaseKineticSyncHandler {
                         if (Math.abs(rxStress - channel.rxStress) > 0.1f || Math.abs(txCapacity - channel.txCapacity) > 0.1f) {
                             channel.rxStress = rxStress;
                             channel.txCapacity = txCapacity;
-                            KineticValidationHelper.updateNetwork(txBe);
+                            KineticValidationHelper.updateGeneratedRotation(txBe);
                         }
 
                         // 3. Эфирные частицы
                         if (Math.abs(txSpeed) > 0.1f && server.getTickCount() % 20 == 0) {
                             txLevel.sendParticles(
-                                    net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK,
+                                    ParticleTypes.ELECTRIC_SPARK,
                                     channel.transmitter.pos.getX() + 0.5,
                                     channel.transmitter.pos.getY() + 0.5,
                                     channel.transmitter.pos.getZ() + 0.5,
                                     3, 0.2, 0.2, 0.2, 0.05
                             );
                             rxLevel.sendParticles(
-                                    net.minecraft.core.particles.ParticleTypes.PORTAL,
+                                    ParticleTypes.PORTAL,
                                     channel.receiver.pos.getX() + 0.5,
                                     channel.receiver.pos.getY() + 0.5,
                                     channel.receiver.pos.getZ() + 0.5,
