@@ -20,8 +20,7 @@ public class PhaseKineticSyncHandler {
 
         PhaseNetworkManager manager = PhaseNetworkManager.get(server);
 
-        for (double channelId = 0; channelId < 1000; channelId++) {
-            var channel = manager.getChannel(channelId);
+        for (PhaseNetworkManager.PhaseChannel channel : manager.getAllChannels()) {
             if (channel != null && channel.transmitter != null && channel.receiver != null) {
                 ServerLevel txLevel = server.getLevel(channel.transmitter.dimension);
                 ServerLevel rxLevel = server.getLevel(channel.receiver.dimension);
@@ -33,13 +32,13 @@ public class PhaseKineticSyncHandler {
                     if (txBe instanceof PhaseRelayBlockEntity txRelay && rxBe instanceof PhaseRelayBlockEntity rxRelay) {
                         float txSpeed = txRelay.getSpeed();
 
-                        // 1. Передача скорости на RX
-                        if (Math.abs(txSpeed - channel.currentSpeed) > 0.05f) {
+                        // 1. Передача скорости на RX и пересчет физики Create
+                        if (Math.abs(txSpeed - channel.currentSpeed) > 0.05f || Math.abs(rxRelay.getSpeed() - txSpeed) > 0.05f) {
                             channel.currentSpeed = txSpeed;
                             rxRelay.updateGeneratedRotation();
                         }
 
-                        // 2. Считывание стресса и мощности
+                        // 2. Двусторонняя синхронизация стресса и емкости
                         if (rxRelay.getOrCreateNetwork() != null && txRelay.getOrCreateNetwork() != null) {
                             float rxStress = rxRelay.getOrCreateNetwork().calculateStress();
                             float txCapacity = txRelay.getOrCreateNetwork().calculateCapacity();
