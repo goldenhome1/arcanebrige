@@ -136,19 +136,47 @@ public class ArcaneGuideEntity extends PathfinderMob implements GeoEntity {
             var structure = structRegistry.get(structLoc);
 
             if (structure != null) {
+
                 var holderSet = net.minecraft.core.HolderSet.direct(structRegistry.getHolderOrThrow(structRegistry.getResourceKey(structure).orElseThrow()));
-                var result = serverLevel.getChunkSource().getGenerator().findNearestMapStructure(
-                        serverLevel, holderSet, player.blockPosition(), 250, false
+
+                // Ищем только по существующей сетке без переключения пайплайна
+
+                net.minecraft.core.BlockPos pos = serverLevel.findNearestMapStructure(
+
+                        net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.STRUCTURE, structLoc),
+
+                        player.blockPosition(), 100, false
+
                 );
 
-                if (result != null) {
-                    net.minecraft.core.BlockPos pos = result.getFirst();
-                    int dist = (int) Math.sqrt(player.blockPosition().distSqr(pos));
-                                        player.sendSystemMessage(Component.literal(
-                            "§6[Мастер Резонанса] §aСпектральный сигнал зафиксирован: §eX: " + pos.getX() + "§7, §eZ: " + pos.getZ() + " §7(~" + dist + " блоков)"
-                    ));
-                    return;
+
+                if (pos == null) {
+
+                    var result = serverLevel.getChunkSource().getGenerator().findNearestMapStructure(
+
+                            serverLevel, holderSet, player.blockPosition(), 100, false
+
+                    );
+
+                    if (result != null) pos = result.getFirst();
+
                 }
+
+
+                if (pos != null) {
+
+                    int dist = (int) Math.sqrt(player.blockPosition().distSqr(pos));
+
+                    player.sendSystemMessage(Component.literal(
+
+                            "§6[Мастер Резонанса] §aСпектральный сигнал зафиксирован: §eX: " + pos.getX() + "§7, §eZ: " + pos.getZ() + " §7(~" + dist + " блоков)"
+
+                    ));
+
+                    return;
+
+                }
+
             }
             player.sendSystemMessage(Component.literal(
                     "§6[Мастер Резонанса] §cСигнал рассеялся. В радиусе 4000 блоков целевая структура не обнаружена."
