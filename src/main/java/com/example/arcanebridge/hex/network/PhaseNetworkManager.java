@@ -56,8 +56,12 @@ public class PhaseNetworkManager extends SavedData {
         setDirty();
     }
 
-    public PhaseChannel getChannel(double channelId) {
+        public PhaseChannel getChannel(double channelId) {
         return channels.get(channelId);
+    }
+
+    public java.util.Collection<PhaseChannel> getAllChannels() {
+        return channels.values();
     }
 
     public PhaseChannel getChannelByReceiver(ResourceKey<Level> dim, BlockPos pos) {
