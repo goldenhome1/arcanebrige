@@ -1,6 +1,7 @@
 package com.example.arcanebridge.block.entity;
 
 import com.example.arcanebridge.hex.network.PhaseNetworkManager;
+import com.example.arcanebridge.registry.ModBlockEntities;
 import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -15,6 +16,10 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
 
     public PhaseRelayBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
+    }
+
+    public PhaseRelayBlockEntity(BlockPos pos, BlockState state) {
+        super(ModBlockEntities.PHASE_RELAY.get(), pos, state);
     }
 
     @Override
