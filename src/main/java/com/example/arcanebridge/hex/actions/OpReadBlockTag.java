@@ -58,6 +58,12 @@ public class OpReadBlockTag implements ConstMediaAction {
 
     @NotNull
     @Override
+    public ConstMediaAction.CostMediaActionResult executeWithOpCount(@NotNull List<? extends Iota> args, @NotNull CastingEnvironment env) {
+        return ConstMediaAction.DefaultImpls.executeWithOpCount(this, args, env);
+    }
+
+    @NotNull
+    @Override
     public OperationResult operate(@NotNull CastingEnvironment env, @NotNull CastingImage image, @NotNull SpellContinuation continuation) {
         return ConstMediaAction.DefaultImpls.operate(this, env, image, continuation);
     }
