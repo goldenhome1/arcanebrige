@@ -1,5 +1,7 @@
 package com.example.arcanebridge.hex;
 
+import com.example.arcanebridge.hex.actions.OpCastPhaseReceiver;
+import com.example.arcanebridge.hex.actions.OpCastPhaseTransmitter;
 import com.example.arcanebridge.hex.actions.OpReadBlockTag;
 import at.petrak.hexcasting.api.casting.ActionRegistryEntry;
 import at.petrak.hexcasting.api.casting.math.HexDir;
