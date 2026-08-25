@@ -14,12 +14,12 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
     public double channelId = 0.0D;
     public boolean isLinked = false;
 
-    // Синхронизированные данные для клиентских очков (Goggles) и рендера
+    // Синхронизированные данные для очков (Goggles) и рендера на клиенте
     private float syncedSpeed = 0.0F;
     private float syncedCapacity = 0.0F;
 
-    private float lastObservedSpeed = Float.NaN;
-    private float lastObservedCapacity = Float.NaN;
+    private float lastObservedSpeed = -999999.0F;
+    private float lastObservedCapacity = -999999.0F;
 
     public PhaseRelayBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -33,38 +33,45 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
         this.channelId = channel;
         this.isReceiver = receiver;
         this.isLinked = true;
-        this.lastObservedSpeed = Float.NaN;
-        this.lastObservedCapacity = Float.NaN;
+        this.lastObservedSpeed = -999999.0F;
+        this.lastObservedCapacity = -999999.0F;
         setChanged();
         if (level != null && !level.isClientSide) {
-            updateGeneratedRotation();
+            if (isReceiver) {
+                applyNewGeneratedSpeed();
+            }
             notifyUpdate();
         }
     }
 
     public void registerInNetwork() {
         this.isLinked = true;
-        this.lastObservedSpeed = Float.NaN;
-        this.lastObservedCapacity = Float.NaN;
+        this.lastObservedSpeed = -999999.0F;
+        this.lastObservedCapacity = -999999.0F;
         setChanged();
         if (level != null && !level.isClientSide) {
-            updateGeneratedRotation();
+            if (isReceiver) {
+                applyNewGeneratedSpeed();
+            }
             notifyUpdate();
         }
     }
 
     public void unregisterFromNetwork() {
         this.isLinked = false;
+        this.lastObservedSpeed = -999999.0F;
+        this.lastObservedCapacity = -999999.0F;
         setChanged();
         if (level != null && !level.isClientSide) {
-            updateGeneratedRotation();
+            if (isReceiver) {
+                applyNewGeneratedSpeed();
+            }
             notifyUpdate();
         }
     }
 
     @Override
     public boolean isSource() {
-        // Только активный приёмник с ненулевой скоростью регистрируется в Create как генератор
         return isReceiver && isLinked && getGeneratedSpeed() != 0.0F;
     }
 
@@ -100,26 +107,13 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     @Override
-    public void updateGeneratedRotation() {
-        if (level == null || level.isClientSide) return;
-
-        if (isReceiver && isLinked) {
-            // Переподключаем кинетический узел, чтобы Create зарегистрировал блок в network.sources
-            detachKinetics();
-            attachKinetics();
-        }
-
-        super.updateGeneratedRotation();
-    }
-
-    @Override
     public void tick() {
         super.tick();
         if (level == null || level.isClientSide) return;
 
         if (isLinked) {
             if (!isReceiver) {
-                // ПЕРЕДАТЧИК (TX): считывает скорость и мощность от колеса/мотора
+                // ПЕРЕДАТЧИК (TX): транслирует реальную скорость и мощность линии в эфир
                 float currentSpeed = getSpeed();
                 float currentCapacity = (getOrCreateNetwork() != null) ? getOrCreateNetwork().calculateCapacity() : 0.0F;
 
@@ -130,14 +124,14 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
                     notifyUpdate();
                 }
             } else {
-                // ПРИЕМНИК (RX): слушает эфир и при изменении пересчитывает сеть Create
+                // ПРИЕМНИК (RX): слушает эфир и мгновенно пересчитывает физику Create
                 float targetSpeed = PhaseNetworkManager.getChannelSpeed(level, channelId);
                 float targetCapacity = PhaseNetworkManager.getChannelCapacity(level, channelId);
 
                 if (Math.abs(targetSpeed - lastObservedSpeed) > 0.01F || Math.abs(targetCapacity - lastObservedCapacity) > 0.1F) {
                     lastObservedSpeed = targetSpeed;
                     lastObservedCapacity = targetCapacity;
-                    updateGeneratedRotation();
+                    applyNewGeneratedSpeed();
                     notifyUpdate();
                 }
             }
@@ -151,7 +145,6 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
         compound.putDouble("ChannelId", channelId);
         compound.putBoolean("IsLinked", isLinked);
 
-        // Синхронизация кинетики на клиент
         float curSpeed = isReceiver
                 ? (level != null ? PhaseNetworkManager.getChannelSpeed(level, channelId) : 0.0F)
                 : getSpeed();
