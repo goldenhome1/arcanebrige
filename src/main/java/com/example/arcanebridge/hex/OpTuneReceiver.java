@@ -2,6 +2,9 @@ package com.example.arcanebridge.hex;
 
 import at.petrak.hexcasting.api.casting.castables.ConstMediaAction;
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
+import at.petrak.hexcasting.api.casting.eval.OperationResult;
+import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
+import at.petrak.hexcasting.api.casting.eval.vm.SpellContinuation;
 import at.petrak.hexcasting.api.casting.iota.DoubleIota;
 import at.petrak.hexcasting.api.casting.iota.Iota;
 import at.petrak.hexcasting.api.casting.iota.Vec3Iota;
@@ -26,9 +29,19 @@ import java.util.List;
 
 public class OpTuneReceiver implements ConstMediaAction {
 
-    @Override
+        @Override
     public int getArgc() {
         return 2;
+    }
+
+    @Override
+    public long getMediaCost() {
+        return 0;
+    }
+
+    @Override
+    public OperationResult operate(CastingEnvironment env, CastingImage image, SpellContinuation continuation) {
+        return ConstMediaAction.DefaultImpls.operate(this, env, image, continuation);
     }
 
     @Override
