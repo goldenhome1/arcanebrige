@@ -29,23 +29,20 @@ public class PhaseKineticSyncHandler {
                     BlockEntity txBe = txLevel.getBlockEntity(channel.transmitter.pos);
                     BlockEntity rxBe = rxLevel.getBlockEntity(channel.receiver.pos);
 
-                    if (txBe != null && rxBe != null && 
-                        KineticValidationHelper.isKineticBlock(txLevel, channel.transmitter.pos) && 
-                        KineticValidationHelper.isKineticBlock(rxLevel, channel.receiver.pos)) {
-                        
+                    if (txBe != null && rxBe != null) {
                         float txSpeed = KineticValidationHelper.getSpeed(txBe);
 
-                        // 1. При изменении скорости источника — обновляем граф приемника
+                        // 1. При изменении скорости источника передаем вращение по всему графу Create
                         if (Math.abs(txSpeed - channel.currentSpeed) > 0.05f) {
                             channel.currentSpeed = txSpeed;
-                            KineticValidationHelper.updateKineticSource(rxBe);
+                            KineticValidationHelper.applyPhaseSource(rxLevel, channel.receiver.pos, txSpeed);
                         }
 
-                        // 2. Считываем стресс сети станков на RX и транслируем на передатчик
+                        // 2. Считываем суммарный стресс сети станков на RX и пробрасываем на TX
                         float currentRxStress = KineticValidationHelper.getNetworkStress(rxBe);
                         if (Math.abs(currentRxStress - channel.rxStress) > 0.1f) {
                             channel.rxStress = currentRxStress;
-                            KineticValidationHelper.updateKineticSource(txBe);
+                            KineticValidationHelper.updateNetwork(txBe);
                         }
 
                         // 3. Эфирные частицы
