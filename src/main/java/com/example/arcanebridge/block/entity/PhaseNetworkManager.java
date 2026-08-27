@@ -12,7 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PhaseNetworkManager {
 
-    // Хранилище позиций: Измерение -> (Номер канала -> Множество позиций)
     private static final Map<ResourceLocation, Map<Double, Set<BlockPos>>> NETWORKS = new ConcurrentHashMap<>();
 
     private static ResourceLocation getDimId(LevelAccessor level) {
