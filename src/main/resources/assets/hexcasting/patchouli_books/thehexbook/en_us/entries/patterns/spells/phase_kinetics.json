@@ -28,7 +28,7 @@
     {
       "type": "patchouli:text",
       "title": "Network Physics",
-      "text": "$(li)$(bold)Direct Stress:$(/) Machine load on the RX line immediately applies back to the TX source.$(br)$(li)$(bold)1:1 Speed:$(/) Rotational speed (RPM) is transferred without loss.$(br)$(li)$(bold)Overstress:$(/) If demand exceeds capacity, both networks stall simultaneously."
+      "text": "$(li)$(bold)Direct Stress:$(/) Machine load on the RX line immediately applies back to the TX source.$(br)$(li)$(bold)1:1 Speed:$(/) Rotational speed (RPM) is transferred without loss.$(br)$(li)$(bold)Overstress:$(/) If demand exceeds capacity, both networks stall simultaneously.$(br)$(li)$(bold)Goggle HUD:$(/) Engineer Goggles or the HUD Jack implant display channel and mode on hover."
     }
   ]
 }
