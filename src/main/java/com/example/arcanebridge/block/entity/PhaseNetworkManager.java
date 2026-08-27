@@ -1,49 +1,57 @@
 package com.example.arcanebridge.block.entity;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PhaseNetworkManager {
 
-    public static class ChannelData {
-        public float speed = 0.0F;
-        public float capacity = 0.0F;
-        public float stress = 0.0F;
+    // Хранилище позиций реле: Dimension -> (ChannelId -> Set<BlockPos>)
+    private static final Map<ResourceLocation, Map<Double, Set<BlockPos>>> NETWORKS = new ConcurrentHashMap<>();
 
-        public ChannelData(float speed, float capacity, float stress) {
-            this.speed = speed;
-            this.capacity = capacity;
-            this.stress = stress;
+    private static ResourceLocation getDimId(LevelAccessor level) {
+        if (level instanceof Level l) {
+            return l.dimension().location();
+        }
+        return new ResourceLocation("minecraft", "overworld");
+    }
+
+    public static void addToChannel(LevelAccessor level, double channel, BlockPos pos) {
+        ResourceLocation dim = getDimId(level);
+        NETWORKS.computeIfAbsent(dim, d -> new ConcurrentHashMap<>())
+                .computeIfAbsent(channel, c -> ConcurrentHashMap.newKeySet())
+                .add(pos);
+    }
+
+    public static void removeFromChannel(LevelAccessor level, double channel, BlockPos pos) {
+        ResourceLocation dim = getDimId(level);
+        Map<Double, Set<BlockPos>> dimMap = NETWORKS.get(dim);
+        if (dimMap != null) {
+            Set<BlockPos> set = dimMap.get(channel);
+            if (set != null) {
+                set.remove(pos);
+                if (set.isEmpty()) {
+                    dimMap.remove(channel);
+                }
+            }
         }
     }
 
-    private static final Map<Double, ChannelData> CHANNELS = new ConcurrentHashMap<>();
-
-    public static void updateTx(double channel, float speed, float capacity) {
-        CHANNELS.compute(channel, (k, v) -> v == null 
-                ? new ChannelData(speed, capacity, 0.0F) 
-                : new ChannelData(speed, capacity, v.stress));
-    }
-
-    public static void updateRxStress(double channel, float stress) {
-        CHANNELS.compute(channel, (k, v) -> v == null 
-                ? new ChannelData(0.0F, 0.0F, stress) 
-                : new ChannelData(v.speed, v.capacity, stress));
-    }
-
-    public static float getChannelSpeed(Level level, double channel) {
-        ChannelData data = CHANNELS.get(channel);
-        return data != null ? data.speed : 0.0F;
-    }
-
-    public static float getChannelCapacity(Level level, double channel) {
-        ChannelData data = CHANNELS.get(channel);
-        return data != null ? data.capacity : 0.0F;
-    }
-
-    public static float getChannelStress(Level level, double channel) {
-        ChannelData data = CHANNELS.get(channel);
-        return data != null ? data.stress : 0.0F;
+    public static Set<BlockPos> getChannelNodes(LevelAccessor level, double channel) {
+        ResourceLocation dim = getDimId(level);
+        Map<Double, Set<BlockPos>> dimMap = NETWORKS.get(dim);
+        if (dimMap != null) {
+            Set<BlockPos> set = dimMap.get(channel);
+            if (set != null) {
+                return set;
+            }
+        }
+        return Collections.emptySet();
     }
 }
