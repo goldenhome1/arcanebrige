@@ -50,28 +50,9 @@ public class PhaseRelayBlock extends RotatedPillarKineticBlock implements IBE<Ph
         return face.getAxis() == state.getValue(AXIS);
     }
 
-    @Override
+        @Override
     public Direction.Axis getRotationAxis(BlockState state) {
         return state.getValue(AXIS);
-    }
-
-    @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide && hand == InteractionHand.MAIN_HAND) {
-            if (level.getBlockEntity(pos) instanceof PhaseRelayBlockEntity relay) {
-                if (player.isShiftKeyDown()) {
-                    relay.tuneChannel(relay.channelId, !relay.isReceiver);
-                    player.sendSystemMessage(Component.literal("§6[Фазовый Резонатор] §7Режим переключен: " + 
-                            (relay.isReceiver ? "§c[RX: Приемник]" : "§f[TX: Передатчик]")));
-                } else {
-                    player.sendSystemMessage(Component.literal("§6[Фазовый Резонатор] §7Канал: §e" + relay.channelId + 
-                            " §7| Режим: " + (relay.isReceiver ? "§cRX" : "§fTX") + 
-                            " §7| Скорость: §b" + relay.getSpeed() + " RPM"));
-                }
-                return InteractionResult.SUCCESS;
-            }
-        }
-        return InteractionResult.SUCCESS;
     }
 
     @Override
