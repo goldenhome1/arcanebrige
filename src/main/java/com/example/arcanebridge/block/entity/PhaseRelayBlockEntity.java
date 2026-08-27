@@ -91,25 +91,32 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
     }
 
     @Override
-    public void clearRemoved() {
-        super.clearRemoved();
+    public void onLoad() {
+        super.onLoad();
         if (this.isLinked && this.level != null && !this.level.isClientSide) {
             PhaseNetworkManager.addToChannel(this.level, this.channelId, this.worldPosition);
-            detachKinetics();
-            attachKinetics();
             notifyChannelMembers(this.channelId);
         }
     }
 
     @Override
-    public void setRemoved() {
+    public void invalidate() {
         if (this.isLinked && this.level != null && !this.level.isClientSide) {
             PhaseNetworkManager.removeFromChannel(this.level, this.channelId, this.worldPosition);
             notifyChannelMembers(this.channelId);
             detachKinetics();
             removeSource();
         }
-        super.setRemoved();
+        super.invalidate();
+    }
+
+    @Override
+    public void destroy() {
+        if (this.isLinked && this.level != null && !this.level.isClientSide) {
+            PhaseNetworkManager.removeFromChannel(this.level, this.channelId, this.worldPosition);
+            notifyChannelMembers(this.channelId);
+        }
+        super.destroy();
     }
 
     private void notifyChannelMembers(double channel) {
