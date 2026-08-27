@@ -30,7 +30,7 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
     public void tuneChannel(double channel, boolean receiver) {
         if (this.isLinked && this.level != null && !this.level.isClientSide) {
             PhaseNetworkManager.removeFromChannel(this.level, this.channelId, this.worldPosition);
-            notifyChannelMembers(this.channelId);
+            PhaseNetworkManager.notifyChannel(this.level, this.channelId, this.worldPosition);
         }
 
         this.channelId = channel;
@@ -42,7 +42,7 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
             PhaseNetworkManager.addToChannel(this.level, this.channelId, this.worldPosition);
             detachKinetics();
             attachKinetics();
-            notifyChannelMembers(this.channelId);
+            PhaseNetworkManager.notifyChannel(this.level, this.channelId, this.worldPosition);
             notifyUpdate();
         }
     }
@@ -50,7 +50,7 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
     public void unregisterFromNetwork() {
         if (this.isLinked && this.level != null && !this.level.isClientSide) {
             PhaseNetworkManager.removeFromChannel(this.level, this.channelId, this.worldPosition);
-            notifyChannelMembers(this.channelId);
+            PhaseNetworkManager.notifyChannel(this.level, this.channelId, this.worldPosition);
         }
         this.isLinked = false;
         setChanged();
@@ -79,7 +79,7 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
     public float propagateRotationTo(KineticBlockEntity target, BlockState stateFrom, BlockState stateTo,
                                      BlockPos diff, boolean connectedViaAxes, boolean connectedViaCogs) {
         if (target instanceof PhaseRelayBlockEntity otherRelay) {
-            if (this.isLinked && otherRelay.isLinked && this.channelId == otherRelay.channelId) {
+            if (this.isLinked && otherRelay.isLinked && Double.compare(this.channelId, otherRelay.channelId) == 0) {
                 return 1.0F;
             }
         }
@@ -100,7 +100,7 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
                 PhaseNetworkManager.addToChannel(this.level, this.channelId, this.worldPosition);
                 detachKinetics();
                 attachKinetics();
-                notifyChannelMembers(this.channelId);
+                PhaseNetworkManager.notifyChannel(this.level, this.channelId, this.worldPosition);
             }
         }
     }
@@ -109,7 +109,7 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
     public void invalidate() {
         if (this.isLinked && this.level != null && !this.level.isClientSide) {
             PhaseNetworkManager.removeFromChannel(this.level, this.channelId, this.worldPosition);
-            notifyChannelMembers(this.channelId);
+            PhaseNetworkManager.notifyChannel(this.level, this.channelId, this.worldPosition);
             detachKinetics();
             removeSource();
         }
@@ -120,22 +120,9 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
     public void destroy() {
         if (this.isLinked && this.level != null && !this.level.isClientSide) {
             PhaseNetworkManager.removeFromChannel(this.level, this.channelId, this.worldPosition);
-            notifyChannelMembers(this.channelId);
+            PhaseNetworkManager.notifyChannel(this.level, this.channelId, this.worldPosition);
         }
         super.destroy();
-    }
-
-    private void notifyChannelMembers(double channel) {
-        if (this.level == null || this.level.isClientSide) return;
-        Set<BlockPos> nodes = PhaseNetworkManager.getChannelNodes(this.level, channel);
-        for (BlockPos pos : nodes) {
-            if (!pos.equals(this.worldPosition) && this.level.isLoaded(pos)) {
-                if (this.level.getBlockEntity(pos) instanceof PhaseRelayBlockEntity other) {
-                    other.detachKinetics();
-                    other.attachKinetics();
-                }
-            }
-        }
     }
 
     @Override
