@@ -9,11 +9,19 @@ import at.petrak.hexcasting.api.casting.eval.vm.SpellContinuation;
 import at.petrak.hexcasting.api.casting.iota.DoubleIota;
 import at.petrak.hexcasting.api.casting.iota.Iota;
 import at.petrak.hexcasting.api.casting.iota.NullIota;
-import com.example.arcanebridge.hex.network.PhaseNetworkManager;
-import com.example.arcanebridge.hex.util.KineticValidationHelper;
+import com.example.arcanebridge.block.PhaseRelayBlock;
+import com.example.arcanebridge.block.entity.PhaseRelayBlockEntity;
+import com.example.arcanebridge.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -37,20 +45,29 @@ public class OpCastPhaseTransmitter implements ConstMediaAction {
         double channelId = OperatorUtils.getDouble(args, 1, getArgc());
         BlockPos targetPos = BlockPos.containing(targetVec);
         ServerLevel level = env.getWorld();
+        BlockState targetState = level.getBlockState(targetPos);
 
-        if (!KineticValidationHelper.isKineticBlock(level, targetPos)) {
+        Block shaftBlock = ForgeRegistries.BLOCKS.getValue(new ResourceLocation("create", "shaft"));
+        boolean isCreateShaft = shaftBlock != null && targetState.is(shaftBlock);
+        boolean isPhaseRelay = targetState.getBlock() instanceof PhaseRelayBlock;
+
+        if (!isCreateShaft && !isPhaseRelay) {
             return List.of(new NullIota());
         }
 
-        PhaseNetworkManager manager = PhaseNetworkManager.get(level.getServer());
-        manager.registerTransmitter(channelId, level.dimension(), targetPos);
+        if (isCreateShaft) {
+            Direction.Axis axis = targetState.hasProperty(PhaseRelayBlock.AXIS)
+                    ? targetState.getValue(PhaseRelayBlock.AXIS)
+                    : Direction.Axis.Y;
+            BlockState newState = ModBlocks.PHASE_RELAY.get().defaultBlockState()
+                    .setValue(PhaseRelayBlock.AXIS, axis);
+            level.setBlock(targetPos, newState, Block.UPDATE_ALL);
+        }
 
-        double px = targetPos.getX() + 0.5D;
-        double py = targetPos.getY() + 0.5D;
-        double pz = targetPos.getZ() + 0.5D;
-        level.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, px, py, pz, 16, 0.35, 0.35, 0.35, 0.1);
-        level.sendParticles(net.minecraft.core.particles.ParticleTypes.ENCHANT, px, py, pz, 20, 0.4, 0.4, 0.4, 0.2);
-        level.playSound(null, targetPos, net.minecraft.sounds.SoundEvents.BEACON_ACTIVATE, net.minecraft.sounds.SoundSource.BLOCKS, 0.8F, 1.6F);
+        if (level.getBlockEntity(targetPos) instanceof PhaseRelayBlockEntity relay) {
+            relay.tuneChannel(channelId, false);
+            level.playSound(null, targetPos, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 0.8F, 1.6F);
+        }
 
         return List.of(new DoubleIota(channelId));
     }
