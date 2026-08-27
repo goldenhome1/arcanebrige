@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PhaseNetworkManager {
 
-    // Хранилище позиций реле: Dimension -> (ChannelId -> Set<BlockPos>)
+    // Хранилище позиций: Измерение -> (Номер канала -> Множество позиций)
     private static final Map<ResourceLocation, Map<Double, Set<BlockPos>>> NETWORKS = new ConcurrentHashMap<>();
 
     private static ResourceLocation getDimId(LevelAccessor level) {
@@ -26,7 +26,7 @@ public class PhaseNetworkManager {
         ResourceLocation dim = getDimId(level);
         NETWORKS.computeIfAbsent(dim, d -> new ConcurrentHashMap<>())
                 .computeIfAbsent(channel, c -> ConcurrentHashMap.newKeySet())
-                .add(pos);
+                .add(pos.immutable());
     }
 
     public static void removeFromChannel(LevelAccessor level, double channel, BlockPos pos) {
