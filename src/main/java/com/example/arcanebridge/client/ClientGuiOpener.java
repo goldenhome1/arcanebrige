@@ -67,15 +67,15 @@ public class ClientGuiOpener {
         {
           "start_node": "greeting",
           "nodes": {
-            "greeting": {
+                        "greeting": {
               "npc_text": "Приветствую. Частоты эфира стабильны, помех не наблюдается. Чем могу помочь?",
               "sound_event": "arcane_bridge:guide.greeting_01",
               "options": [
-                { "index": 1, "text": "Кто ты такой? Расскажи о себе.", "target_node": "about_master" },
-                { "index": 2, "text": "Открыть журнал задач (Квестбук)", "target_node": "OPEN_FTB_QUESTS" },
-                { "index": 3, "text": "Что делать дальше? (Вектор прогрессии)", "target_node": "progression_hub" },
-                { "index": 4, "text": "Спектральный Локатор структур", "target_node": "locator_hub" },
-                { "index": 5, "text": "Проверь частоты резонанса.", "target_node": "resonance" },
+                { "index": 1, "text": "Расшифровать найденный манускрипт", "target_node": "ACTION_DECIPHER" },
+                { "index": 2, "text": "Кто ты такой? Расскажи о себе.", "target_node": "about_master" },
+                { "index": 3, "text": "Открыть журнал задач (Квестбук)", "target_node": "OPEN_FTB_QUESTS" },
+                { "index": 4, "text": "Что делать дальше? (Вектор прогрессии)", "target_node": "progression_hub" },
+                { "index": 5, "text": "Спектральный Локатор структур", "target_node": "locator_hub" },
                 { "index": 6, "text": "[Завершить диалог]", "target_node": "EXIT" }
               ]
             },
