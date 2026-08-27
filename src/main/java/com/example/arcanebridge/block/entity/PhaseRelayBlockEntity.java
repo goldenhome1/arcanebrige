@@ -17,6 +17,7 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
     public boolean isReceiver = false;
     public double channelId = 0.0D;
     public boolean isLinked = false;
+    private boolean initialized = false;
 
     public PhaseRelayBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -29,6 +30,7 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
     public void tuneChannel(double channel, boolean receiver) {
         if (this.isLinked && this.level != null && !this.level.isClientSide) {
             PhaseNetworkManager.removeFromChannel(this.level, this.channelId, this.worldPosition);
+            notifyChannelMembers(this.channelId);
         }
 
         this.channelId = channel;
@@ -40,6 +42,7 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
             PhaseNetworkManager.addToChannel(this.level, this.channelId, this.worldPosition);
             detachKinetics();
             attachKinetics();
+            notifyChannelMembers(this.channelId);
             notifyUpdate();
         }
     }
@@ -47,6 +50,7 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
     public void unregisterFromNetwork() {
         if (this.isLinked && this.level != null && !this.level.isClientSide) {
             PhaseNetworkManager.removeFromChannel(this.level, this.channelId, this.worldPosition);
+            notifyChannelMembers(this.channelId);
         }
         this.isLinked = false;
         setChanged();
@@ -88,12 +92,16 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
     }
 
     @Override
-    public void onLoad() {
-        super.onLoad();
-        if (this.isLinked && this.level != null && !this.level.isClientSide) {
-            PhaseNetworkManager.addToChannel(this.level, this.channelId, this.worldPosition);
-            detachKinetics();
-            attachKinetics();
+    public void tick() {
+        super.tick();
+        if (!this.initialized && this.level != null && !this.level.isClientSide) {
+            this.initialized = true;
+            if (this.isLinked) {
+                PhaseNetworkManager.addToChannel(this.level, this.channelId, this.worldPosition);
+                detachKinetics();
+                attachKinetics();
+                notifyChannelMembers(this.channelId);
+            }
         }
     }
 
@@ -101,6 +109,7 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
     public void invalidate() {
         if (this.isLinked && this.level != null && !this.level.isClientSide) {
             PhaseNetworkManager.removeFromChannel(this.level, this.channelId, this.worldPosition);
+            notifyChannelMembers(this.channelId);
             detachKinetics();
             removeSource();
         }
@@ -111,8 +120,22 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
     public void destroy() {
         if (this.isLinked && this.level != null && !this.level.isClientSide) {
             PhaseNetworkManager.removeFromChannel(this.level, this.channelId, this.worldPosition);
+            notifyChannelMembers(this.channelId);
         }
         super.destroy();
+    }
+
+    private void notifyChannelMembers(double channel) {
+        if (this.level == null || this.level.isClientSide) return;
+        Set<BlockPos> nodes = PhaseNetworkManager.getChannelNodes(this.level, channel);
+        for (BlockPos pos : nodes) {
+            if (!pos.equals(this.worldPosition) && this.level.isLoaded(pos)) {
+                if (this.level.getBlockEntity(pos) instanceof PhaseRelayBlockEntity other) {
+                    other.detachKinetics();
+                    other.attachKinetics();
+                }
+            }
+        }
     }
 
     @Override
