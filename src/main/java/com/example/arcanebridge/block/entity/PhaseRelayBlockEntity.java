@@ -92,16 +92,16 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
         return false;
     }
 
-    @Override
+        @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         boolean added = super.addToGoggleTooltip(tooltip, isPlayerSneaking);
         if (this.isLinked) {
-            tooltip.add(Component.literal("§6[Фазовый Резонатор]"));
+            tooltip.add(Component.literal("Фазовый резонатор:"));
             String chStr = (this.channelId == (long) this.channelId)
                     ? String.valueOf((long) this.channelId)
                     : String.valueOf(this.channelId);
-            tooltip.add(Component.literal(" §7Канал: §e" + chStr));
-            tooltip.add(Component.literal(" §7Режим: " + (this.isReceiver ? "§c[RX: Приёмник]" : "§b[TX: Передатчик]")));
+            tooltip.add(Component.literal("  §7Канал: §e" + chStr));
+            tooltip.add(Component.literal("  §7Режим: " + (this.isReceiver ? "§cПриёмник" : "§bИсточник")));
             added = true;
         }
         return added;
