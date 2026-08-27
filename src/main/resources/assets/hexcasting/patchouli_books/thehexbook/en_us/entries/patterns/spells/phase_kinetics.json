@@ -10,12 +10,12 @@
       "text": "Merging the mechanics of $(thing)Create$() with spatial casting allows rotational force to bridge vast distances and dimensions.$(br2)By attuning two or more $(item)Phase Relays$() to the same channel, they form an uninterrupted kinetic circuit."
     },
     {
-      "type": "hexcasting:pattern",
+            "type": "hexcasting:pattern",
       "op_id": "arcane_bridge:tune_transmitter",
       "anchor": "arcane_bridge:tune_transmitter",
       "input": "vector, number",
       "output": "number",
-      "text": "$(bold)Ethereal Star$().$(br)Transforms the targeted shaft into a $(bold)Transmitter (TX)$() bound to the specified channel."
+      "text": "$(bold)Ethereal Star$().$(br)Transforms the targeted shaft into a $(bold)Source$() bound to the specified channel."
     },
     {
       "type": "hexcasting:pattern",
@@ -23,12 +23,12 @@
       "anchor": "arcane_bridge:tune_receiver",
       "input": "vector, number",
       "output": "number",
-      "text": "$(bold)Enclosed Star$().$(br)Transforms the targeted shaft into a $(bold)Receiver (RX)$() bound to the specified channel."
+      "text": "$(bold)Enclosed Star$().$(br)Transforms the targeted shaft into a $(bold)Receiver$() bound to the specified channel."
     },
     {
       "type": "patchouli:text",
       "title": "Network Physics",
-      "text": "$(li)$(bold)Direct Stress:$(/) Machine load on the RX line immediately applies back to the TX source.$(br)$(li)$(bold)1:1 Speed:$(/) Rotational speed (RPM) is transferred without loss.$(br)$(li)$(bold)Overstress:$(/) If demand exceeds capacity, both networks stall simultaneously.$(br)$(li)$(bold)Goggle HUD:$(/) Engineer Goggles or the HUD Jack implant display channel and mode on hover."
+      "text": "$(li)$(bold)Direct Stress:$(/) Machine load on the receiver line immediately applies back to the source.$(br)$(li)$(bold)1:1 Speed:$(/) Rotational speed (RPM) is transferred without loss.$(br)$(li)$(bold)Overstress:$(/) If demand exceeds capacity, both networks stall simultaneously.$(br)$(li)$(bold)Goggle HUD:$(/) Engineer Goggles or the HUD Jack implant display channel and mode on hover."
     }
   ]
 }
