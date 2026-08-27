@@ -1,4 +1,6 @@
 {
+  "hexcasting.action.arcane_bridge:tune_transmitter": "Phase Source",
+  "hexcasting.action.arcane_bridge:tune_receiver": "Phase Echo",
   "item.arcane_bridge.guide_core": "Resonance Master Core",
   "entity.arcane_bridge.arcane_guide": "Master of Resonance",
   "key.categories.arcane_bridge": "Arcane Bridge",
