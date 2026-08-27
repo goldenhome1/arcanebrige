@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "arcane_bridge:phase_relay"
+    },
+    "title": {
+      "text": "Тайна Эфирной Кинетики"
+    },
+    "description": {
+      "text": "Мастер Резонанса перевёл древний манускрипт, открыв вам тайну передачи крутящего момента через эфир."
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "hexcasting:root",
+  "criteria": {
+    "unlock": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
