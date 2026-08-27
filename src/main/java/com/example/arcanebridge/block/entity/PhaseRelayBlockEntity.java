@@ -5,6 +5,7 @@ import com.simibubi.create.content.kinetics.base.IRotate;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -86,9 +87,24 @@ public class PhaseRelayBlockEntity extends KineticBlockEntity {
         return super.propagateRotationTo(target, stateFrom, stateTo, diff, connectedViaAxes, connectedViaCogs);
     }
 
-    @Override
+        @Override
     public boolean isNoisy() {
         return false;
+    }
+
+    @Override
+    public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+        boolean added = super.addToGoggleTooltip(tooltip, isPlayerSneaking);
+        if (this.isLinked) {
+            tooltip.add(Component.literal("§6[Фазовый Резонатор]"));
+            String chStr = (this.channelId == (long) this.channelId)
+                    ? String.valueOf((long) this.channelId)
+                    : String.valueOf(this.channelId);
+            tooltip.add(Component.literal(" §7Канал: §e" + chStr));
+            tooltip.add(Component.literal(" §7Режим: " + (this.isReceiver ? "§c[RX: Приёмник]" : "§b[TX: Передатчик]")));
+            added = true;
+        }
+        return added;
     }
 
     @Override
