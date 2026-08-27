@@ -23,7 +23,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class PhaseRelayBlock extends RotatedPillarKineticBlock implements IBE<PhaseRelayBlockEntity> {
 
-    // Хитбоксы вала Create по трем осям
     protected static final VoxelShape X_AXIS_AABB = Block.box(0, 6, 6, 16, 10, 10);
     protected static final VoxelShape Y_AXIS_AABB = Block.box(6, 0, 6, 10, 16, 10);
     protected static final VoxelShape Z_AXIS_AABB = Block.box(6, 6, 0, 10, 10, 16);
@@ -61,15 +60,10 @@ public class PhaseRelayBlock extends RotatedPillarKineticBlock implements IBE<Ph
         if (!level.isClientSide && hand == InteractionHand.MAIN_HAND) {
             if (level.getBlockEntity(pos) instanceof PhaseRelayBlockEntity relay) {
                 if (player.isShiftKeyDown()) {
-                    relay.unregisterFromNetwork();
-                    relay.isReceiver = !relay.isReceiver;
-                    relay.registerInNetwork();
-                    relay.updateGeneratedRotation();
-                    relay.notifyUpdate();
+                    relay.tuneChannel(relay.channelId, !relay.isReceiver);
                     player.sendSystemMessage(Component.literal("§6[Фазовый Резонатор] §7Режим переключен: " + 
-                            (relay.isReceiver ? "§c[RX: Приемник/Генератор]" : "§f[TX: Передатчик/Сенсор]")));
+                            (relay.isReceiver ? "§c[RX: Приемник]" : "§f[TX: Передатчик]")));
                 } else {
-                    relay.registerInNetwork();
                     player.sendSystemMessage(Component.literal("§6[Фазовый Резонатор] §7Канал: §e" + relay.channelId + 
                             " §7| Режим: " + (relay.isReceiver ? "§cRX" : "§fTX") + 
                             " §7| Скорость: §b" + relay.getSpeed() + " RPM"));
