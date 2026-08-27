@@ -1,6 +1,7 @@
 package com.example.arcanebridge;
 
 import com.example.arcanebridge.capability.ResonanceProvider;
+import com.example.arcanebridge.decipher.DecryptionRegistry;
 import com.example.arcanebridge.entity.ModEntities;
 import com.example.arcanebridge.hex.ArcaneHexRegistry;
 import com.example.arcanebridge.hex.ModHexActions;
@@ -44,9 +45,17 @@ public class ArcaneBridge {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        event.enqueueWork(() -> {
+                event.enqueueWork(() -> {
             ResonanceEngine.loadOrCreateConfig();
             RaidConfig.loadOrCreateConfig();
+            
+            // Регистрация доступных для расшифровки реликвий
+            DecryptionRegistry.register(
+                    ModItems.ANCIENT_SCROLL_PHASE.get(),
+                    new ResourceLocation("arcane_bridge", "spells/phase_kinetics"),
+                    "decipher_phase_kinetics_success",
+                    "Фазовый Резонанс (Кинетика)"
+            );
         });
     }
 
