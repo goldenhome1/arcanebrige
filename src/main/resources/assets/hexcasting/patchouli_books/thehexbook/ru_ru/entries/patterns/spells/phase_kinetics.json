@@ -1,9 +1,9 @@
 {
   "name": "Эфирная Кинетика",
-  "category": "hexcasting:patterns/spells",
+    "category": "hexcasting:patterns/spells",
   "icon": "arcane_bridge:phase_relay",
   "sortnum": 15,
-  "advancement": "hexcasting:root",
+  "advancement": "arcane_bridge:spells/phase_kinetics",
   "pages": [
     {
       "type": "patchouli:text",
