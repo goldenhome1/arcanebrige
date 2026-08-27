@@ -1,27 +1,22 @@
 package com.example.arcanebridge.block.entity;
 
 import com.example.arcanebridge.registry.ModBlockEntities;
-import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
+import com.simibubi.create.content.kinetics.base.IRotate;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
+import java.util.List;
+import java.util.Set;
+
+public class PhaseRelayBlockEntity extends KineticBlockEntity {
 
     public boolean isReceiver = false;
     public double channelId = 0.0D;
     public boolean isLinked = false;
-
-    // Синхронизированные данные для очков (Goggles) на клиенте
-    private float syncedSpeed = 0.0F;
-    private float syncedCapacity = 0.0F;
-    private float syncedStress = 0.0F;
-
-    private float lastObservedSpeed = -999999.0F;
-    private float lastObservedCapacity = -999999.0F;
-    private float lastObservedStress = -999999.0F;
 
     public PhaseRelayBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -32,181 +27,99 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     public void tuneChannel(double channel, boolean receiver) {
+        if (this.isLinked && this.level != null && !this.level.isClientSide) {
+            PhaseNetworkManager.removeFromChannel(this.level, this.channelId, this.worldPosition);
+            notifyChannelMembers(this.channelId);
+        }
+
         this.channelId = channel;
         this.isReceiver = receiver;
         this.isLinked = true;
-        this.lastObservedSpeed = -999999.0F;
-        this.lastObservedCapacity = -999999.0F;
-        this.lastObservedStress = -999999.0F;
         setChanged();
-        if (level != null && !level.isClientSide) {
-            detachKinetics();
-            attachKinetics();
-            if (isReceiver) {
-                updateGeneratedRotation();
-            } else if (hasNetwork()) {
-                getOrCreateNetwork().updateStress();
-                getOrCreateNetwork().updateCapacity();
-            }
-            notifyUpdate();
-        }
-    }
 
-    public void registerInNetwork() {
-        this.isLinked = true;
-        this.lastObservedSpeed = -999999.0F;
-        this.lastObservedCapacity = -999999.0F;
-        this.lastObservedStress = -999999.0F;
-        setChanged();
-        if (level != null && !level.isClientSide) {
+        if (this.level != null && !this.level.isClientSide) {
+            PhaseNetworkManager.addToChannel(this.level, this.channelId, this.worldPosition);
             detachKinetics();
             attachKinetics();
-            if (isReceiver) {
-                updateGeneratedRotation();
-            } else if (hasNetwork()) {
-                getOrCreateNetwork().updateStress();
-                getOrCreateNetwork().updateCapacity();
-            }
+            notifyChannelMembers(this.channelId);
             notifyUpdate();
         }
     }
 
     public void unregisterFromNetwork() {
+        if (this.isLinked && this.level != null && !this.level.isClientSide) {
+            PhaseNetworkManager.removeFromChannel(this.level, this.channelId, this.worldPosition);
+            notifyChannelMembers(this.channelId);
+        }
         this.isLinked = false;
-        this.lastObservedSpeed = -999999.0F;
-        this.lastObservedCapacity = -999999.0F;
-        this.lastObservedStress = -999999.0F;
         setChanged();
-        if (level != null && !level.isClientSide) {
+        if (this.level != null && !this.level.isClientSide) {
             detachKinetics();
-            attachKinetics();
+            removeSource();
             notifyUpdate();
         }
     }
 
     @Override
-    public boolean isSource() {
-        return isReceiver && isLinked && getGeneratedSpeed() != 0.0F;
-    }
-
-    @Override
-    public float getGeneratedSpeed() {
-        if (isReceiver && isLinked) {
-            if (level != null && !level.isClientSide) {
-                return PhaseNetworkManager.getChannelSpeed(level, channelId);
-            }
-            return syncedSpeed;
-        }
-        return 0.0F;
-    }
-
-    @Override
-    public float calculateAddedStressCapacity() {
-        // Ёмкость сети (SU) генерирует ИСКЛЮЧИТЕЛЬНО Приёмник (RX)
-        if (isReceiver && isLinked) {
-            float speed = Math.abs(getTheoreticalSpeed());
-            if (speed == 0.0F) {
-                speed = Math.abs(getGeneratedSpeed());
-            }
-
-            if (speed > 0.0F) {
-                float totalCap = (level != null && !level.isClientSide)
-                        ? PhaseNetworkManager.getChannelCapacity(level, channelId)
-                        : syncedCapacity;
-                float effectiveCap = totalCap > 0.0F ? totalCap : 2048.0F;
-
-                float capPerRpm = effectiveCap / speed;
-                this.lastCapacityProvided = capPerRpm;
-                return capPerRpm;
-            }
-        }
-        this.lastCapacityProvided = 0.0F;
-        return 0.0F;
-    }
-
-    @Override
-    public float calculateStressApplied() {
-        // Нагрузку на вал источника прикладывает ИСКЛЮЧИТЕЛЬНО Передатчик (TX)
-        if (!isReceiver && isLinked) {
-            float speed = Math.abs(getTheoreticalSpeed());
-            if (speed == 0.0F) {
-                speed = Math.abs(getSpeed());
-            }
-
-            if (speed > 0.0F) {
-                float rxStress = (level != null && !level.isClientSide)
-                        ? PhaseNetworkManager.getChannelStress(level, channelId)
-                        : syncedStress;
-
-                if (rxStress > 0.0F) {
-                    float stressPerRpm = rxStress / speed;
-                    this.lastStressApplied = stressPerRpm;
-                    return stressPerRpm;
+    public List<BlockPos> addPropagationLocations(IRotate block, BlockState state, List<BlockPos> neighbours) {
+        super.addPropagationLocations(block, state, neighbours);
+        if (this.isLinked && this.level != null) {
+            Set<BlockPos> nodes = PhaseNetworkManager.getChannelNodes(this.level, this.channelId);
+            for (BlockPos targetPos : nodes) {
+                if (!targetPos.equals(this.worldPosition)) {
+                    neighbours.add(targetPos);
                 }
             }
         }
-        this.lastStressApplied = 0.0F;
-        return 0.0F;
+        return neighbours;
     }
 
     @Override
-    public void tick() {
-        super.tick();
-        if (level == null || level.isClientSide) return;
+    public float propagateRotationTo(KineticBlockEntity target, BlockState stateFrom, BlockState stateTo,
+                                     BlockPos diff, boolean connectedViaAxes, boolean connectedViaCogs) {
+        if (target instanceof PhaseRelayBlockEntity otherRelay) {
+            if (this.isLinked && otherRelay.isLinked && this.channelId == otherRelay.channelId) {
+                return 1.0F;
+            }
+        }
+        return super.propagateRotationTo(target, stateFrom, stateTo, diff, connectedViaAxes, connectedViaCogs);
+    }
 
-        if (isLinked) {
-            if (!isReceiver) {
-                // ==========================================
-                // ПЕРЕДАТЧИК (TX):
-                // ==========================================
-                float currentSpeed = getTheoreticalSpeed() != 0.0F ? getTheoreticalSpeed() : getSpeed();
-                float currentCapacity = (hasNetwork()) ? getOrCreateNetwork().calculateCapacity() : 0.0F;
+    @Override
+    public boolean isNoisy() {
+        return false;
+    }
 
-                if (Math.abs(currentSpeed - lastObservedSpeed) > 0.01F || Math.abs(currentCapacity - lastObservedCapacity) > 0.1F) {
-                    lastObservedSpeed = currentSpeed;
-                    lastObservedCapacity = currentCapacity;
-                    PhaseNetworkManager.updateTx(channelId, currentSpeed, currentCapacity);
-                    notifyUpdate();
-                }
+    @Override
+    public void clearRemoved() {
+        super.clearRemoved();
+        if (this.isLinked && this.level != null && !this.level.isClientSide) {
+            PhaseNetworkManager.addToChannel(this.level, this.channelId, this.worldPosition);
+            detachKinetics();
+            attachKinetics();
+            notifyChannelMembers(this.channelId);
+        }
+    }
 
-                float targetRxStress = PhaseNetworkManager.getChannelStress(level, channelId);
-                if (Math.abs(targetRxStress - lastObservedStress) > 0.1F) {
-                    lastObservedStress = targetRxStress;
-                    
-                    // 1. Принудительно пересчитываем поле stress у самого блока в реальном времени
-                    this.stress = calculateStressApplied();
-                    
-                    // 2. Уведомляем KineticNetwork о смене стресса для обновления Стрессометра
-                    if (hasNetwork()) {
-                        getOrCreateNetwork().updateStress();
-                    }
-                    notifyUpdate();
-                }
-            } else {
-                // ==========================================
-                // ПРИЁМНИК (RX):
-                // ==========================================
-                // Считаем чистый стресс станков на приёмнике (без учёта самого реле)
-                float currentRxStress = (hasNetwork()) ? (getOrCreateNetwork().calculateStress() - this.stress) : 0.0F;
-                currentRxStress = Math.max(0.0F, currentRxStress);
+    @Override
+    public void setRemoved() {
+        if (this.isLinked && this.level != null && !this.level.isClientSide) {
+            PhaseNetworkManager.removeFromChannel(this.level, this.channelId, this.worldPosition);
+            notifyChannelMembers(this.channelId);
+            detachKinetics();
+            removeSource();
+        }
+        super.setRemoved();
+    }
 
-                if (Math.abs(currentRxStress - lastObservedStress) > 0.1F) {
-                    lastObservedStress = currentRxStress;
-                    PhaseNetworkManager.updateRxStress(channelId, currentRxStress);
-                }
-
-                float targetSpeed = PhaseNetworkManager.getChannelSpeed(level, channelId);
-                float targetCapacity = PhaseNetworkManager.getChannelCapacity(level, channelId);
-
-                if (Math.abs(targetSpeed - lastObservedSpeed) > 0.01F || Math.abs(targetCapacity - lastObservedCapacity) > 0.1F) {
-                    lastObservedSpeed = targetSpeed;
-                    lastObservedCapacity = targetCapacity;
-                    updateGeneratedRotation();
-                    if (hasNetwork()) {
-                        getOrCreateNetwork().updateCapacity();
-                        getOrCreateNetwork().updateStress();
-                    }
-                    notifyUpdate();
+    private void notifyChannelMembers(double channel) {
+        if (this.level == null || this.level.isClientSide) return;
+        Set<BlockPos> nodes = PhaseNetworkManager.getChannelNodes(this.level, channel);
+        for (BlockPos pos : nodes) {
+            if (!pos.equals(this.worldPosition) && this.level.isLoaded(pos)) {
+                if (this.level.getBlockEntity(pos) instanceof PhaseRelayBlockEntity other) {
+                    other.detachKinetics();
+                    other.attachKinetics();
                 }
             }
         }
@@ -215,23 +128,9 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
     @Override
     protected void write(CompoundTag compound, boolean clientPacket) {
         super.write(compound, clientPacket);
-        compound.putBoolean("IsReceiver", isReceiver);
-        compound.putDouble("ChannelId", channelId);
-        compound.putBoolean("IsLinked", isLinked);
-
-        float curSpeed = isReceiver
-                ? (level != null ? PhaseNetworkManager.getChannelSpeed(level, channelId) : 0.0F)
-                : (getTheoreticalSpeed() != 0.0F ? getTheoreticalSpeed() : getSpeed());
-        float curCap = isReceiver
-                ? (level != null ? PhaseNetworkManager.getChannelCapacity(level, channelId) : 0.0F)
-                : ((hasNetwork()) ? getOrCreateNetwork().calculateCapacity() : 0.0F);
-        float curStress = !isReceiver
-                ? (level != null ? PhaseNetworkManager.getChannelStress(level, channelId) : 0.0F)
-                : ((hasNetwork()) ? getOrCreateNetwork().calculateStress() : 0.0F);
-
-        compound.putFloat("SyncedSpeed", curSpeed);
-        compound.putFloat("SyncedCapacity", curCap);
-        compound.putFloat("SyncedStress", curStress);
+        compound.putBoolean("IsReceiver", this.isReceiver);
+        compound.putDouble("ChannelId", this.channelId);
+        compound.putBoolean("IsLinked", this.isLinked);
     }
 
     @Override
@@ -240,9 +139,6 @@ public class PhaseRelayBlockEntity extends GeneratingKineticBlockEntity {
         this.isReceiver = compound.getBoolean("IsReceiver");
         this.channelId = compound.getDouble("ChannelId");
         this.isLinked = compound.getBoolean("IsLinked");
-        this.syncedSpeed = compound.getFloat("SyncedSpeed");
-        this.syncedCapacity = compound.getFloat("SyncedCapacity");
-        this.syncedStress = compound.getFloat("SyncedStress");
     }
 
     @Override
