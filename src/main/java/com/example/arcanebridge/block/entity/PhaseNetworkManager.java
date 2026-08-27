@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 import java.util.Collections;
 import java.util.Map;
@@ -52,5 +53,19 @@ public class PhaseNetworkManager {
             }
         }
         return Collections.emptySet();
+    }
+
+    public static void notifyChannel(Level level, double channel, BlockPos sourcePos) {
+        if (level == null || level.isClientSide) return;
+        Set<BlockPos> nodes = getChannelNodes(level, channel);
+        for (BlockPos pos : nodes) {
+            if (!pos.equals(sourcePos) && level.isLoaded(pos)) {
+                BlockEntity be = level.getBlockEntity(pos);
+                if (be instanceof PhaseRelayBlockEntity relay) {
+                    relay.detachKinetics();
+                    relay.attachKinetics();
+                }
+            }
+        }
     }
 }
