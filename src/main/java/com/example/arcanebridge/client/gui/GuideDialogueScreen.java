@@ -127,7 +127,7 @@ public class GuideDialogueScreen extends Screen {
             return;
         }
 
-        // Запуск спектральной локации структур через сетевой менеджер
+                // Запуск спектральной локации структур через сетевой менеджер
         if (nodeKey.startsWith("ACTION_LOCATE:")) {
             String structureId = nodeKey.substring("ACTION_LOCATE:".length());
             closeSafely();
@@ -135,6 +135,19 @@ public class GuideDialogueScreen extends Screen {
                 com.example.arcanebridge.network.NetworkHandler.sendToServer(
                         new com.example.arcanebridge.network.ServerboundGuideActionPacket(
                                 this.guideEntity.getId(), "LOCATE", structureId
+                        )
+                );
+            }
+            return;
+        }
+
+        // Запуск расшифровки манускриптов через Гида
+        if ("ACTION_DECIPHER".equalsIgnoreCase(nodeKey)) {
+            closeSafely();
+            if (this.guideEntity != null) {
+                com.example.arcanebridge.network.NetworkHandler.sendToServer(
+                        new com.example.arcanebridge.network.ServerboundGuideActionPacket(
+                                this.guideEntity.getId(), "DECIPHER", ""
                         )
                 );
             }
