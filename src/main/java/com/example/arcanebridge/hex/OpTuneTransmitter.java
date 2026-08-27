@@ -10,7 +10,10 @@ import at.petrak.hexcasting.api.casting.iota.Iota;
 import at.petrak.hexcasting.api.casting.iota.Vec3Iota;
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadBlock;
 import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota;
+import at.petrak.hexcasting.api.casting.mishaps.MishapUnenlightened;
 import at.petrak.hexcasting.api.misc.MediaConstants;
+import net.minecraft.advancements.Advancement;
+import net.minecraft.server.level.ServerPlayer;
 import com.example.arcanebridge.block.PhaseRelayBlock;
 import com.example.arcanebridge.block.entity.PhaseRelayBlockEntity;
 import com.example.arcanebridge.registry.ModBlocks;
@@ -54,8 +57,18 @@ public class OpTuneTransmitter implements ConstMediaAction {
         Vec3 targetVec = vIota.getVec3();
         env.assertVecInRange(targetVec);
 
-        BlockPos targetPos = BlockPos.containing(targetVec);
+                ServerPlayer caster = env.getCaster();
         ServerLevel level = env.getWorld();
+
+        if (caster != null) {
+            ResourceLocation advId = new ResourceLocation("arcane_bridge", "spells/phase_kinetics");
+            Advancement adv = level.getServer().getAdvancements().getAdvancement(advId);
+            if (adv != null && !caster.getAdvancements().getOrStartProgress(adv).isDone()) {
+                throw new MishapUnenlightened();
+            }
+        }
+
+        BlockPos targetPos = BlockPos.containing(targetVec);
         BlockState targetState = level.getBlockState(targetPos);
 
         Block shaftBlock = ForgeRegistries.BLOCKS.getValue(new ResourceLocation("create", "shaft"));
