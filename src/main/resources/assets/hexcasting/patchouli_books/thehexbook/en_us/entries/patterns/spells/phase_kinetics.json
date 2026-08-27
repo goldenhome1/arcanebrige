@@ -1,0 +1,34 @@
+{
+  "name": "Phase Kinetics",
+  "category": "hexcasting:patterns/spells",
+  "icon": "arcane_bridge:phase_relay",
+  "sortnum": 15,
+  "advancement": "hexcasting:root",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Merging the mechanics of $(thing)Create$() with spatial casting allows rotational force to bridge vast distances and dimensions.$(br2)By attuning two or more $(item)Phase Relays$() to the same channel, they form an uninterrupted kinetic circuit."
+    },
+    {
+      "type": "hexcasting:pattern",
+      "op_id": "arcane_bridge:tune_transmitter",
+      "anchor": "arcane_bridge:tune_transmitter",
+      "input": "vector, number",
+      "output": "number",
+      "text": "$(bold)Ethereal Star$().$(br)Transforms the targeted shaft into a $(bold)Transmitter (TX)$() bound to the specified channel."
+    },
+    {
+      "type": "hexcasting:pattern",
+      "op_id": "arcane_bridge:tune_receiver",
+      "anchor": "arcane_bridge:tune_receiver",
+      "input": "vector, number",
+      "output": "number",
+      "text": "$(bold)Enclosed Star$().$(br)Transforms the targeted shaft into a $(bold)Receiver (RX)$() bound to the specified channel."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Network Physics",
+      "text": "$(li)$(bold)Direct Stress:$(/) Machine load on the RX line immediately applies back to the TX source.$(br)$(li)$(bold)1:1 Speed:$(/) Rotational speed (RPM) is transferred without loss.$(br)$(li)$(bold)Overstress:$(/) If demand exceeds capacity, both networks stall simultaneously."
+    }
+  ]
+}
