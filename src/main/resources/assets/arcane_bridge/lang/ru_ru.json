@@ -1,4 +1,6 @@
 {
+  "hexcasting.action.arcane_bridge:tune_transmitter": "Фазовый Исток",
+  "hexcasting.action.arcane_bridge:tune_receiver": "Фазовое Эхо",
   "item.arcane_bridge.guide_core": "Ядро Мастера Резонанса",
   "entity.arcane_bridge.arcane_guide": "Мастер Резонанса",
   "key.categories.arcane_bridge": "Arcane Bridge",
