@@ -21,22 +21,28 @@ public class ClientGuiOpener {
         Entity entity = mc.level.getEntity(entityId);
         String jsonContent = loadDialogueJson();
 
-                // Определение динамического состояния игрока
+                        // Определение динамического состояния игрока
         String startNode = "greeting";
-        boolean isInjured = mc.player.getHealth() <= 6.0F || mc.player.hasEffect(
-                ForgeRegistries.MOB_EFFECTS.getValue(new ResourceLocation("majruszsdifficulty", "bleeding"))
-        );
-        
-        // Считываем реальные клиентские синхронизированные данные резонанса
-        boolean hasDissonance = com.example.arcanebridge.network.ClientboundResonanceSyncPacket.clientStability < 70.0F ||
-                                com.example.arcanebridge.network.ClientboundResonanceSyncPacket.mechLoadStatic > com.example.arcanebridge.network.ClientboundResonanceSyncPacket.mechLimitStatic ||
-                                com.example.arcanebridge.network.ClientboundResonanceSyncPacket.arcaneLoadStatic > com.example.arcanebridge.network.ClientboundResonanceSyncPacket.arcaneLimitStatic ||
-                                com.example.arcanebridge.network.ClientboundResonanceSyncPacket.eleLoadStatic > com.example.arcanebridge.network.ClientboundResonanceSyncPacket.eleLimitStatic;
 
-        if (isInjured) {
-            startNode = "greeting_injured";
-        } else if (hasDissonance) {
-            startNode = "greeting_resonance_alert";
+        // Проверка наличия запечатанной скрижали в руке для особого диалога
+        if (mc.player.getMainHandItem().is(com.example.arcanebridge.item.ModItems.ANCIENT_SCROLL_PHASE.get())) {
+            startNode = "decipher_phase_start";
+        } else {
+            boolean isInjured = mc.player.getHealth() <= 6.0F || mc.player.hasEffect(
+                    ForgeRegistries.MOB_EFFECTS.getValue(new ResourceLocation("majruszsdifficulty", "bleeding"))
+            );
+            
+            // Считываем реальные клиентские синхронизированные данные резонанса
+            boolean hasDissonance = com.example.arcanebridge.network.ClientboundResonanceSyncPacket.clientStability < 70.0F ||
+                                    com.example.arcanebridge.network.ClientboundResonanceSyncPacket.mechLoadStatic > com.example.arcanebridge.network.ClientboundResonanceSyncPacket.mechLimitStatic ||
+                                    com.example.arcanebridge.network.ClientboundResonanceSyncPacket.arcaneLoadStatic > com.example.arcanebridge.network.ClientboundResonanceSyncPacket.arcaneLimitStatic ||
+                                    com.example.arcanebridge.network.ClientboundResonanceSyncPacket.eleLoadStatic > com.example.arcanebridge.network.ClientboundResonanceSyncPacket.eleLimitStatic;
+
+            if (isInjured) {
+                startNode = "greeting_injured";
+            } else if (hasDissonance) {
+                startNode = "greeting_resonance_alert";
+            }
         }
 
                         GuideDialogueScreen screen = new GuideDialogueScreen(entity, jsonContent);
@@ -67,16 +73,49 @@ public class ClientGuiOpener {
         {
           "start_node": "greeting",
           "nodes": {
-                        "greeting": {
+                                    "greeting": {
               "npc_text": "Приветствую. Частоты эфира стабильны, помех не наблюдается. Чем могу помочь?",
               "sound_event": "arcane_bridge:guide.greeting_01",
               "options": [
-                { "index": 1, "text": "Расшифровать найденный манускрипт", "target_node": "ACTION_DECIPHER" },
+                { "index": 1, "text": "Слухи об аномалиях и реликвиях в мире", "target_node": "rumors_hub" },
                 { "index": 2, "text": "Кто ты такой? Расскажи о себе.", "target_node": "about_master" },
                 { "index": 3, "text": "Открыть журнал задач (Квестбук)", "target_node": "OPEN_FTB_QUESTS" },
                 { "index": 4, "text": "Что делать дальше? (Вектор прогрессии)", "target_node": "progression_hub" },
                 { "index": 5, "text": "Спектральный Локатор структур", "target_node": "locator_hub" },
-                { "index": 6, "text": "[Завершить диалог]", "target_node": "EXIT" }
+                { "index": 6, "text": "Проверь частоты резонанса.", "target_node": "resonance" },
+                { "index": 7, "text": "[Завершить диалог]", "target_node": "EXIT" }
+              ]
+            },
+            "rumors_hub": {
+              "npc_text": "Сенсоры улавливают эхо забытых технологий прошлого. О чем именно ты хочешь узнать?",
+              "sound_event": "arcane_bridge:guide.locator_menu",
+              "options": [
+                { "index": 1, "text": "Пернатый Ретранслятор в Джунглях (Фазовая кинетика)", "target_node": "hint_umvuthi" },
+                { "index": 2, "text": "[Назад в меню]", "target_node": "greeting" }
+              ]
+            },
+            "hint_umvuthi": {
+              "npc_text": "Над кронами тропических джунглей зафиксированы высокочастотные колебания. Дикое племя возвело священный трон вокруг древнего птичьего ретранслятора Умвути, поклоняясь его фазовому венцу как богу солнца. В его святилище хранятся сервисные скрижали древних архитекторов — одолей существо, принеси мне свиток в руке, и мы откроем тайну беспроводной передачи кинетики.",
+              "sound_event": "arcane_bridge:guide.about_help",
+              "options": [
+                { "index": 1, "text": "[Назад к слухам]", "target_node": "rumors_hub" },
+                { "index": 2, "text": "[Назад в меню]", "target_node": "greeting" }
+              ]
+            },
+            "decipher_phase_start": {
+              "npc_text": "Постой... Что это у тебя в руках? Невероятно! Ты добыл сервисные скрижали из святилища Пернатого Ретранслятора — Умвути! Дикари поклонялись ему как богу солнца, но взгляни на эти схемы: его сияющий венец был прототипом фазовой линзы, передававшей кинетическое вращение в эфирные колебания.",
+              "sound_event": "arcane_bridge:guide.about_appearance",
+              "options": [
+                { "index": 1, "text": "Сможешь расшифровать эти чертежи?", "target_node": "decipher_phase_explain" },
+                { "index": 2, "text": "[Назад в меню]", "target_node": "greeting" }
+              ]
+            },
+            "decipher_phase_explain": {
+              "npc_text": "Разумеется. Формулы описывают геометрию двух рун: Фазового Истока и Фазового Эха. Сейчас я синхронизирую древние уравнения с твоим Рунным Блокнотом. Отныне твои кинетические линии валов Create смогут передавать вращение и стресс сквозь пространство без единого провода и шестерни.",
+              "sound_event": "arcane_bridge:guide.about_master",
+              "options": [
+                { "index": 1, "text": "§a[Синхронизировать скрижаль с блокнотом]§r", "target_node": "ACTION_DECIPHER" },
+                { "index": 2, "text": "[Назад]", "target_node": "decipher_phase_start" }
               ]
             },
                         "about_master": {
