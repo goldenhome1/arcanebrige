@@ -24,9 +24,11 @@ public class ClientGuiOpener {
                         // Определение динамического состояния игрока
         String startNode = "greeting";
 
-        // Проверка наличия запечатанной скрижали в руке для особого диалога
+                // Проверка наличия запечатанных скрижалей в руке для особого диалога
         if (mc.player.getMainHandItem().is(com.example.arcanebridge.item.ModItems.ANCIENT_SCROLL_PHASE.get())) {
             startNode = "decipher_phase_start";
+        } else if (mc.player.getMainHandItem().is(com.example.arcanebridge.item.ModItems.ANCIENT_SCROLL_FLUID.get())) {
+            startNode = "decipher_fluid_start";
         } else {
             boolean isInjured = mc.player.getHealth() <= 6.0F || mc.player.hasEffect(
                     ForgeRegistries.MOB_EFFECTS.getValue(new ResourceLocation("majruszsdifficulty", "bleeding"))
