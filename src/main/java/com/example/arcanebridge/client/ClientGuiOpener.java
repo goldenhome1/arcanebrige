@@ -86,9 +86,9 @@ public class ClientGuiOpener {
                 { "index": 7, "text": "[Завершить диалог]", "target_node": "EXIT" }
               ]
             },
-                        "rumors_hub": {
+                                    "rumors_hub": {
               "npc_text": "Сенсоры улавливают слабое эхо забытых сигналов в пространстве. О чем именно ты хочешь узнать?",
-              "sound_event": "arcane_bridge:guide.locator_menu",
+              "sound_event": "arcane_bridge:guide.rumors_hub",
               "options": [
                 { "index": 1, "text": "Странный гул над кронами джунглей", "target_node": "hint_umvuthi_1" },
                 { "index": 2, "text": "[Назад в меню]", "target_node": "greeting" }
@@ -96,7 +96,7 @@ public class ClientGuiOpener {
             },
             "hint_umvuthi_1": {
               "npc_text": "Сенсоры ядра фиксируют устойчивый высокочастотный резонанс глубоко в тропических джунглях. Это не природная стихия и не простой механизм... Излучение пульсирует со строгой математической периодичностью.",
-              "sound_event": "arcane_bridge:guide.about_help",
+              "sound_event": "arcane_bridge:guide.hint_umvuthi_1",
               "options": [
                 { "index": 1, "text": "[Далее...]", "target_node": "hint_umvuthi_2" },
                 { "index": 2, "text": "[Назад к слухам]", "target_node": "rumors_hub" }
@@ -104,7 +104,7 @@ public class ClientGuiOpener {
             },
             "hint_umvuthi_2": {
               "npc_text": "Старые хроники упоминали дикие племена, обосновавшиеся на верхушках гигантских деревьев. Они поклоняются пернатому исполину с сияющим нимбом за спиной, почитая его как божество. Но этот венец... судя по спектру, он поразительно напоминает фазовые апертуры древних Архитекторов.",
-              "sound_event": "arcane_bridge:guide.about_philosophy",
+              "sound_event": "arcane_bridge:guide.hint_umvuthi_2",
               "options": [
                 { "index": 1, "text": "[Далее...]", "target_node": "hint_umvuthi_3" },
                 { "index": 2, "text": "[Назад]", "target_node": "hint_umvuthi_1" }
@@ -112,7 +112,7 @@ public class ClientGuiOpener {
             },
             "hint_umvuthi_3": {
               "npc_text": "Если в том святилище действительно уцелели инженерные реликвии, там могут быть запечатанные скрижали калибровки. Если тебе удастся найти подобную схему — возьми её в руку и покажи мне. Возможно, нам удастся разгадать утерянный принцип.",
-              "sound_event": "arcane_bridge:guide.about_appearance",
+              "sound_event": "arcane_bridge:guide.hint_umvuthi_3",
               "options": [
                 { "index": 1, "text": "[Назад к списку слухов]", "target_node": "rumors_hub" },
                 { "index": 2, "text": "[Вернуться в главное меню]", "target_node": "greeting" }
@@ -120,7 +120,7 @@ public class ClientGuiOpener {
             },
             "decipher_phase_start": {
               "npc_text": "Постой... Что это у тебя в руках? Невероятно! Ты добыл сервисные скрижали из святилища Пернатого Ретранслятора — Умвути! Дикари поклонялись ему как богу солнца, но взгляни на эти схемы: его сияющий венец был прототипом фазовой линзы, передававшей кинетическое вращение в эфирные колебания.",
-              "sound_event": "arcane_bridge:guide.about_appearance",
+              "sound_event": "arcane_bridge:guide.decipher_phase_start",
               "options": [
                 { "index": 1, "text": "Сможешь расшифровать эти чертежи?", "target_node": "decipher_phase_explain" },
                 { "index": 2, "text": "[Назад в меню]", "target_node": "greeting" }
@@ -128,7 +128,7 @@ public class ClientGuiOpener {
             },
             "decipher_phase_explain": {
               "npc_text": "Разумеется. Формулы описывают геометрию двух рун: Фазового Истока и Фазового Эха. Сейчас я синхронизирую древние уравнения с твоим Рунным Блокнотом. Отныне твои кинетические линии валов Create смогут передавать вращение и стресс сквозь пространство без единого провода и шестерни.",
-              "sound_event": "arcane_bridge:guide.about_master",
+              "sound_event": "arcane_bridge:guide.decipher_phase_explain",
               "options": [
                 { "index": 1, "text": "§a[Синхронизировать скрижаль с блокнотом]§r", "target_node": "ACTION_DECIPHER" },
                 { "index": 2, "text": "[Назад]", "target_node": "decipher_phase_start" }
@@ -238,9 +238,9 @@ public class ClientGuiOpener {
                 { "index": 4, "text": "[Назад]", "target_node": "greeting" }
               ]
             },
-            "resonance": {
+                        "resonance": {
               "npc_text": "Следи за нагрузкой частот. Ношение более 2 предметов одной категории (Mech / Arcane / Ele) без Матрицы снижает стабильность тела.",
-              "sound_event": "arcane_bridge:guide.resonance_warning",
+              "sound_event": "arcane_bridge:guide.resonance_info",
               "options": [
                 { "index": 1, "text": "[Назад]", "target_node": "greeting" },
                 { "index": 2, "text": "[Завершить диалог]", "target_node": "EXIT" }
