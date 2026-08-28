@@ -1,7 +1,7 @@
 package com.example.arcanebridge.fluid;
 
 import com.example.arcanebridge.network.ClientboundPhaseFluidSyncPacket;
-import com.example.arcanebridge.network.ModMessages;
+import com.example.arcanebridge.network.NetworkHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 
 public class PhaseFluidTank extends FluidTank {
@@ -21,7 +21,7 @@ public class PhaseFluidTank extends FluidTank {
             data.setDirty();
         }
         // Синхронизируем уровень жидкости со всеми клиентами для очков инженера
-        ModMessages.sendToAllClients(new ClientboundPhaseFluidSyncPacket(this.channelId, this.writeToNBT(new net.minecraft.nbt.CompoundTag())));
+        NetworkHandler.sendToAll(new ClientboundPhaseFluidSyncPacket(this.channelId, this.writeToNBT(new net.minecraft.nbt.CompoundTag())));
     }
 
     public int getChannelId() {
