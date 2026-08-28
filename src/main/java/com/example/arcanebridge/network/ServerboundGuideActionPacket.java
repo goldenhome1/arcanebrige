@@ -54,10 +54,16 @@ public class ServerboundGuideActionPacket {
                         continue;
                     }
 
-                    // Списываем 1 манускрипт и выдаем прогресс
+                                        // Списываем 1 запечатанную скрижаль
                     stack.shrink(1);
                     for (String criterion : progress.getRemainingCriteria()) {
                         player.getAdvancements().award(adv, criterion);
+                    }
+
+                    // Выдаем расшифрованную скрижаль в инвентарь игроку (или дропаем рядом)
+                    ItemStack decipheredStack = new ItemStack(entry.decipheredItem());
+                    if (!player.getInventory().add(decipheredStack)) {
+                        player.drop(decipheredStack, false);
                     }
 
                     // Анимация и спецэффекты гида
@@ -68,7 +74,7 @@ public class ServerboundGuideActionPacket {
                     level.playSound(null, guide.getX(), guide.getY(), guide.getZ(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 0.8F, 1.4F);
                     level.playSound(null, guide.getX(), guide.getY(), guide.getZ(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0F, 1.0F);
 
-                    player.sendSystemMessage(Component.literal("§6[Мастер Резонанса] §aМанускрипт расшифрован: §e«" + entry.spellName() + "» §aдобавлено в ваш Рунный Блокнот!"));
+                    player.sendSystemMessage(Component.literal("§6[Мастер Резонанса] §aСкрижаль расшифрована! Вы получили §e«" + entry.spellName() + "»§a."));
                     foundAny = true;
                     break;
                 }
