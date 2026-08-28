@@ -1,7 +1,33 @@
-// Добавьте регистрацию BlockEntity:
-public static final RegistryObject<BlockEntityType<com.example.arcanebridge.block.entity.PhaseFluidBlockEntity>> PHASE_FLUID_RELAY =
-        BLOCK_ENTITIES.register("phase_fluid_relay",
-                () -> BlockEntityType.Builder.of(
-                        com.example.arcanebridge.block.entity.PhaseFluidBlockEntity::new,
-                        ModBlocks.PHASE_FLUID_RELAY.get()
-                ).build(null));
+package com.example.arcanebridge.registry;
+
+import com.example.arcanebridge.ArcaneBridge;
+import com.example.arcanebridge.block.entity.PhaseFluidBlockEntity;
+import com.example.arcanebridge.block.entity.PhaseRelayBlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+
+public class ModBlockEntities {
+    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
+            DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, ArcaneBridge.MODID);
+
+    public static final RegistryObject<BlockEntityType<PhaseRelayBlockEntity>> PHASE_RELAY =
+            BLOCK_ENTITIES.register("phase_relay",
+                    () -> BlockEntityType.Builder.of(
+                            PhaseRelayBlockEntity::new,
+                            ModBlocks.PHASE_RELAY.get()
+                    ).build(null));
+
+    public static final RegistryObject<BlockEntityType<PhaseFluidBlockEntity>> PHASE_FLUID_RELAY =
+            BLOCK_ENTITIES.register("phase_fluid_relay",
+                    () -> BlockEntityType.Builder.of(
+                            PhaseFluidBlockEntity::new,
+                            ModBlocks.PHASE_FLUID_RELAY.get()
+                    ).build(null));
+
+    public static void register(IEventBus eventBus) {
+        BLOCK_ENTITIES.register(eventBus);
+    }
+}
