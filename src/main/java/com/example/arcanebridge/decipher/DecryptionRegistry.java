@@ -10,8 +10,9 @@ import java.util.Optional;
 
 public class DecryptionRegistry {
 
-    public record DecryptionEntry(
-            Item item,
+        public record DecryptionEntry(
+            Item sealedItem,
+            Item decipheredItem,
             ResourceLocation advancementId,
             String successDialogueNode,
             String spellName
@@ -19,8 +20,8 @@ public class DecryptionRegistry {
 
     private static final Map<Item, DecryptionEntry> REGISTRY = new HashMap<>();
 
-    public static void register(Item item, ResourceLocation advancementId, String successDialogueNode, String spellName) {
-        REGISTRY.put(item, new DecryptionEntry(item, advancementId, successDialogueNode, spellName));
+    public static void register(Item sealedItem, Item decipheredItem, ResourceLocation advancementId, String successDialogueNode, String spellName) {
+        REGISTRY.put(sealedItem, new DecryptionEntry(sealedItem, decipheredItem, advancementId, successDialogueNode, spellName));
     }
 
     public static Optional<DecryptionEntry> getEntry(Item item) {
