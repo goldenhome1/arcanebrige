@@ -35,6 +35,12 @@ public class ModItems {
                     "Фазовый Резонанс (Гидродинамика)"
             ));
 
+        public static final RegistryObject<Item> PHASE_FLUID_RELAY = ITEMS.register("phase_fluid_relay",
+            () -> new net.minecraft.world.item.BlockItem(
+                    com.example.arcanebridge.registry.ModBlocks.PHASE_FLUID_RELAY.get(),
+                    new Item.Properties()
+            ));
+
     public static final RegistryObject<Item> PHASE_FLUID_TUNER = ITEMS.register("phase_fluid_tuner",
             () -> new PhaseFluidTunerItem(new Item.Properties()));
 
