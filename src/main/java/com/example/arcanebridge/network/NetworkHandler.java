@@ -54,11 +54,18 @@ public class NetworkHandler {
                 .consumerMainThread(ServerboundRepairCompletePacket::handle)
                 .add();
 
-        // 6. Запрос действий Гида / Локатора (GUI -> Сервер)
+                // 6. Запрос действий Гида / Локатора (GUI -> Сервер)
         CHANNEL.messageBuilder(ServerboundGuideActionPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(ServerboundGuideActionPacket::toBytes)
                 .decoder(ServerboundGuideActionPacket::new)
                 .consumerMainThread(ServerboundGuideActionPacket::handle)
+                .add();
+
+        // 7. Синхронизация фазовых резервуаров жидкости (Сервер -> Клиент)
+        CHANNEL.messageBuilder(ClientboundPhaseFluidSyncPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(ClientboundPhaseFluidSyncPacket::toBytes)
+                .decoder(ClientboundPhaseFluidSyncPacket::new)
+                .consumerMainThread(ClientboundPhaseFluidSyncPacket::handle)
                 .add();
     }
 
