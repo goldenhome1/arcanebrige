@@ -1,6 +1,7 @@
 package com.example.arcanebridge.item;
 
-import com.example.arcanebridge.fluid.PhaseFluidCapabilityProvider;
+import com.example.arcanebridge.block.entity.PhaseFluidBlockEntity;
+import com.example.arcanebridge.registry.ModBlocks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -18,7 +19,9 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -57,24 +60,29 @@ public class PhaseFluidTunerItem extends Item {
             return InteractionResult.PASS;
         }
 
+        int channel = stack.getOrCreateTag().getInt("SelectedChannel");
+        if (channel <= 0) channel = 1;
+
+        BlockState state = level.getBlockState(pos);
         BlockEntity be = level.getBlockEntity(pos);
-        if (be != null) {
-            int channel = stack.getOrCreateTag().getInt("SelectedChannel");
-            if (channel <= 0) channel = 1;
 
+        // Если кликнули по трубе или резервуару Create — превращаем в Фазовый Гидроузел
+        if (!(be instanceof PhaseFluidBlockEntity)) {
+            level.setBlock(pos, ModBlocks.PHASE_FLUID_RELAY.get().defaultBlockState(), Block.UPDATE_ALL);
+            be = level.getBlockEntity(pos);
+        }
+
+        if (be instanceof PhaseFluidBlockEntity fluidNode) {
             if (!level.isClientSide() && player != null) {
-                int finalChannel = channel;
-                be.getCapability(PhaseFluidCapabilityProvider.PHASE_FLUID_CAP).ifPresent(node -> {
-                    node.setChannel(finalChannel);
-                    be.setChanged();
+                fluidNode.setChannel(channel);
 
-                    ((ServerLevel) level).sendParticles(ParticleTypes.SPLASH, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, 20, 0.3, 0.3, 0.3, 0.1);
-                    level.playSound(null, pos, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 0.8F, 1.8F);
-                    player.sendSystemMessage(Component.literal("§b[Фазовая Гидравлика] §aБлок привязан к каналу §e#" + finalChannel));
-                });
+                ((ServerLevel) level).sendParticles(ParticleTypes.SPLASH, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, 20, 0.3, 0.3, 0.3, 0.1);
+                level.playSound(null, pos, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 0.8F, 1.8F);
+                player.sendSystemMessage(Component.literal("§b[Фазовая Гидравлика] §aГидроузел настроен на канал §e#" + channel));
             }
             return InteractionResult.sidedSuccess(level.isClientSide());
         }
+
         return InteractionResult.PASS;
     }
 
@@ -84,7 +92,7 @@ public class PhaseFluidTunerItem extends Item {
         if (channel <= 0) channel = 1;
         tooltip.add(Component.literal("§7Тестовый инструмент настройки фазовых жидкостей."));
         tooltip.add(Component.literal("§bАктивный канал: §e#" + channel));
-        tooltip.add(Component.literal("§e• ПКМ по блоку: §7привязать к каналу.").withStyle(ChatFormatting.ITALIC));
+        tooltip.add(Component.literal("§e• ПКМ по блоку: §7настроить/создать гидроузел.").withStyle(ChatFormatting.ITALIC));
         tooltip.add(Component.literal("§e• Shift + ПКМ в воздух: §7сменить канал.").withStyle(ChatFormatting.ITALIC));
     }
 }
