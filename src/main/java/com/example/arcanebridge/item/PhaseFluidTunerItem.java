@@ -5,7 +5,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -25,8 +24,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class PhaseFluidTunerItem extends Item {
-
-    private static final ResourceLocation CAP_KEY = new ResourceLocation("arcane_bridge", "phase_fluid_capability");
 
     public PhaseFluidTunerItem(Properties properties) {
         super(properties.stacksTo(1).rarity(Rarity.EPIC));
@@ -67,15 +64,13 @@ public class PhaseFluidTunerItem extends Item {
 
             if (!level.isClientSide() && player != null) {
                 int finalChannel = channel;
-                be.getCapability(CAP_KEY).ifPresent(cap -> {
-                    if (cap instanceof PhaseFluidCapabilityProvider provider) {
-                        provider.setChannel(finalChannel);
-                        be.setChanged();
+                be.getCapability(PhaseFluidCapabilityProvider.PHASE_FLUID_CAP).ifPresent(node -> {
+                    node.setChannel(finalChannel);
+                    be.setChanged();
 
-                        ((ServerLevel) level).sendParticles(ParticleTypes.SPLASH, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, 20, 0.3, 0.3, 0.3, 0.1);
-                        level.playSound(null, pos, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 0.8F, 1.8F);
-                        player.sendSystemMessage(Component.literal("§b[Фазовая Гидравлика] §aБлок привязан к каналу §e#" + finalChannel));
-                    }
+                    ((ServerLevel) level).sendParticles(ParticleTypes.SPLASH, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, 20, 0.3, 0.3, 0.3, 0.1);
+                    level.playSound(null, pos, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 0.8F, 1.8F);
+                    player.sendSystemMessage(Component.literal("§b[Фазовая Гидравлика] §aБлок привязан к каналу §e#" + finalChannel));
                 });
             }
             return InteractionResult.sidedSuccess(level.isClientSide());
