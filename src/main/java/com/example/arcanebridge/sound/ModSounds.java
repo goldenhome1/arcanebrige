@@ -26,8 +26,29 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> GUIDE_GREETING_INJURED =
             SOUND_EVENTS.register("guide.greeting_injured", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("arcane_bridge", "guide.greeting_injured")));
 
-    public static final RegistryObject<SoundEvent> GUIDE_RESONANCE_WARNING =
+        public static final RegistryObject<SoundEvent> GUIDE_RESONANCE_WARNING =
             SOUND_EVENTS.register("guide.resonance_warning", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("arcane_bridge", "guide.resonance_warning")));
+
+    public static final RegistryObject<SoundEvent> GUIDE_RESONANCE_INFO =
+            SOUND_EVENTS.register("guide.resonance_info", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("arcane_bridge", "guide.resonance_info")));
+
+    public static final RegistryObject<SoundEvent> GUIDE_RUMORS_HUB =
+            SOUND_EVENTS.register("guide.rumors_hub", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("arcane_bridge", "guide.rumors_hub")));
+
+    public static final RegistryObject<SoundEvent> GUIDE_HINT_UMVUTHI_1 =
+            SOUND_EVENTS.register("guide.hint_umvuthi_1", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("arcane_bridge", "guide.hint_umvuthi_1")));
+
+    public static final RegistryObject<SoundEvent> GUIDE_HINT_UMVUTHI_2 =
+            SOUND_EVENTS.register("guide.hint_umvuthi_2", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("arcane_bridge", "guide.hint_umvuthi_2")));
+
+    public static final RegistryObject<SoundEvent> GUIDE_HINT_UMVUTHI_3 =
+            SOUND_EVENTS.register("guide.hint_umvuthi_3", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("arcane_bridge", "guide.hint_umvuthi_3")));
+
+    public static final RegistryObject<SoundEvent> GUIDE_DECIPHER_PHASE_START =
+            SOUND_EVENTS.register("guide.decipher_phase_start", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("arcane_bridge", "guide.decipher_phase_start")));
+
+    public static final RegistryObject<SoundEvent> GUIDE_DECIPHER_PHASE_EXPLAIN =
+            SOUND_EVENTS.register("guide.decipher_phase_explain", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("arcane_bridge", "guide.decipher_phase_explain")));
 
     public static final RegistryObject<SoundEvent> GUIDE_ABOUT_MASTER =
             SOUND_EVENTS.register("guide.about_master", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("arcane_bridge", "guide.about_master")));
