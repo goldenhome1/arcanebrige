@@ -49,9 +49,10 @@ public class ArcaneBridge {
             ResonanceEngine.loadOrCreateConfig();
             RaidConfig.loadOrCreateConfig();
             
-            // Регистрация доступных для расшифровки реликвий
+                        // Регистрация доступных для расшифровки реликвий
             DecryptionRegistry.register(
                     ModItems.ANCIENT_SCROLL_PHASE.get(),
+                    ModItems.DECIPHERED_SCROLL_PHASE.get(),
                     new ResourceLocation("arcane_bridge", "spells/phase_kinetics"),
                     "decipher_phase_kinetics_success",
                     "Фазовый Резонанс (Кинетика)"
