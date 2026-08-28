@@ -1,5 +1,6 @@
 {
-      "item.arcane_bridge.ancient_scroll_phase": "Solar Slate: Phase Circuit",
+        "item.arcane_bridge.ancient_scroll_phase": "Solar Slate: Phase Circuit",
+  "item.arcane_bridge.deciphered_scroll_phase": "Deciphered Slate: Phase Circuit",
   "hexcasting.action.arcane_bridge:tune_transmitter": "Phase Source",
   "hexcasting.action.arcane_bridge:tune_receiver": "Phase Echo",
   "item.arcane_bridge.guide_core": "Resonance Master Core",
