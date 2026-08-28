@@ -89,11 +89,56 @@
       }
     ]
   },
-  "guide.hint_umvuthi_3": {
+    "guide.hint_umvuthi_3": {
     "category": "player",
     "sounds": [
       {
         "name": "arcane_bridge:guide/hint_umvuthi_3",
+        "type": "file"
+      }
+    ]
+  },
+  "guide.hint_frostmaw_1": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/hint_frostmaw_1",
+        "type": "file"
+      }
+    ]
+  },
+  "guide.hint_frostmaw_2": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/hint_frostmaw_2",
+        "type": "file"
+      }
+    ]
+  },
+  "guide.hint_frostmaw_3": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/hint_frostmaw_3",
+        "type": "file"
+      }
+    ]
+  },
+  "guide.decipher_fluid_start": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/decipher_fluid_start",
+        "type": "file"
+      }
+    ]
+  },
+  "guide.decipher_fluid_explain": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/decipher_fluid_explain",
         "type": "file"
       }
     ]
