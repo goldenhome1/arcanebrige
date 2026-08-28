@@ -50,12 +50,20 @@ public class ArcaneBridge {
             RaidConfig.loadOrCreateConfig();
             
                         // Регистрация доступных для расшифровки реликвий
-            DecryptionRegistry.register(
+                        DecryptionRegistry.register(
                     ModItems.ANCIENT_SCROLL_PHASE.get(),
                     ModItems.DECIPHERED_SCROLL_PHASE.get(),
                     new ResourceLocation("arcane_bridge", "spells/phase_kinetics"),
                     "decipher_phase_kinetics_success",
                     "Фазовый Резонанс (Кинетика)"
+            );
+
+            DecryptionRegistry.register(
+                    ModItems.ANCIENT_SCROLL_FLUID.get(),
+                    ModItems.DECIPHERED_SCROLL_FLUID.get(),
+                    new ResourceLocation("arcane_bridge", "spells/phase_fluidics"),
+                    "decipher_fluid_explain",
+                    "Фазовый Резонанс (Гидродинамика)"
             );
         });
     }
