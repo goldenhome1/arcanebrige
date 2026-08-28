@@ -20,11 +20,12 @@ public class AncientManuscriptItem extends Item {
         this.descriptionKey = descriptionKey;
     }
 
-    @Override
+        @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
-        tooltip.add(Component.literal("§7Древний фрагмент рунических записей."));
-        tooltip.add(Component.literal("§dСимволы зашифрованы неизвестным диалектом эфира."));
-        tooltip.add(Component.literal("§6• Отдайте Мастеру Резонанса для перевода.").withStyle(ChatFormatting.ITALIC));
+        tooltip.add(Component.literal("§7Древняя шестиугольная сланцевая плита."));
+        tooltip.add(Component.literal("§eВнутри пульсирует золотой орнамент двенадцатилучевой звезды."));
+        tooltip.add(Component.literal("§8«Сервисный оттиск фазового ретранслятора Архитекторов»"));
+        tooltip.add(Component.literal("§6• Возьмите в руку и покажите Мастеру Резонанса.").withStyle(ChatFormatting.ITALIC));
         super.appendHoverText(stack, level, tooltip, isAdvanced);
     }
 }
