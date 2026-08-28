@@ -6,6 +6,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.CapabilityManager;
+import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilitySerializable;
 import net.minecraftforge.common.util.LazyOptional;
@@ -14,20 +16,24 @@ import net.minecraftforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class PhaseFluidCapabilityProvider implements ICapabilitySerializable<CompoundTag> {
+public class PhaseFluidCapabilityProvider implements ICapabilitySerializable<CompoundTag>, IPhaseFluidNode {
+
+    public static final Capability<IPhaseFluidNode> PHASE_FLUID_CAP = CapabilityManager.get(new CapabilityToken<>(){});
 
     private int channelId = 0;
     private final BlockEntity blockEntity;
-    private LazyOptional<IFluidHandler> holder = LazyOptional.empty();
+    private LazyOptional<IFluidHandler> fluidHolder = LazyOptional.empty();
+    private final LazyOptional<IPhaseFluidNode> nodeHolder = LazyOptional.of(() -> this);
 
     public PhaseFluidCapabilityProvider(BlockEntity blockEntity) {
         this.blockEntity = blockEntity;
     }
 
+    @Override
     public void setChannel(int channel) {
         this.channelId = channel;
-        this.holder.invalidate();
-        this.holder = LazyOptional.of(() -> {
+        this.fluidHolder.invalidate();
+        this.fluidHolder = LazyOptional.of(() -> {
             Level level = blockEntity != null ? blockEntity.getLevel() : null;
             if (level != null && !level.isClientSide()) {
                 PhaseFluidSavedData data = PhaseFluidSavedData.getInstance();
@@ -38,17 +44,21 @@ public class PhaseFluidCapabilityProvider implements ICapabilitySerializable<Com
         });
     }
 
-    public int getChannelId() {
+    @Override
+    public int getChannel() {
         return channelId;
     }
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == PHASE_FLUID_CAP) {
+            return nodeHolder.cast();
+        }
         if (cap == ForgeCapabilities.FLUID_HANDLER && channelId > 0) {
-            if (!holder.isPresent()) {
+            if (!fluidHolder.isPresent()) {
                 setChannel(this.channelId);
             }
-            return holder.cast();
+            return fluidHolder.cast();
         }
         return LazyOptional.empty();
     }
