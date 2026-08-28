@@ -44,11 +44,74 @@
       }
     ]
   },
-  "guide.resonance_warning": {
+    "guide.resonance_warning": {
     "category": "player",
     "sounds": [
       {
         "name": "arcane_bridge:guide/resonance_warning",
+        "type": "file"
+      }
+    ]
+  },
+  "guide.resonance_info": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/resonance_info",
+        "type": "file"
+      }
+    ]
+  },
+  "guide.rumors_hub": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/rumors_hub",
+        "type": "file"
+      }
+    ]
+  },
+  "guide.hint_umvuthi_1": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/hint_umvuthi_1",
+        "type": "file"
+      }
+    ]
+  },
+  "guide.hint_umvuthi_2": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/hint_umvuthi_2",
+        "type": "file"
+      }
+    ]
+  },
+  "guide.hint_umvuthi_3": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/hint_umvuthi_3",
+        "type": "file"
+      }
+    ]
+  },
+  "guide.decipher_phase_start": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/decipher_phase_start",
+        "type": "file"
+      }
+    ]
+  },
+  "guide.decipher_phase_explain": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "arcane_bridge:guide/decipher_phase_explain",
         "type": "file"
       }
     ]
