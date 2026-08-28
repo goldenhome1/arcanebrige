@@ -15,8 +15,15 @@ public class ModItems {
         public static final RegistryObject<Item> GUIDE_CORE = ITEMS.register("guide_core",
             () -> new GuideCoreItem(new Item.Properties().rarity(Rarity.RARE)));
 
-    public static final RegistryObject<Item> ANCIENT_SCROLL_PHASE = ITEMS.register("ancient_scroll_phase",
+        public static final RegistryObject<Item> ANCIENT_SCROLL_PHASE = ITEMS.register("ancient_scroll_phase",
             () -> new AncientManuscriptItem(new Item.Properties(), "phase_kinetics"));
+
+    public static final RegistryObject<Item> DECIPHERED_SCROLL_PHASE = ITEMS.register("deciphered_scroll_phase",
+            () -> new DecipheredManuscriptItem(
+                    new Item.Properties(),
+                    new net.minecraft.resources.ResourceLocation("arcane_bridge", "spells/phase_kinetics"),
+                    "Фазовый Резонанс (Кинетика)"
+            ));
 
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);
