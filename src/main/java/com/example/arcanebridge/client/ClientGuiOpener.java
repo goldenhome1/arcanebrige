@@ -88,12 +88,53 @@ public class ClientGuiOpener {
                 { "index": 7, "text": "[Завершить диалог]", "target_node": "EXIT" }
               ]
             },
-                                    "rumors_hub": {
+                                                "rumors_hub": {
               "npc_text": "Сенсоры улавливают слабое эхо забытых сигналов в пространстве. О чем именно ты хочешь узнать?",
               "sound_event": "arcane_bridge:guide.rumors_hub",
               "options": [
                 { "index": 1, "text": "Странный гул над кронами джунглей", "target_node": "hint_umvuthi_1" },
+                { "index": 2, "text": "Аномальный холод в заснеженных землях", "target_node": "hint_frostmaw_1" },
+                { "index": 3, "text": "[Назад в меню]", "target_node": "greeting" }
+              ]
+            },
+            "hint_frostmaw_1": {
+              "npc_text": "Сенсоры ядра регистрируют колоссальный температурный провал в заснеженных биомах. Это не обычная метель — в обширной области пространство буквально теряет тепловую энергию, стремясь к абсолютному нулю.",
+              "sound_event": "arcane_bridge:guide.hint_frostmaw_1",
+              "options": [
+                { "index": 1, "text": "[Далее...]", "target_node": "hint_frostmaw_2" },
+                { "index": 2, "text": "[Назад к слухам]", "target_node": "rumors_hub" }
+              ]
+            },
+            "hint_frostmaw_2": {
+              "npc_text": "В древних чертежах Архитекторов упоминаются живые крио-стабилизаторы — исполинские стражи, созданные для охлаждения магистральных гидросистем. Без их ледяных клапанов передача кипящих флюидов сквозь эфир мгновенно разорвала бы пространственную ткань.",
+              "sound_event": "arcane_bridge:guide.hint_frostmaw_2",
+              "options": [
+                { "index": 1, "text": "[Далее...]", "target_node": "hint_frostmaw_3" },
+                { "index": 2, "text": "[Назад]", "target_node": "hint_frostmaw_1" }
+              ]
+            },
+            "hint_frostmaw_3": {
+              "npc_text": "Судя по сигнатуре, один из таких реликтовых стражей до сих пор дремлет посреди снегов, удерживая в пасти термодинамический регулятор. Если тебе удастся одолеть чудовище и извлечь сервисную гидро-скрижаль — принеси её мне в руке.",
+              "sound_event": "arcane_bridge:guide.hint_frostmaw_3",
+              "options": [
+                { "index": 1, "text": "[Назад к списку слухов]", "target_node": "rumors_hub" },
+                { "index": 2, "text": "[Вернуться в главное меню]", "target_node": "greeting" }
+              ]
+            },
+            "decipher_fluid_start": {
+              "npc_text": "Какой леденящий холод исходит от этой плиты... Невероятно! Ты добыл сервисную матрицу Крио-Стабилизатора! Древние использовали это существо для поглощения колоссального тепла при беспроводной перекачке лавы и жидких реагентов, а кристалл в его пасти служил клапаном сброса давления.",
+              "sound_event": "arcane_bridge:guide.decipher_fluid_start",
+              "options": [
+                { "index": 1, "text": "Сможешь адаптировать эти гидро-формулы для Рунного Блокнота?", "target_node": "decipher_fluid_explain" },
                 { "index": 2, "text": "[Назад в меню]", "target_node": "greeting" }
+              ]
+            },
+            "decipher_fluid_explain": {
+              "npc_text": "Разумеется. Эти уравнения описывают геометрию Фазового Истока и Фазового Эха Потока. Я синхронизирую формулы термодинамики с твоим блокнотом. Отныне твои помпы, трубы и резервуары Create смогут перекачивать любые жидкости — от воды и жидкого опыта до кипящей магмы — сквозь эфир без единой трубы.",
+              "sound_event": "arcane_bridge:guide.decipher_fluid_explain",
+              "options": [
+                { "index": 1, "text": "§b[Синхронизировать гидро-скрижаль с блокнотом]§r", "target_node": "ACTION_DECIPHER" },
+                { "index": 2, "text": "[Назад]", "target_node": "decipher_fluid_start" }
               ]
             },
             "hint_umvuthi_1": {
