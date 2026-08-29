@@ -17,7 +17,7 @@ public class ModHexActions {
     public static final DeferredRegister<ActionRegistryEntry> ACTIONS =
             DeferredRegister.create(HexRegistries.ACTION, ArcaneBridge.MODID);
 
-    // Валы: Источник и Приёмник[cite: 4, 5]
+    // Валы: Передатчик и Приёмник[cite: 4, 5]
     public static final RegistryObject<ActionRegistryEntry> PHASE_TRANSMITTER = ACTIONS.register("phase_transmitter",
             () -> new ActionRegistryEntry(
                     HexPattern.fromAngles("eaqawwawwawe", HexDir.NORTH_EAST),
@@ -30,7 +30,7 @@ public class ModHexActions {
                     new OpCastPhaseReceiver()
             ));
 
-    // Трубы: Исток (TX) и Приёмник (RX)
+    // Трубы: Исток (TX) и Приёмник (RX)[cite: 2, 3]
     public static final RegistryObject<ActionRegistryEntry> PHASE_FLUID_TX = ACTIONS.register("phase_fluid_tx",
             () -> new ActionRegistryEntry(
                     HexPattern.fromAngles("wwawwqwwawwwwwawwwwwawwewwawwwwwaww", HexDir.EAST),
