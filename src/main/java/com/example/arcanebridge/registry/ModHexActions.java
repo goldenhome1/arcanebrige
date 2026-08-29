@@ -17,20 +17,20 @@ public class ModHexActions {
     public static final DeferredRegister<ActionRegistryEntry> ACTIONS =
             DeferredRegister.create(HexRegistries.ACTION, ArcaneBridge.MODID);
 
-    // Валы: Передатчик и Приёмник[cite: 4, 5]
-    public static final RegistryObject<ActionRegistryEntry> PHASE_TRANSMITTER = ACTIONS.register("phase_transmitter",
+    // ⚙️ КИНЕТИКА / ВАЛЫ (Оригинальные солнечные паттерны)
+    public static final RegistryObject<ActionRegistryEntry> TUNE_TRANSMITTER = ACTIONS.register("tune_transmitter",
             () -> new ActionRegistryEntry(
-                    HexPattern.fromAngles("eaqawwawwawe", HexDir.NORTH_EAST),
+                    HexPattern.fromAngles("adaeadaeadaeadaeadaeadawwqwqwqwqwqw", HexDir.NORTH_EAST),
                     new OpCastPhaseTransmitter()
             ));
 
-    public static final RegistryObject<ActionRegistryEntry> PHASE_RECEIVER = ACTIONS.register("phase_receiver",
+    public static final RegistryObject<ActionRegistryEntry> TUNE_RECEIVER = ACTIONS.register("tune_receiver",
             () -> new ActionRegistryEntry(
-                    HexPattern.fromAngles("qdedwwawwawe", HexDir.SOUTH_EAST),
+                    HexPattern.fromAngles("adaeadaeadaeadaeadaeadawwqwqwqwqwqwaeqqqqq", HexDir.NORTH_EAST),
                     new OpCastPhaseReceiver()
             ));
 
-    // Трубы: Исток (TX) и Приёмник (RX)[cite: 2, 3]
+    // 💧 ГИДРАВЛИКА / ТРУБЫ (Паттерны из Hex (2) и Hex (3))
     public static final RegistryObject<ActionRegistryEntry> PHASE_FLUID_TX = ACTIONS.register("phase_fluid_tx",
             () -> new ActionRegistryEntry(
                     HexPattern.fromAngles("wwawwqwwawwwwwawwwwwawwewwawwwwwaww", HexDir.EAST),
