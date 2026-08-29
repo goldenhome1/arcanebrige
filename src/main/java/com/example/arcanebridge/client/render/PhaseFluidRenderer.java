@@ -5,14 +5,20 @@ import com.example.arcanebridge.block.entity.PhaseFluidBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
@@ -49,43 +55,54 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         float time = (be.getLevel() != null ? be.getLevel().getGameTime() : 0) + partialTicks;
 
         // -------------------------------------------------------------------------
-        // 🌌 1. СТАТИЧНАЯ НЕПРОЗРАЧНАЯ ЗАГЛУШКА ЭНДА (СТРОГО ВНУТРИ ОТВЕРСТИЯ ТРУБЫ)
+        // 💧 1. ОТРИСОВКА ЖИДКОСТИ ВНУТРИ СТЕКЛЯННОЙ ТРУБЫ
         // -------------------------------------------------------------------------
-        float portalHalfSize = 0.245F; // Точный размер внутреннего отверстия (8x8 пикселей)
-        float portalDepth = 0.496F;    // Расположение на срезе торца
+        IFluidHandler storage = be.getFluidStorage();
+        FluidStack fluid = storage.getFluidInTank(0);
+        if (!fluid.isEmpty()) {
+            renderFluidInside(ms, buffer, fluid, storage.getTankCapacity(0), light);
+        }
 
-        VertexConsumer solidVoidConsumer = buffer.getBuffer(RenderType.entitySolid(TEX_END_SKY));
-        drawFixedPortalBore(ms.last().pose(), ms.last().normal(), solidVoidConsumer, portalHalfSize, portalDepth);
-        drawFixedPortalBore(ms.last().pose(), ms.last().normal(), solidVoidConsumer, portalHalfSize, -portalDepth);
+        // -------------------------------------------------------------------------
+        // 🌌 2. СТАТИЧНЫЕ НЕПРОЗРАЧНЫЕ ЗАГЛУШКИ ЭНДА (ПЕРЕКРЫВАЮТ СОСЕДНИЕ ТРУБЫ)
+        // -------------------------------------------------------------------------
+        // Точный размер внутреннего отверстия фланца Create (ровно 8x8 пикселей)
+        float portalHalfSize = 0.245F;
+        float portalDepth = 0.498F;
+
+        VertexConsumer voidConsumer = buffer.getBuffer(RenderType.entitySolid(TEX_END_SKY));
+        drawFixedPortalBore(ms.last().pose(), ms.last().normal(), voidConsumer, portalHalfSize, portalDepth);
+        drawFixedPortalBore(ms.last().pose(), ms.last().normal(), voidConsumer, portalHalfSize, -portalDepth);
 
         // -------------------------------------------------------------------------
-        // 🔮 2. ЕДИНЫЙ ВРАЩАЮЩИЙСЯ 3D-КАРКАС (ГЛИФЫ + БОКОВЫЕ ЛИНИИ)
+        // 🔮 3. ЕДИНЫЙ ВРАЩАЮЩИЙСЯ КАРКАС (ГЛИФЫ + БОКОВЫЕ ЛИНИИ)
         // -------------------------------------------------------------------------
-        float pulse = 1.0F + (float) Math.sin(time * 0.08F) * 0.025F;
+        float pulse = 1.0F + (float) Math.sin(time * 0.08F) * 0.02F;
         float r = be.isReceiver ? 0.20F : 0.05F;
         float g = be.isReceiver ? 0.60F : 0.90F;
         float b = be.isReceiver ? 1.00F : 0.95F;
         float a = 0.95F;
 
-        float cageSize = 0.34F * pulse; // Полуширина каркаса и торцевых глифов
-        float cageHalfLen = 0.501F;     // Полная длина каркаса от торца до торца
-        float rotAngle = time * 0.6F;   // Скорость вращения всей структуры
+        // Габариты строго подогнаны под углы стыковки
+        float cageSize = 0.248F * pulse;
+        float cageHalfLen = 0.500F;
+        float rotAngle = time * 0.6F;
 
         ms.pushPose();
-        // Вращаем весь каркас целиком как единое твердое тело
+        // Вращаем весь рунический контур как единое целое
         ms.mulPose(Axis.ZP.rotationDegrees(rotAngle));
 
         Matrix4f cagePosMat = ms.last().pose();
         Matrix3f cageNormMat = ms.last().normal();
 
-        // А. Торцевые светящиеся глифы (+Z и -Z)
+        // А. Торцевые вращающиеся глифы
         ResourceLocation glyphTexture = be.isReceiver ? GLYPH_RX : GLYPH_TX;
         VertexConsumer glyphConsumer = buffer.getBuffer(RenderType.entityTranslucent(glyphTexture));
 
-        drawEndGlyph(cagePosMat, cageNormMat, glyphConsumer, cageSize, cageHalfLen, r, g, b, a, true);
-        drawEndGlyph(cagePosMat, cageNormMat, glyphConsumer, cageSize, -cageHalfLen, r, g, b, a, false);
+        drawEndGlyph(cagePosMat, cageNormMat, glyphConsumer, cageSize, cageHalfLen + 0.001F, r, g, b, a, true);
+        drawEndGlyph(cagePosMat, cageNormMat, glyphConsumer, cageSize, -(cageHalfLen + 0.001F), r, g, b, a, false);
 
-        // Б. 4 боковые грани, соединяющие углы глифов
+        // Б. 4 боковые грани, соединяющие углы глифов от торца до торца
         VertexConsumer wallConsumer = buffer.getBuffer(RenderType.entityTranslucent(GLYPH_LINES));
         for (int i = 0; i < 4; i++) {
             ms.pushPose();
@@ -99,13 +116,82 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
             ms.popPose();
         }
 
-        ms.popPose(); // Возврат из общего вращения каркаса
-        ms.popPose(); // Возврат из базовой трансформации
+        ms.popPose();
+        ms.popPose();
     }
 
     /**
-     * Неподвижная заглушка неба Энда (Opaque / Solid, отсекает видимость внутренней геометрии)
+     * Рендерит уровень текущей жидкости внутри трубы
      */
+    private void renderFluidInside(PoseStack ms, MultiBufferSource buffer, FluidStack fluid, int capacity, int light) {
+        IClientFluidTypeExtensions clientFluid = IClientFluidTypeExtensions.of(fluid.getFluid());
+        ResourceLocation stillTex = clientFluid.getStillTexture(fluid);
+        if (stillTex == null) return;
+
+        TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTex);
+        int color = clientFluid.getTintColor(fluid);
+
+        float fR = (float) (color >> 16 & 255) / 255.0F;
+        float fG = (float) (color >> 8 & 255) / 255.0F;
+        float fB = (float) (color & 255) / 255.0F;
+        float fA = (float) (color >> 24 & 255) / 255.0F;
+        if (fA <= 0.01F) fA = 1.0F;
+
+        float fillRatio = Math.min(1.0F, Math.max(0.12F, (float) fluid.getAmount() / (float) capacity));
+
+        float xMin = -0.22F;
+        float xMax = 0.22F;
+        float yMin = -0.22F;
+        float yMax = -0.22F + (0.44F * fillRatio);
+        float zMin = -0.48F;
+        float zMax = 0.48F;
+
+        VertexConsumer builder = buffer.getBuffer(RenderType.translucent());
+        Matrix4f mat = ms.last().pose();
+        Matrix3f norm = ms.last().normal();
+
+        float u0 = sprite.getU0();
+        float u1 = sprite.getU1();
+        float v0 = sprite.getV0();
+        float v1 = sprite.getV1();
+
+        // Верхняя грань уровня жидкости
+        builder.vertex(mat, xMin, yMax, zMin).color(fR, fG, fB, fA).uv(u0, v0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, 1, 0).endVertex();
+        builder.vertex(mat, xMin, yMax, zMax).color(fR, fG, fB, fA).uv(u0, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, 1, 0).endVertex();
+        builder.vertex(mat, xMax, yMax, zMax).color(fR, fG, fB, fA).uv(u1, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, 1, 0).endVertex();
+        builder.vertex(mat, xMax, yMax, zMin).color(fR, fG, fB, fA).uv(u1, v0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, 1, 0).endVertex();
+
+        // Нижняя грань
+        builder.vertex(mat, xMin, yMin, zMax).color(fR, fG, fB, fA).uv(u0, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, -1, 0).endVertex();
+        builder.vertex(mat, xMin, yMin, zMin).color(fR, fG, fB, fA).uv(u0, v0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, -1, 0).endVertex();
+        builder.vertex(mat, xMax, yMin, zMin).color(fR, fG, fB, fA).uv(u1, v0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, -1, 0).endVertex();
+        builder.vertex(mat, xMax, yMin, zMax).color(fR, fG, fB, fA).uv(u1, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, -1, 0).endVertex();
+
+        // Северная грань (-Z)
+        builder.vertex(mat, xMin, yMax, zMin).color(fR, fG, fB, fA).uv(u0, v0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, 0, -1).endVertex();
+        builder.vertex(mat, xMax, yMax, zMin).color(fR, fG, fB, fA).uv(u1, v0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, 0, -1).endVertex();
+        builder.vertex(mat, xMax, yMin, zMin).color(fR, fG, fB, fA).uv(u1, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, 0, -1).endVertex();
+        builder.vertex(mat, xMin, yMin, zMin).color(fR, fG, fB, fA).uv(u0, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, 0, -1).endVertex();
+
+        // Южная грань (+Z)
+        builder.vertex(mat, xMin, yMin, zMax).color(fR, fG, fB, fA).uv(u0, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, 0, 1).endVertex();
+        builder.vertex(mat, xMax, yMin, zMax).color(fR, fG, fB, fA).uv(u1, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, 0, 1).endVertex();
+        builder.vertex(mat, xMax, yMax, zMax).color(fR, fG, fB, fA).uv(u1, v0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, 0, 1).endVertex();
+        builder.vertex(mat, xMin, yMax, zMax).color(fR, fG, fB, fA).uv(u0, v0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 0, 0, 1).endVertex();
+
+        // Западная грань (-X)
+        builder.vertex(mat, xMin, yMin, zMax).color(fR, fG, fB, fA).uv(u0, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, -1, 0, 0).endVertex();
+        builder.vertex(mat, xMin, yMax, zMax).color(fR, fG, fB, fA).uv(u0, v0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, -1, 0, 0).endVertex();
+        builder.vertex(mat, xMin, yMax, zMin).color(fR, fG, fB, fA).uv(u1, v0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, -1, 0, 0).endVertex();
+        builder.vertex(mat, xMin, yMin, zMin).color(fR, fG, fB, fA).uv(u1, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, -1, 0, 0).endVertex();
+
+        // Восточная грань (+X)
+        builder.vertex(mat, xMax, yMin, zMin).color(fR, fG, fB, fA).uv(u0, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 1, 0, 0).endVertex();
+        builder.vertex(mat, xMax, yMax, zMin).color(fR, fG, fB, fA).uv(u0, v0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 1, 0, 0).endVertex();
+        builder.vertex(mat, xMax, yMax, zMax).color(fR, fG, fB, fA).uv(u1, v0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 1, 0, 0).endVertex();
+        builder.vertex(mat, xMax, yMin, zMax).color(fR, fG, fB, fA).uv(u1, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(norm, 1, 0, 0).endVertex();
+    }
+
     private void drawFixedPortalBore(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder, float s, float z) {
         int fullLight = 15728880;
 
@@ -121,9 +207,6 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         builder.vertex(posMat, -s, -s, z).color(0.12F, 0.02F, 0.22F, 1.0F).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
     }
 
-    /**
-     * Торцевой светящийся глиф с корректным направлением обхода вершин
-     */
     private void drawEndGlyph(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder,
                               float s, float z, float r, float g, float b, float a, boolean isFront) {
         int fullLight = 15728880;
@@ -141,9 +224,6 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         }
     }
 
-    /**
-     * Боковая грань призмы (соединяет торцы от -cageHalfLen до +cageHalfLen)
-     */
     private void drawWallPanel(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder,
                                float hw, float halfLen, float r, float g, float b, float a) {
         int fullLight = 15728880;
