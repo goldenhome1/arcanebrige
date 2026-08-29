@@ -1,9 +1,9 @@
 {
   "name": "Фазовый Резонанс: Гидравлика",
   "category": "hexcasting:patterns/spells",
-  "icon": "arcane_bridge:deciphered_scroll_fluid",
+  "icon": "arcane_bridge:ancient_scroll_fluid",
   "entry_color": "00E5FF",
-  "advancement": "arcane_bridge:spells/phase_fluidics",
+    "advancement": "arcane_bridge:spells/phase_fluidics",
   "pages": [
     {
       "type": "patchouli:text",
