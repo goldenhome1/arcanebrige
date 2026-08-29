@@ -39,7 +39,7 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         ms.pushPose();
         ms.translate(0.5D, 0.5D, 0.5D);
 
-        // Поворот по оси трубы
+        // Ориентация вдоль трубы
         switch (axis) {
             case X -> ms.mulPose(Axis.YP.rotationDegrees(90.0F));
             case Z -> {}
@@ -49,51 +49,52 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         float time = (be.getLevel() != null ? be.getLevel().getGameTime() : 0) + partialTicks;
 
         // -------------------------------------------------------------------------
-        // 🌌 1. ЗВЁЗДНЫЙ ПОРТАЛ КРАЯ (ТОРЦЫ ТРУБЫ)
+        // 🌌 1. НЕПОДВИЖНАЯ КОСМИЧЕСКАЯ ЗАГЛУШКА (СТРОГО ПО КВАДРАТУ ТРУБЫ)
         // -------------------------------------------------------------------------
-        float portalRadius = 0.28F; // Радиус внутреннего отверстия трубы
-        float portalZ = 0.495F;     // Расположение на срезе фланца
+        float capHalfSize = 0.31F; // Точный размер внутреннего отверстия фланца
+        float capDepth = 0.495F;    // Срез трубы
 
         VertexConsumer voidConsumer = buffer.getBuffer(RenderType.entityTranslucent(TEX_END_SKY));
         
-        // Вращающийся космический фон +Z
-        ms.pushPose();
-        ms.translate(0.0D, 0.0D, portalZ);
-        ms.mulPose(Axis.ZP.rotationDegrees(time * 0.4F));
-        drawSpaceDisc(ms.last().pose(), ms.last().normal(), voidConsumer, portalRadius, 0.12F, 0.02F, 0.22F, 0.98F);
-        ms.popPose();
-
-        // Вращающийся космический фон -Z
-        ms.pushPose();
-        ms.translate(0.0D, 0.0D, -portalZ);
-        ms.mulPose(Axis.ZP.rotationDegrees(-time * 0.4F));
-        drawSpaceDisc(ms.last().pose(), ms.last().normal(), voidConsumer, portalRadius, 0.12F, 0.02F, 0.22F, 0.98F);
-        ms.popPose();
+        // Торцы остаются статичными квадратами
+        drawFixedCapQuad(ms.last().pose(), ms.last().normal(), voidConsumer, capHalfSize, capDepth, 0.12F, 0.02F, 0.22F, 0.98F);
+        drawFixedCapQuad(ms.last().pose(), ms.last().normal(), voidConsumer, capHalfSize, -capDepth, 0.12F, 0.02F, 0.22F, 0.98F);
 
         // -------------------------------------------------------------------------
-        // 🔮 2. СВЕТЯЩАЯСЯ РУНИЧЕСКАЯ ПЕЧАТЬ ПОВЕРХ ПОРТАЛА
+        // 🔮 2. ВРАЩАЮЩИЙСЯ СВЕТЯЩИЙСЯ СИНИЙ ГЛИФ ПОВЕРХ ЗАГЛУШКИ
         // -------------------------------------------------------------------------
-        float pulse = 1.0F + (float) Math.sin(time * 0.08F) * 0.025F;
+        float pulse = 1.0F + (float) Math.sin(time * 0.08F) * 0.03F;
         float r = be.isReceiver ? 0.20F : 0.05F;
         float g = be.isReceiver ? 0.60F : 0.90F;
         float b = be.isReceiver ? 1.00F : 0.95F;
         float a = 0.95F;
 
-        ResourceLocation capTexture = be.isReceiver ? GLYPH_RX : GLYPH_TX;
-        VertexConsumer capConsumer = buffer.getBuffer(RenderType.entityTranslucent(capTexture));
+        ResourceLocation glyphTexture = be.isReceiver ? GLYPH_RX : GLYPH_TX;
+        VertexConsumer glyphConsumer = buffer.getBuffer(RenderType.entityTranslucent(glyphTexture));
 
-        Matrix4f posMat = ms.last().pose();
-        Matrix3f normMat = ms.last().normal();
+        float glyphSize = capHalfSize * 0.92F * pulse;
+        float rotSpeed = time * 0.6F;
 
-        drawGlyphQuad(posMat, normMat, capConsumer, portalRadius * pulse, portalZ + 0.002F, r, g, b, a);
-        drawGlyphQuad(posMat, normMat, capConsumer, portalRadius * pulse, -(portalZ + 0.002F), r, g, b, a);
+        // Вращающийся глиф на переднем торце (+Z)
+        ms.pushPose();
+        ms.translate(0.0D, 0.0D, capDepth + 0.002F);
+        ms.mulPose(Axis.ZP.rotationDegrees(rotSpeed));
+        drawRotatingGlyph(ms.last().pose(), ms.last().normal(), glyphConsumer, glyphSize, r, g, b, a);
+        ms.popPose();
+
+        // Вращающийся глиф на заднем торце (-Z)
+        ms.pushPose();
+        ms.translate(0.0D, 0.0D, -(capDepth + 0.002F));
+        ms.mulPose(Axis.ZP.rotationDegrees(-rotSpeed));
+        drawRotatingGlyph(ms.last().pose(), ms.last().normal(), glyphConsumer, glyphSize, r, g, b, a);
+        ms.popPose();
 
         // -------------------------------------------------------------------------
-        // ⚡ 3. БОКОВЫЕ РУНИЧЕСКИЕ ЛИНИИ НА СТЕКЛЕ
+        // ⚡ 3. БОКОВЫЕ НЕПОДВИЖНЫЕ ГРАНИ ВОКРУГ СТЕКЛА
         // -------------------------------------------------------------------------
         float halfW = 0.315F;   // Ширина стекла окна
         float halfLen = 0.375F; // Длина окна между фланцами
-        float yOffset = 0.315F; // Точный вынос на внешнюю поверхность стекла
+        float yOffset = 0.315F; // Вынос граней на внешнюю плоскость стекла
 
         VertexConsumer wallConsumer = buffer.getBuffer(RenderType.entityTranslucent(GLYPH_LINES));
         for (int i = 0; i < 4; i++) {
@@ -111,24 +112,8 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         ms.popPose();
     }
 
-    private void drawSpaceDisc(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder,
-                               float s, float r, float g, float b, float a) {
-        int fullLight = 15728880;
-
-        builder.vertex(posMat, -s, -s, 0.0F).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
-        builder.vertex(posMat,  s, -s, 0.0F).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
-        builder.vertex(posMat,  s,  s, 0.0F).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
-        builder.vertex(posMat, -s,  s, 0.0F).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
-
-        // Двусторонний рендер
-        builder.vertex(posMat, -s,  s, 0.0F).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
-        builder.vertex(posMat,  s,  s, 0.0F).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
-        builder.vertex(posMat,  s, -s, 0.0F).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
-        builder.vertex(posMat, -s, -s, 0.0F).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
-    }
-
-    private void drawGlyphQuad(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder,
-                               float s, float z, float r, float g, float b, float a) {
+    private void drawFixedCapQuad(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder,
+                                  float s, float z, float r, float g, float b, float a) {
         int fullLight = 15728880;
 
         builder.vertex(posMat, -s, -s, z).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
@@ -136,10 +121,27 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         builder.vertex(posMat,  s,  s, z).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
         builder.vertex(posMat, -s,  s, z).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
 
+        // Двусторонний рендер
         builder.vertex(posMat, -s,  s, z).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
         builder.vertex(posMat,  s,  s, z).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
         builder.vertex(posMat,  s, -s, z).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
         builder.vertex(posMat, -s, -s, z).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
+    }
+
+    private void drawRotatingGlyph(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder,
+                                   float s, float r, float g, float b, float a) {
+        int fullLight = 15728880;
+
+        builder.vertex(posMat, -s, -s, 0.0F).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
+        builder.vertex(posMat,  s, -s, 0.0F).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
+        builder.vertex(posMat,  s,  s, 0.0F).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
+        builder.vertex(posMat, -s,  s, 0.0F).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
+
+        // Обратная сторона
+        builder.vertex(posMat, -s,  s, 0.0F).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
+        builder.vertex(posMat,  s,  s, 0.0F).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
+        builder.vertex(posMat,  s, -s, 0.0F).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
+        builder.vertex(posMat, -s, -s, 0.0F).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
     }
 
     private void drawWallPanel(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder,
