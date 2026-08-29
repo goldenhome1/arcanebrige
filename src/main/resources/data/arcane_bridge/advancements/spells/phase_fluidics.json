@@ -1,13 +1,13 @@
 {
   "display": {
     "icon": {
-      "item": "arcane_bridge:phase_fluid_relay"
+      "item": "arcane_bridge:deciphered_scroll_fluid"
     },
     "title": {
-      "text": "Тайна Эфирной Гидравлики"
+      "text": "Фазовый Резонанс: Гидродинамика"
     },
     "description": {
-      "text": "Мастер Резонанса перевёл древний манускрипт, открыв вам тайну перекачки жидкостей через эфир."
+      "text": "Беспроводная передача флюидов сквозь эфир"
     },
     "frame": "goal",
     "show_toast": true,
