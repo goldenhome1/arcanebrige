@@ -1,14 +1,16 @@
 package com.example.arcanebridge.hex.actions;
 
 import at.petrak.hexcasting.api.casting.OperatorUtils;
-import at.petrak.hexcasting.api.casting.castables.ConstMediaAction;
+import at.petrak.hexcasting.api.casting.castables.Action;
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
 import at.petrak.hexcasting.api.casting.eval.OperationResult;
 import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
+import at.petrak.hexcasting.api.casting.eval.vm.HexEvalMarker;
 import at.petrak.hexcasting.api.casting.eval.vm.SpellContinuation;
 import at.petrak.hexcasting.api.casting.iota.Iota;
 import at.petrak.hexcasting.api.casting.mishaps.Mishap;
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadBlock;
+import at.petrak.hexcasting.api.casting.mishaps.MishapNotEnoughArgs;
 import at.petrak.hexcasting.api.misc.MediaConstants;
 import com.example.arcanebridge.block.PhaseFluidBlock;
 import com.example.arcanebridge.block.entity.PhaseFluidBlockEntity;
@@ -28,32 +30,23 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class OpPhaseFluidTX implements ConstMediaAction {
+public class OpPhaseFluidTX implements Action {
 
     public static final OpPhaseFluidTX INSTANCE = new OpPhaseFluidTX();
 
-    @Override
-    public int getArgc() {
-        return 2; // Вектор (Позиция), Число (Канал)
-    }
-
-    @Override
-    public long getMediaCost() {
-        return MediaConstants.DUST_UNIT * 2L;
-    }
-
-    @Override
-    public OperationResult operate(CastingEnvironment env, CastingImage image, SpellContinuation continuation) {
-        return ConstMediaAction.DefaultImpls.operate(this, env, image, continuation);
-    }
-
     @NotNull
     @Override
-    public List<Iota> execute(@NotNull List<? extends Iota> args, @NotNull CastingEnvironment env) throws Mishap {
-        BlockPos pos = OperatorUtils.getBlockPos(args, 0, getArgc());
-        int channel = OperatorUtils.getInt(args, 1, getArgc());
+    public OperationResult operate(@NotNull CastingEnvironment env, @NotNull CastingImage image, @NotNull SpellContinuation continuation) throws Mishap {
+        List<Iota> stack = image.getStack();
+        if (stack.size() < 2) {
+            throw new MishapNotEnoughArgs(2, stack.size());
+        }
+
+        BlockPos pos = OperatorUtils.getBlockPos(stack, stack.size() - 2, 2);
+        int channel = OperatorUtils.getInt(stack, stack.size() - 1, 2);
 
         env.assertPosInRange(pos);
 
@@ -70,6 +63,8 @@ public class OpPhaseFluidTX implements ConstMediaAction {
         if (!isValidTarget) {
             throw new MishapBadBlock(pos, Component.translatable("hexcasting.mishap.bad_block.pipe"));
         }
+
+        env.extractMedia(MediaConstants.DUST_UNIT * 2L, false);
 
         Direction.Axis axis = Direction.Axis.Y;
         if (state.hasProperty(PhaseFluidBlock.AXIS)) {
@@ -96,6 +91,16 @@ public class OpPhaseFluidTX implements ConstMediaAction {
             level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 1.0F, 1.2F);
         }
 
-        return List.of();
+        List<Iota> newStack = new ArrayList<>(stack.subList(0, stack.size() - 2));
+        CastingImage newImage = image.copy(
+                newStack,
+                image.getParenCount(),
+                image.getParenthesized(),
+                image.getEscapeNext(),
+                image.getOpsConsumed() + 1,
+                image.getUserData()
+        );
+
+        return new OperationResult(newImage, List.of(), continuation, HexEvalMarker.NORMAL);
     }
 }
