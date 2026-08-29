@@ -9,13 +9,16 @@ import at.petrak.hexcasting.api.casting.eval.vm.SpellContinuation;
 import at.petrak.hexcasting.api.casting.iota.DoubleIota;
 import at.petrak.hexcasting.api.casting.iota.Iota;
 import at.petrak.hexcasting.api.casting.iota.NullIota;
+import at.petrak.hexcasting.api.casting.mishaps.MishapUnenlightened;
 import com.example.arcanebridge.block.PhaseRelayBlock;
 import com.example.arcanebridge.block.entity.PhaseRelayBlockEntity;
 import com.example.arcanebridge.registry.ModBlocks;
+import net.minecraft.advancements.Advancement;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.Block;
@@ -45,6 +48,16 @@ public class OpCastPhaseTransmitter implements ConstMediaAction {
         double channelId = OperatorUtils.getDouble(args, 1, getArgc());
         BlockPos targetPos = BlockPos.containing(targetVec);
         ServerLevel level = env.getWorld();
+        ServerPlayer caster = env.getCaster();
+
+        if (caster != null) {
+            ResourceLocation advId = new ResourceLocation("arcane_bridge", "spells/phase_kinetics");
+            Advancement adv = level.getServer().getAdvancements().getAdvancement(advId);
+            if (adv != null && !caster.getAdvancements().getOrStartProgress(adv).isDone()) {
+                throw new MishapUnenlightened();
+            }
+        }
+
         BlockState targetState = level.getBlockState(targetPos);
 
         Block shaftBlock = ForgeRegistries.BLOCKS.getValue(new ResourceLocation("create", "shaft"));
