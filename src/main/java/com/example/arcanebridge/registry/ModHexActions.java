@@ -5,8 +5,8 @@ import at.petrak.hexcasting.api.casting.math.HexDir;
 import at.petrak.hexcasting.api.casting.math.HexPattern;
 import at.petrak.hexcasting.common.lib.HexRegistries;
 import com.example.arcanebridge.ArcaneBridge;
-import com.example.arcanebridge.hex.actions.OpPhaseFluidClose;
-import com.example.arcanebridge.hex.actions.OpPhaseFluidOpen;
+import com.example.arcanebridge.hex.actions.OpPhaseFluidRX;
+import com.example.arcanebridge.hex.actions.OpPhaseFluidTX;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
@@ -15,18 +15,18 @@ public class ModHexActions {
     public static final DeferredRegister<ActionRegistryEntry> ACTIONS =
             DeferredRegister.create(HexRegistries.ACTION, ArcaneBridge.MODID);
 
-    // Паттерн Открытия/Связывания Гидравлики
-    public static final RegistryObject<ActionRegistryEntry> PHASE_FLUID_OPEN = ACTIONS.register("phase_fluid_open",
+    // Паттерн Источника (TX)[cite: 4]
+    public static final RegistryObject<ActionRegistryEntry> PHASE_FLUID_TX = ACTIONS.register("phase_fluid_tx",
             () -> new ActionRegistryEntry(
-                    HexPattern.fromAngles("wwawwqwwawwwwwawwwwwawwewwawwwwwaww", HexDir.NORTH_EAST),
-                    OpPhaseFluidOpen.INSTANCE
+                    HexPattern.fromAngles("wwawwqwwawwwwwawwwwwaww", HexDir.NORTH_EAST),
+                    OpPhaseFluidTX.INSTANCE
             ));
 
-    // Паттерн Закрытия/Разрыва Гидравлики
-    public static final RegistryObject<ActionRegistryEntry> PHASE_FLUID_CLOSE = ACTIONS.register("phase_fluid_close",
+    // Паттерн Приёмника (RX)[cite: 3]
+    public static final RegistryObject<ActionRegistryEntry> PHASE_FLUID_RX = ACTIONS.register("phase_fluid_rx",
             () -> new ActionRegistryEntry(
-                    HexPattern.fromAngles("wwawwqwwawwwwwawwwwwawwewwawwwwwawwqeaqaaw", HexDir.NORTH_EAST),
-                    OpPhaseFluidClose.INSTANCE
+                    HexPattern.fromAngles("wwawwqwwawwwwwawwwwwawwqeaqaaw", HexDir.NORTH_EAST),
+                    OpPhaseFluidRX.INSTANCE
             ));
 
     public static void register(IEventBus eventBus) {
