@@ -1,8 +1,40 @@
+            // ПРОФИЛЬНАЯ АТАКА (100% УРОНА ПО ЩИТУ)
+            // =========================================================================
+            currentShieldHp -= incomingDamage;
+            data.putFloat(MobArchetypes.NBT_SHIELD_HP, Math.max(0.0f, currentShieldHp));
+
+            if (currentShieldHp <= 0.0f) {
+                data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, true);
+                triggerShieldBreakEffects(level, target, archetype);
+            } else {
+                triggerShieldHitEffects(level, target, archetype, true);
+            }
+        } else {
+            // =========================================================================
+            // НЕПРОФИЛЬНАЯ АТАКА (20% УРОНА ПО ЩИТУ И ЗДОРОВЬЮ)
+            // =========================================================================
+            float reducedDamage = incomingDamage * MobArchetypes.SHIELD_DAMAGE_REDUCTION;
+            event.setAmount(reducedDamage);
+
+            currentShieldHp -= reducedDamage;
+            data.putFloat(MobArchetypes.NBT_SHIELD_HP, Math.max(0.0f, currentShieldHp));
+
+            if (currentShieldHp <= 0.0f) {
+                data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, true);
+                triggerShieldBreakEffects(level, target, archetype);
+            } else {
+                triggerShieldHitEffects(level, target, archetype, false);
+            }
+        }
+    }
+=======
 package com.example.arcanebridge.combat;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -31,31 +63,31 @@ public class ArchetypeDamageHandler {
         if (target.level().isClientSide() || target instanceof Player) return;
 
         CompoundTag data = target.getPersistentData();
-        MobArchetypes.Type archetype = MobArchetypes.Type.NONE;
 
-        // 1. Определение или динамическая инициализация архетипа
-        if (data.contains(MobArchetypes.NBT_ARCHETYPE)) {
-            try {
-                archetype = MobArchetypes.Type.valueOf(data.getString(MobArchetypes.NBT_ARCHETYPE));
-            } catch (IllegalArgumentException ignored) {}
-        } else {
-            archetype = MobArchetypes.resolveArchetype(target);
-            if (archetype != MobArchetypes.Type.NONE) {
-                float maxHp = switch (archetype) {
-                    case ARMORED -> MobArchetypes.HP_ARMORED_SHIELD;
-                    case ETHEREAL -> MobArchetypes.HP_ETHEREAL_SHIELD;
-                    case BIO -> MobArchetypes.HP_BIO_SHIELD;
-                    default -> 0.0f;
-                };
-                data.putString(MobArchetypes.NBT_ARCHETYPE, archetype.name());
-                data.putFloat(MobArchetypes.NBT_SHIELD_HP, maxHp);
-                data.putFloat(MobArchetypes.NBT_MAX_SHIELD_HP, maxHp);
-                data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, false);
-            }
+        // 1. Проверка полного отсутствия щитов
+        if (data.getBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN)) {
+            return;
         }
 
-        // Если архетипа нет или щит уже сломан — урон проходит штатно (100%)
-        if (archetype == MobArchetypes.Type.NONE || data.getBoolean(MobArchetypes.NBT_SHIELD_BROKEN)) {
+        // 2. Инициализация стека щитов, если он еще не создан
+        if (!data.contains(MobArchetypes.NBT_SHIELD_LAYERS, Tag.TAG_LIST)) {
+            initShieldStack(target, data);
+        }
+
+        ListTag layers = data.getList(MobArchetypes.NBT_SHIELD_LAYERS, Tag.TAG_COMPOUND);
+        int currentIndex = data.getInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX);
+
+        if (layers.isEmpty() || currentIndex >= layers.size()) {
+            data.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, true);
+            return;
+        }
+
+        // 3. Получение текущего активного внешнего слоя
+        CompoundTag activeLayer = layers.getCompound(currentIndex);
+        MobArchetypes.Type archetype;
+        try {
+            archetype = MobArchetypes.Type.valueOf(activeLayer.getString("Type"));
+        } catch (Exception e) {
             return;
         }
 
@@ -64,11 +96,108 @@ public class ArchetypeDamageHandler {
         boolean isMatchingKey = isProfileMatch(archetype, category);
 
         float incomingDamage = event.getAmount();
-        float currentShieldHp = data.getFloat(MobArchetypes.NBT_SHIELD_HP);
+        float currentShieldHp = activeLayer.getFloat("HP");
         ServerLevel level = (ServerLevel) target.level();
 
         if (isMatchingKey) {
             // =========================================================================
+            // ПРОФИЛЬНАЯ АТАКА (100% УРОНА ПО ТЕКУЩЕМУ ЩИТУ)
+            // =========================================================================
+            currentShieldHp -= incomingDamage;
+            activeLayer.putFloat("HP", Math.max(0.0f, currentShieldHp));
+
+            if (currentShieldHp <= 0.0f) {
+                // Текущий слой разрушен
+                triggerShieldBreakEffects(level, target, archetype);
+                currentIndex++;
+                data.putInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX, currentIndex);
+
+                if (currentIndex >= layers.size()) {
+                    data.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, true);
+                    data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, true);
+                } else {
+                    // Звук обнажения следующего внутреннего барьера
+                    level.playSound(null, target.getX(), target.getY(), target.getZ(),
+                            SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.8f, 1.4f);
+                }
+            } else {
+                triggerShieldHitEffects(level, target, archetype, true);
+            }
+        } else {
+            // =========================================================================
+            // НЕПРОФИЛЬНАЯ АТАКА (20% УРОНА ПО ЩИТУ И ЗДОРОВЬЮ)
+            // =========================================================================
+            float reducedDamage = incomingDamage * MobArchetypes.SHIELD_DAMAGE_REDUCTION;
+            event.setAmount(reducedDamage);
+
+            currentShieldHp -= reducedDamage;
+            activeLayer.putFloat("HP", Math.max(0.0f, currentShieldHp));
+
+            if (currentShieldHp <= 0.0f) {
+                triggerShieldBreakEffects(level, target, archetype);
+                currentIndex++;
+                data.putInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX, currentIndex);
+
+                if (currentIndex >= layers.size()) {
+                    data.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, true);
+                    data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, true);
+                } else {
+                    level.playSound(null, target.getX(), target.getY(), target.getZ(),
+                            SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.8f, 1.4f);
+                }
+            } else {
+                triggerShieldHitEffects(level, target, archetype, false);
+            }
+        }
+    }
+
+    /**
+     * Построение стека слоев из тегов моба или базового архетипа
+     */
+    private static void initShieldStack(LivingEntity entity, CompoundTag data) {
+        ListTag layers = new ListTag();
+
+        // 1. Проверяем наличие составных тегов (Комбинированный барьер)
+        // Пример порядка слоев: снаружи Эфир -> внутри Броня
+        if (entity.getTags().contains(MobArchetypes.TAG_ETHEREAL)) {
+            float hp = data.contains("ArcaneEtherealHP") ? data.getFloat("ArcaneEtherealHP") : MobArchetypes.HP_ETHEREAL_SHIELD;
+            layers.add(createLayerTag(MobArchetypes.Type.ETHEREAL, hp));
+        }
+        if (entity.getTags().contains(MobArchetypes.TAG_ARMORED)) {
+            float hp = data.contains("ArcaneArmoredHP") ? data.getFloat("ArcaneArmoredHP") : MobArchetypes.HP_ARMORED_SHIELD;
+            layers.add(createLayerTag(MobArchetypes.Type.ARMORED, hp));
+        }
+        if (entity.getTags().contains(MobArchetypes.TAG_BIO)) {
+            float hp = data.contains("ArcaneBioHP") ? data.getFloat("ArcaneBioHP") : MobArchetypes.HP_BIO_SHIELD;
+            layers.add(createLayerTag(MobArchetypes.Type.BIO, hp));
+        }
+
+        // 2. Если ручных тегов нет, проверяем EntityType Tags из датапаков
+        if (layers.isEmpty()) {
+            MobArchetypes.Type defaultType = MobArchetypes.resolveArchetype(entity);
+            if (defaultType != MobArchetypes.Type.NONE) {
+                float defaultHp = switch (defaultType) {
+                    case ARMORED -> MobArchetypes.HP_ARMORED_SHIELD;
+                    case ETHEREAL -> MobArchetypes.HP_ETHEREAL_SHIELD;
+                    case BIO -> MobArchetypes.HP_BIO_SHIELD;
+                    default -> 0.0f;
+                };
+                layers.add(createLayerTag(defaultType, defaultHp));
+            }
+        }
+
+        data.put(MobArchetypes.NBT_SHIELD_LAYERS, layers);
+        data.putInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX, 0);
+        data.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, layers.isEmpty());
+    }
+
+    private static CompoundTag createLayerTag(MobArchetypes.Type type, float hp) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString("Type", type.name());
+        tag.putFloat("HP", hp);
+        tag.putFloat("MaxHP", hp);
+        return tag;
+    }=======
             // ПРОФИЛЬНАЯ АТАКА (100% УРОНА ПО ЩИТУ)
             // =========================================================================
             currentShieldHp -= incomingDamage;
