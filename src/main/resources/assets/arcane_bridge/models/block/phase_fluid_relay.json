@@ -1,37 +1,24 @@
 {
-  "credit": "Arcane Bridge Phase Pipe",
+  "credit": "Arcane Bridge Windowed Phase Pipe",
   "parent": "minecraft:block/block",
+  "render_type": "translucent",
   "textures": {
     "particle": "create:block/copper_casing",
-    "pipe": "create:block/fluid_pipe/pipe",
-    "casing": "create:block/copper_casing",
-    "window": "create:block/fluid_pipe/window"
+    "copper": "create:block/copper_casing",
+    "glass": "minecraft:block/glass"
   },
   "elements": [
-    {
-      "name": "pipe_body",
-      "from": [4, 0, 4],
-      "to": [12, 16, 12],
-      "faces": {
-        "north": { "uv": [4, 0, 12, 16], "texture": "#pipe" },
-        "east":  { "uv": [4, 0, 12, 16], "texture": "#pipe" },
-        "south": { "uv": [4, 0, 12, 16], "texture": "#pipe" },
-        "west":  { "uv": [4, 0, 12, 16], "texture": "#pipe" },
-        "up":    { "uv": [4, 4, 12, 12], "texture": "#pipe" },
-        "down":  { "uv": [4, 4, 12, 12], "texture": "#pipe" }
-      }
-    },
     {
       "name": "bottom_flange",
       "from": [3, 0, 3],
       "to": [13, 2, 13],
       "faces": {
-        "north": { "uv": [3, 14, 13, 16], "texture": "#casing" },
-        "east":  { "uv": [3, 14, 13, 16], "texture": "#casing" },
-        "south": { "uv": [3, 14, 13, 16], "texture": "#casing" },
-        "west":  { "uv": [3, 14, 13, 16], "texture": "#casing" },
-        "up":    { "uv": [3, 3, 13, 13], "texture": "#casing" },
-        "down":  { "uv": [3, 3, 13, 13], "texture": "#casing" }
+        "north": { "uv": [3, 14, 13, 16], "texture": "#copper" },
+        "east":  { "uv": [3, 14, 13, 16], "texture": "#copper" },
+        "south": { "uv": [3, 14, 13, 16], "texture": "#copper" },
+        "west":  { "uv": [3, 14, 13, 16], "texture": "#copper" },
+        "up":    { "uv": [3, 3, 13, 13], "texture": "#copper" },
+        "down":  { "uv": [3, 3, 13, 13], "texture": "#copper" }
       }
     },
     {
@@ -39,23 +26,155 @@
       "from": [3, 14, 3],
       "to": [13, 16, 13],
       "faces": {
-        "north": { "uv": [3, 0, 13, 2], "texture": "#casing" },
-        "east":  { "uv": [3, 0, 13, 2], "texture": "#casing" },
-        "south": { "uv": [3, 0, 13, 2], "texture": "#casing" },
-        "west":  { "uv": [3, 0, 13, 2], "texture": "#casing" },
-        "up":    { "uv": [3, 3, 13, 13], "texture": "#casing" },
-        "down":  { "uv": [3, 3, 13, 13], "texture": "#casing" }
+        "north": { "uv": [3, 0, 13, 2], "texture": "#copper" },
+        "east":  { "uv": [3, 0, 13, 2], "texture": "#copper" },
+        "south": { "uv": [3, 0, 13, 2], "texture": "#copper" },
+        "west":  { "uv": [3, 0, 13, 2], "texture": "#copper" },
+        "up":    { "uv": [3, 3, 13, 13], "texture": "#copper" },
+        "down":  { "uv": [3, 3, 13, 13], "texture": "#copper" }
       }
     },
     {
-      "name": "center_core",
-      "from": [3.5, 5, 3.5],
-      "to": [12.5, 11, 12.5],
+      "name": "pillar_nw",
+      "from": [3, 2, 3],
+      "to": [5, 14, 5],
       "faces": {
-        "north": { "uv": [3.5, 5, 12.5, 11], "texture": "#window" },
-        "east":  { "uv": [3.5, 5, 12.5, 11], "texture": "#window" },
-        "south": { "uv": [3.5, 5, 12.5, 11], "texture": "#window" },
-        "west":  { "uv": [3.5, 5, 12.5, 11], "texture": "#window" }
+        "north": { "uv": [3, 2, 5, 14], "texture": "#copper" },
+        "west":  { "uv": [3, 2, 5, 14], "texture": "#copper" },
+        "east":  { "uv": [3, 2, 5, 14], "texture": "#copper" },
+        "south": { "uv": [3, 2, 5, 14], "texture": "#copper" }
+      }
+    },
+    {
+      "name": "pillar_ne",
+      "from": [11, 2, 3],
+      "to": [13, 14, 5],
+      "faces": {
+        "north": { "uv": [11, 2, 13, 14], "texture": "#copper" },
+        "east":  { "uv": [3, 2, 5, 14], "texture": "#copper" },
+        "west":  { "uv": [3, 2, 5, 14], "texture": "#copper" },
+        "south": { "uv": [11, 2, 13, 14], "texture": "#copper" }
+      }
+    },
+    {
+      "name": "pillar_sw",
+      "from": [3, 2, 11],
+      "to": [5, 14, 13],
+      "faces": {
+        "south": { "uv": [3, 2, 5, 14], "texture": "#copper" },
+        "west":  { "uv": [11, 2, 13, 14], "texture": "#copper" },
+        "east":  { "uv": [11, 2, 13, 14], "texture": "#copper" },
+        "north": { "uv": [3, 2, 5, 14], "texture": "#copper" }
+      }
+    },
+    {
+      "name": "pillar_se",
+      "from": [11, 2, 11],
+      "to": [13, 14, 13],
+      "faces": {
+        "south": { "uv": [11, 2, 13, 14], "texture": "#copper" },
+        "east":  { "uv": [11, 2, 13, 14], "texture": "#copper" },
+        "west":  { "uv": [11, 2, 13, 14], "texture": "#copper" },
+        "north": { "uv": [11, 2, 13, 14], "texture": "#copper" }
+      }
+    },
+    {
+      "name": "frame_bottom_n",
+      "from": [5, 2, 3],
+      "to": [11, 4, 5],
+      "faces": {
+        "north": { "uv": [5, 2, 11, 4], "texture": "#copper" },
+        "up":    { "uv": [5, 3, 11, 5], "texture": "#copper" },
+        "down":  { "uv": [5, 3, 11, 5], "texture": "#copper" },
+        "south": { "uv": [5, 2, 11, 4], "texture": "#copper" }
+      }
+    },
+    {
+      "name": "frame_bottom_s",
+      "from": [5, 2, 11],
+      "to": [11, 4, 13],
+      "faces": {
+        "south": { "uv": [5, 2, 11, 4], "texture": "#copper" },
+        "up":    { "uv": [5, 11, 11, 13], "texture": "#copper" },
+        "down":  { "uv": [5, 11, 11, 13], "texture": "#copper" },
+        "north": { "uv": [5, 2, 11, 4], "texture": "#copper" }
+      }
+    },
+    {
+      "name": "frame_bottom_w",
+      "from": [3, 2, 5],
+      "to": [5, 4, 11],
+      "faces": {
+        "west":  { "uv": [5, 2, 11, 4], "texture": "#copper" },
+        "up":    { "uv": [3, 5, 5, 11], "texture": "#copper" },
+        "down":  { "uv": [3, 5, 5, 11], "texture": "#copper" },
+        "east":  { "uv": [5, 2, 11, 4], "texture": "#copper" }
+      }
+    },
+    {
+      "name": "frame_bottom_e",
+      "from": [11, 2, 5],
+      "to": [13, 4, 11],
+      "faces": {
+        "east":  { "uv": [5, 2, 11, 4], "texture": "#copper" },
+        "up":    { "uv": [11, 5, 13, 11], "texture": "#copper" },
+        "down":  { "uv": [11, 5, 13, 11], "texture": "#copper" },
+        "west":  { "uv": [5, 2, 11, 4], "texture": "#copper" }
+      }
+    },
+    {
+      "name": "frame_top_n",
+      "from": [5, 12, 3],
+      "to": [11, 14, 5],
+      "faces": {
+        "north": { "uv": [5, 12, 11, 14], "texture": "#copper" },
+        "up":    { "uv": [5, 3, 11, 5], "texture": "#copper" },
+        "down":  { "uv": [5, 3, 11, 5], "texture": "#copper" },
+        "south": { "uv": [5, 12, 11, 14], "texture": "#copper" }
+      }
+    },
+    {
+      "name": "frame_top_s",
+      "from": [5, 12, 11],
+      "to": [11, 14, 13],
+      "faces": {
+        "south": { "uv": [5, 12, 11, 14], "texture": "#copper" },
+        "up":    { "uv": [5, 11, 11, 13], "texture": "#copper" },
+        "down":  { "uv": [5, 11, 11, 13], "texture": "#copper" },
+        "north": { "uv": [5, 12, 11, 14], "texture": "#copper" }
+      }
+    },
+    {
+      "name": "frame_top_w",
+      "from": [3, 12, 5],
+      "to": [5, 14, 11],
+      "faces": {
+        "west":  { "uv": [5, 12, 11, 14], "texture": "#copper" },
+        "up":    { "uv": [3, 5, 5, 11], "texture": "#copper" },
+        "down":  { "uv": [3, 5, 5, 11], "texture": "#copper" },
+        "east":  { "uv": [5, 12, 11, 14], "texture": "#copper" }
+      }
+    },
+    {
+      "name": "frame_top_e",
+      "from": [11, 12, 5],
+      "to": [13, 14, 11],
+      "faces": {
+        "east":  { "uv": [5, 12, 11, 14], "texture": "#copper" },
+        "up":    { "uv": [11, 5, 13, 11], "texture": "#copper" },
+        "down":  { "uv": [11, 5, 13, 11], "texture": "#copper" },
+        "west":  { "uv": [5, 12, 11, 14], "texture": "#copper" }
+      }
+    },
+    {
+      "name": "glass_window",
+      "from": [4, 4, 4],
+      "to": [12, 12, 12],
+      "faces": {
+        "north": { "uv": [4, 4, 12, 12], "texture": "#glass" },
+        "east":  { "uv": [4, 4, 12, 12], "texture": "#glass" },
+        "south": { "uv": [4, 4, 12, 12], "texture": "#glass" },
+        "west":  { "uv": [4, 4, 12, 12], "texture": "#glass" }
       }
     }
   ]
