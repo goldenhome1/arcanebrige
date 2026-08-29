@@ -1,5 +1,6 @@
 package com.example.arcanebridge.block.entity;
 
+import com.example.arcanebridge.block.PhaseFluidBlock;
 import com.example.arcanebridge.fluid.PhaseFluidSavedData;
 import com.example.arcanebridge.network.ClientboundPhaseFluidSyncPacket;
 import com.example.arcanebridge.registry.ModBlockEntities;
@@ -68,6 +69,13 @@ public class PhaseFluidBlockEntity extends SmartBlockEntity implements IHaveGogg
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
+            // Подключение разрешено строго с торцов вдоль продольной оси трубы
+            if (side != null && getBlockState().hasProperty(PhaseFluidBlock.AXIS)) {
+                Direction.Axis pipeAxis = getBlockState().getValue(PhaseFluidBlock.AXIS);
+                if (side.getAxis() != pipeAxis) {
+                    return LazyOptional.empty();
+                }
+            }
             if (!fluidCapability.isPresent()) {
                 fluidCapability = LazyOptional.of(this::getFluidStorage);
             }
