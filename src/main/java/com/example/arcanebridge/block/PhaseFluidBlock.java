@@ -3,6 +3,7 @@ package com.example.arcanebridge.block;
 import com.example.arcanebridge.block.entity.PhaseFluidBlockEntity;
 import com.example.arcanebridge.registry.ModBlockEntities;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
+import com.simibubi.create.content.fluids.pipes.IAxisPipe;
 import com.simibubi.create.foundation.block.IBE;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -26,7 +27,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.fluids.FluidUtil;
 import org.jetbrains.annotations.Nullable;
 
-public class PhaseFluidBlock extends Block implements IBE<PhaseFluidBlockEntity>, IWrenchable {
+public class PhaseFluidBlock extends Block implements IBE<PhaseFluidBlockEntity>, IWrenchable, IAxisPipe {
 
     public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.AXIS;
 
@@ -37,6 +38,11 @@ public class PhaseFluidBlock extends Block implements IBE<PhaseFluidBlockEntity>
     public PhaseFluidBlock(Properties properties) {
         super(properties.noOcclusion());
         this.registerDefaultState(this.stateDefinition.any().setValue(AXIS, Direction.Axis.Y));
+    }
+
+    @Override
+    public Direction.Axis getAxis(BlockState state) {
+        return state.getValue(AXIS);
     }
 
     @Override
