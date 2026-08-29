@@ -1,0 +1,62 @@
+{
+  "credit": "Arcane Bridge Phase Pipe",
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "create:block/fluid_pipe",
+    "pipe": "create:block/fluid_pipe",
+    "casing": "create:block/copper_casing",
+    "window": "create:block/fluid_pipe_window"
+  },
+  "elements": [
+    {
+      "name": "pipe_body",
+      "from": [4, 0, 4],
+      "to": [12, 16, 12],
+      "faces": {
+        "north": { "uv": [4, 0, 12, 16], "texture": "#pipe" },
+        "east":  { "uv": [4, 0, 12, 16], "texture": "#pipe" },
+        "south": { "uv": [4, 0, 12, 16], "texture": "#pipe" },
+        "west":  { "uv": [4, 0, 12, 16], "texture": "#pipe" },
+        "up":    { "uv": [4, 4, 12, 12], "texture": "#pipe" },
+        "down":  { "uv": [4, 4, 12, 12], "texture": "#pipe" }
+      }
+    },
+    {
+      "name": "bottom_flange",
+      "from": [3, 0, 3],
+      "to": [13, 2, 13],
+      "faces": {
+        "north": { "uv": [3, 14, 13, 16], "texture": "#casing" },
+        "east":  { "uv": [3, 14, 13, 16], "texture": "#casing" },
+        "south": { "uv": [3, 14, 13, 16], "texture": "#casing" },
+        "west":  { "uv": [3, 14, 13, 16], "texture": "#casing" },
+        "up":    { "uv": [3, 3, 13, 13], "texture": "#casing" },
+        "down":  { "uv": [3, 3, 13, 13], "texture": "#casing" }
+      }
+    },
+    {
+      "name": "top_flange",
+      "from": [3, 14, 3],
+      "to": [13, 16, 13],
+      "faces": {
+        "north": { "uv": [3, 0, 13, 2], "texture": "#casing" },
+        "east":  { "uv": [3, 0, 13, 2], "texture": "#casing" },
+        "south": { "uv": [3, 0, 13, 2], "texture": "#casing" },
+        "west":  { "uv": [3, 0, 13, 2], "texture": "#casing" },
+        "up":    { "uv": [3, 3, 13, 13], "texture": "#casing" },
+        "down":  { "uv": [3, 3, 13, 13], "texture": "#casing" }
+      }
+    },
+    {
+      "name": "center_core",
+      "from": [3.5, 5, 3.5],
+      "to": [12.5, 11, 12.5],
+      "faces": {
+        "north": { "uv": [3.5, 5, 12.5, 11], "texture": "#window" },
+        "east":  { "uv": [3.5, 5, 12.5, 11], "texture": "#window" },
+        "south": { "uv": [3.5, 5, 12.5, 11], "texture": "#window" },
+        "west":  { "uv": [3.5, 5, 12.5, 11], "texture": "#window" }
+      }
+    }
+  ]
+}
