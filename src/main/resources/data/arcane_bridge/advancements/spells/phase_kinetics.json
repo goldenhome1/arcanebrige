@@ -1,13 +1,13 @@
 {
   "display": {
     "icon": {
-      "item": "arcane_bridge:phase_relay"
+      "item": "arcane_bridge:deciphered_scroll_phase"
     },
     "title": {
-      "text": "Тайна Эфирной Кинетики"
+      "text": "Фазовый Резонанс: Кинетика"
     },
     "description": {
-      "text": "Мастер Резонанса перевёл древний манускрипт, открыв вам тайну передачи крутящего момента через эфир."
+      "text": "Синхронизация кинетических частот эфира"
     },
     "frame": "goal",
     "show_toast": true,
