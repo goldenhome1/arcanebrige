@@ -13,9 +13,10 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = ArcaneBridge.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientModEvents {
 
-    @SubscribeEvent
+        @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.ARCANE_GUIDE.get(), ArcaneGuideRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.PHASE_RELAY.get(), PhaseRelayRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.PHASE_FLUID_RELAY.get(), com.example.arcanebridge.client.render.PhaseFluidRenderer::new);
     }
 }
