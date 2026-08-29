@@ -48,7 +48,6 @@ public class ArcaneBridge {
             ResonanceEngine.loadOrCreateConfig();
             RaidConfig.loadOrCreateConfig();
 
-            // Регистрация реликвий
             DecryptionRegistry.register(
                     ModItems.ANCIENT_SCROLL_PHASE.get(),
                     ModItems.DECIPHERED_SCROLL_PHASE.get(),
