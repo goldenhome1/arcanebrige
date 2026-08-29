@@ -15,17 +15,17 @@ public class ModHexActions {
     public static final DeferredRegister<ActionRegistryEntry> ACTIONS =
             DeferredRegister.create(HexRegistries.ACTION, ArcaneBridge.MODID);
 
-    // Паттерн Источника (TX)[cite: 4]
+    // Паттерн Источника (TX) из Hex (2).hexcasting
     public static final RegistryObject<ActionRegistryEntry> PHASE_FLUID_TX = ACTIONS.register("phase_fluid_tx",
             () -> new ActionRegistryEntry(
-                    HexPattern.fromAngles("wwawwqwwawwwwwawwwwwaww", HexDir.NORTH_EAST),
+                    HexPattern.fromAngles("wwawwqwwawwwwwawwwwwawwewwawwwwwaww", HexDir.EAST),
                     OpPhaseFluidTX.INSTANCE
             ));
 
-    // Паттерн Приёмника (RX)[cite: 3]
+    // Паттерн Приёмника (RX) из Hex (3).hexcasting
     public static final RegistryObject<ActionRegistryEntry> PHASE_FLUID_RX = ACTIONS.register("phase_fluid_rx",
             () -> new ActionRegistryEntry(
-                    HexPattern.fromAngles("wwawwqwwawwwwwawwwwwawwqeaqaaw", HexDir.NORTH_EAST),
+                    HexPattern.fromAngles("wwawwqwwawwwwwawwwwwawwewwawwwwwawwqeaqaaw", HexDir.EAST),
                     OpPhaseFluidRX.INSTANCE
             ));
 
