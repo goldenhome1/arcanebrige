@@ -44,7 +44,7 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         }
 
         float time = (be.getLevel() != null ? be.getLevel().getGameTime() : 0) + partialTicks;
-        float pulse = 1.0F + (float) Math.sin(time * 0.08F) * 0.03F;
+        float pulse = 1.0F + (float) Math.sin(time * 0.08F) * 0.02F;
         ms.scale(pulse, pulse, pulse);
 
         float r = be.isReceiver ? 0.20F : 0.05F;
@@ -57,14 +57,17 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         Matrix4f posMat = ms.last().pose();
         Matrix3f normMat = ms.last().normal();
 
-        float s = 0.44F;
-        float halfLen = 0.48F;
-        float yOffset = 0.44F;
+        // Точные размеры под стеклянное окно трубы Create
+        float s = 0.34F;          // Полуширина грани (стыкуется в углах 4 граней)
+        float halfLen = 0.37F;    // Длина окна между двумя фланцами
+        float yOffset = 0.34F;    // Вынос граней на внешнее стекло
 
+        // 1. Торцевые крышки (+Z и -Z)
         VertexConsumer capConsumer = buffer.getBuffer(RenderType.entityTranslucent(capTexture));
         drawGlyphCap(posMat, normMat, capConsumer, s, halfLen, r, g, b, a);
         drawGlyphCap(posMat, normMat, capConsumer, s, -halfLen, r, g, b, a);
 
+        // 2. 4 боковые грани по периметру стекла
         VertexConsumer wallConsumer = buffer.getBuffer(RenderType.entityTranslucent(GLYPH_LINES));
         for (int i = 0; i < 4; i++) {
             ms.pushPose();
