@@ -1,4 +1,5 @@
 {
+"parent": "hexcasting:root",
   "display": {
     "icon": {
       "item": "arcane_bridge:deciphered_scroll_phase"
