@@ -1,7 +1,7 @@
 {
   "variants": {
-    "": {
-      "model": "create:block/fluid_tank/block_single_window"
-    }
+    "axis=y": { "model": "arcane_bridge:block/phase_fluid_relay" },
+    "axis=z": { "model": "arcane_bridge:block/phase_fluid_relay", "x": 90 },
+    "axis=x": { "model": "arcane_bridge:block/phase_fluid_relay", "x": 90, "y": 90 }
   }
 }
