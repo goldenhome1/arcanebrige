@@ -23,6 +23,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.items.IItemHandler;
 import org.joml.Matrix4f;
+import top.theillusivec4.curios.api.CuriosApi;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -43,7 +44,7 @@ public class ShieldBarOverlayRenderer {
         boolean hasGoggles = hasEngineerGoggles(player);
         boolean hasHudJack = hasCyberware(player, "cyber_ware_port:cybereye_upgrades_hudjack") || hasCyberware(player, "cyber_ware_port:cybereyes");
 
-        // Если у игрока нет очков и нет импланта HUD Jack — не рендерим
+        // Не рендерим, если у игрока нет очков и нет импланта
         if (!hasGoggles && !hasHudJack) return;
 
         Camera camera = mc.gameRenderer.getMainCamera();
@@ -87,13 +88,11 @@ public class ShieldBarOverlayRenderer {
         double y = target.yo + (target.getY() - target.yo) * partialTick - cameraPos.y;
         double z = target.zo + (target.getZ() - target.zo) * partialTick - cameraPos.z;
 
-        // Коррекция высоты: если надет HUD Jack (активен Neat), поднимаем плашку выше над баром HP
         double heightOffset = target.getBbHeight() + (hasHudJack ? 0.65D : 0.30D);
 
         poseStack.pushPose();
         poseStack.translate(x, y + heightOffset, z);
 
-        // Поворот плоскости к камере игрока (Billboard)
         Camera camera = mc.gameRenderer.getMainCamera();
         poseStack.mulPose(Axis.YP.rotationDegrees(-camera.getYRot()));
         poseStack.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
@@ -105,20 +104,19 @@ public class ShieldBarOverlayRenderer {
 
         Matrix4f mat = poseStack.last().pose();
 
-        // Цветовая схема
         int barColor;
         String icon;
         switch (typeStr) {
             case "ARMORED" -> {
-                barColor = 0xFFFFAA00; // Латунь / Золото
+                barColor = 0xFFFFAA00;
                 icon = "⚙";
             }
             case "ETHEREAL" -> {
-                barColor = 0xFFAA00FF; // Неоновый аметист
+                barColor = 0xFFAA00FF;
                 icon = "🔮";
             }
             case "BIO" -> {
-                barColor = 0xFF55FF55; // Био-зеленый
+                barColor = 0xFF55FF55;
                 icon = "🧬";
             }
             default -> {
@@ -131,23 +129,18 @@ public class ShieldBarOverlayRenderer {
         int barHeight = 4;
         int halfWidth = totalWidth / 2;
 
-        // 1. Темный полупрозрачный фон (Подложка)
         fill(mat, -halfWidth - 1, -2, halfWidth + 1, barHeight + 1, 0x88000000);
-
-        // 2. Рамка барьера
         fill(mat, -halfWidth - 1, -3, halfWidth + 1, -2, 0xAA333333);
         fill(mat, -halfWidth - 1, barHeight + 1, halfWidth + 1, barHeight + 2, 0xAA333333);
         fill(mat, -halfWidth - 2, -3, -halfWidth - 1, barHeight + 2, 0xAA333333);
         fill(mat, halfWidth + 1, -3, halfWidth + 2, barHeight + 2, 0xAA333333);
 
-        // 3. Заполненная цветная полоса прогресса
         float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
         int filledWidth = (int) (totalWidth * progress);
         if (filledWidth > 0) {
             fill(mat, -halfWidth, -1, -halfWidth + filledWidth, barHeight, barColor);
         }
 
-        // 4. Текстовая информация (Иконка, числовые значения и мультислои)
         String stackInfo = remainingLayers > 1 ? " x" + remainingLayers : "";
         String text = String.format("%s %.0f/%.0f%s", icon, currentHp, maxHp, stackInfo);
 
@@ -182,12 +175,28 @@ public class ShieldBarOverlayRenderer {
     }
 
     private static boolean hasEngineerGoggles(Player player) {
+        // 1. Проверка ванильного слота головы
         ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
-        if (!head.isEmpty()) {
-            String id = BuiltInRegistries.ITEM.getKey(head.getItem()).toString();
-            if (id.equals("create:goggles") || id.contains("goggle")) return true;
-        }
+        if (isGogglesItem(head)) return true;
+
+        // 2. Проверка слотов Curios
+        try {
+            var curiosInventory = CuriosApi.getCuriosInventory(player);
+            if (curiosInventory.isPresent()) {
+                var handler = curiosInventory.orElse(null);
+                if (handler != null && handler.findFirstCurio(ShieldBarOverlayRenderer::isGogglesItem).isPresent()) {
+                    return true;
+                }
+            }
+        } catch (Throwable ignored) {}
+
         return false;
+    }
+
+    private static boolean isGogglesItem(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+        return id.equals("create:goggles") || id.contains("goggle");
     }
 
     private static boolean hasCyberware(Player player, String targetId) {
@@ -209,13 +218,6 @@ public class ShieldBarOverlayRenderer {
                             for (int i = 0; i < handler.getSlots(); i++) {
                                 ItemStack stack = handler.getStackInSlot(i);
                                 if (!stack.isEmpty()) {
-                                    String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
-                                    if (id.equals(targetId)) return true;
-                                }
-                            }
-                        } else if (val instanceof Iterable<?> iterable) {
-                            for (Object obj : iterable) {
-                                if (obj instanceof ItemStack stack && !stack.isEmpty()) {
                                     String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
                                     if (id.equals(targetId)) return true;
                                 }
