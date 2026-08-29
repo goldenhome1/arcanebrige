@@ -36,8 +36,9 @@ public class ArcaneBridge {
         ModSounds.register(modEventBus);
         ArcaneHexRegistry.register(modEventBus);
         ModItems.register(modEventBus);
-        ModEntities.register(modEventBus);
-        ModBlocks.register(modEventBus);
+        ModBlockEntities.register(modEventBus);
+        ModItems.register(modEventBus);
+        com.example.arcanebridge.registry.ModHexActions.register(modEventBus);
         ModBlockEntities.register(modEventBus);
         modEventBus.addListener(this::commonSetup);
         ModHexActions.register(FMLJavaModLoadingContext.get().getModEventBus());
