@@ -1,33 +1,3 @@
-            // ПРОФИЛЬНАЯ АТАКА (100% УРОНА ПО ЩИТУ)
-            // =========================================================================
-            currentShieldHp -= incomingDamage;
-            data.putFloat(MobArchetypes.NBT_SHIELD_HP, Math.max(0.0f, currentShieldHp));
-
-            if (currentShieldHp <= 0.0f) {
-                data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, true);
-                triggerShieldBreakEffects(level, target, archetype);
-            } else {
-                triggerShieldHitEffects(level, target, archetype, true);
-            }
-        } else {
-            // =========================================================================
-            // НЕПРОФИЛЬНАЯ АТАКА (20% УРОНА ПО ЩИТУ И ЗДОРОВЬЮ)
-            // =========================================================================
-            float reducedDamage = incomingDamage * MobArchetypes.SHIELD_DAMAGE_REDUCTION;
-            event.setAmount(reducedDamage);
-
-            currentShieldHp -= reducedDamage;
-            data.putFloat(MobArchetypes.NBT_SHIELD_HP, Math.max(0.0f, currentShieldHp));
-
-            if (currentShieldHp <= 0.0f) {
-                data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, true);
-                triggerShieldBreakEffects(level, target, archetype);
-            } else {
-                triggerShieldHitEffects(level, target, archetype, false);
-            }
-        }
-    }
-=======
 package com.example.arcanebridge.combat;
 
 import net.minecraft.core.particles.ParticleTypes;
@@ -82,7 +52,7 @@ public class ArchetypeDamageHandler {
             return;
         }
 
-        // 3. Получение текущего активного внешнего слоя
+        // 3. Получение текущего активного слоя
         CompoundTag activeLayer = layers.getCompound(currentIndex);
         MobArchetypes.Type archetype;
         try {
@@ -116,7 +86,7 @@ public class ArchetypeDamageHandler {
                     data.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, true);
                     data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, true);
                 } else {
-                    // Звук обнажения следующего внутреннего барьера
+                    // Звук активации следующего внутреннего барьера
                     level.playSound(null, target.getX(), target.getY(), target.getZ(),
                             SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.8f, 1.4f);
                 }
@@ -157,8 +127,6 @@ public class ArchetypeDamageHandler {
     private static void initShieldStack(LivingEntity entity, CompoundTag data) {
         ListTag layers = new ListTag();
 
-        // 1. Проверяем наличие составных тегов (Комбинированный барьер)
-        // Пример порядка слоев: снаружи Эфир -> внутри Броня
         if (entity.getTags().contains(MobArchetypes.TAG_ETHEREAL)) {
             float hp = data.contains("ArcaneEtherealHP") ? data.getFloat("ArcaneEtherealHP") : MobArchetypes.HP_ETHEREAL_SHIELD;
             layers.add(createLayerTag(MobArchetypes.Type.ETHEREAL, hp));
@@ -172,7 +140,6 @@ public class ArchetypeDamageHandler {
             layers.add(createLayerTag(MobArchetypes.Type.BIO, hp));
         }
 
-        // 2. Если ручных тегов нет, проверяем EntityType Tags из датапаков
         if (layers.isEmpty()) {
             MobArchetypes.Type defaultType = MobArchetypes.resolveArchetype(entity);
             if (defaultType != MobArchetypes.Type.NONE) {
@@ -197,35 +164,6 @@ public class ArchetypeDamageHandler {
         tag.putFloat("HP", hp);
         tag.putFloat("MaxHP", hp);
         return tag;
-    }=======
-            // ПРОФИЛЬНАЯ АТАКА (100% УРОНА ПО ЩИТУ)
-            // =========================================================================
-            currentShieldHp -= incomingDamage;
-            data.putFloat(MobArchetypes.NBT_SHIELD_HP, Math.max(0.0f, currentShieldHp));
-
-            if (currentShieldHp <= 0.0f) {
-                data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, true);
-                triggerShieldBreakEffects(level, target, archetype);
-            } else {
-                triggerShieldHitEffects(level, target, archetype, true);
-            }
-        } else {
-            // =========================================================================
-            // НЕПРОФИЛЬНАЯ АТАКА (20% УРОНА ПО ЩИТУ И ЗДОРОВЬЮ)
-            // =========================================================================
-            float reducedDamage = incomingDamage * MobArchetypes.SHIELD_DAMAGE_REDUCTION;
-            event.setAmount(reducedDamage);
-
-            currentShieldHp -= reducedDamage;
-            data.putFloat(MobArchetypes.NBT_SHIELD_HP, Math.max(0.0f, currentShieldHp));
-
-            if (currentShieldHp <= 0.0f) {
-                data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, true);
-                triggerShieldBreakEffects(level, target, archetype);
-            } else {
-                triggerShieldHitEffects(level, target, archetype, false);
-            }
-        }
     }
 
     /**
@@ -245,7 +183,7 @@ public class ArchetypeDamageHandler {
         String msgId = source.getMsgId();
         Entity directEntity = source.getDirectEntity();
 
-        // 1. ШАГ 1: МАГИЯ (Ars Nouveau, Hex Casting, ванильная магия)
+        // 1. МАГИЯ (Ars Nouveau, Hex Casting, ванильная магия)
         if (damageTypeId.contains("ars_nouveau") || damageTypeId.contains("hexcasting") || damageTypeId.contains("magic")
                 || source.is(DamageTypes.MAGIC) || source.is(DamageTypes.INDIRECT_MAGIC) || source.is(DamageTypeTags.WITCH_RESISTANT_TO)) {
             return MobArchetypes.AttackCategory.MAGIC_SPELL;
@@ -257,7 +195,7 @@ public class ArchetypeDamageHandler {
             }
         }
 
-        // 2. ШАГ 2: ОГНЕСТРЕЛ И АРТИЛЛЕРИЯ (Create: Gunsmithing, NTGL, CBC)
+        // 2. ОГНЕСТРЕЛ И АРТИЛЛЕРИЯ (Create: Gunsmithing, NTGL, CBC)
         if (damageTypeId.contains("ntgl") || damageTypeId.contains("cgs") || damageTypeId.contains("createbigcannons")
                 || damageTypeId.contains("machine_gun") || damageTypeId.contains("cannon") || damageTypeId.contains("bullet")
                 || msgId.contains("bullet") || msgId.contains("cgs") || msgId.contains("cannon") || msgId.contains("machine_gun_fire")) {
@@ -272,12 +210,10 @@ public class ArchetypeDamageHandler {
             }
         }
 
-        // 3. ШАГ 3: БЛИЖНИЙ БОЙ И СТРЕЛЫ / БОЛТЫ (Уязвимость Био-мутанта)
-        // Ванильные стрелы и болты
+        // 3. БЛИЖНИЙ БОЙ И СТРЕЛЫ / БОЛТЫ
         if (directEntity instanceof AbstractArrow || damageTypeId.contains("arrow")) {
             return MobArchetypes.AttackCategory.MELEE_STRIKE;
         }
-        // Прямой контактный удар мечом, топором, кулаком или лапой моба
         if (damageTypeId.equals("minecraft:player_attack") || damageTypeId.equals("minecraft:mob_attack")
                 || (msgId.equals("player") && !damageTypeId.contains("spell") && !damageTypeId.contains("magic"))) {
             return MobArchetypes.AttackCategory.MELEE_STRIKE;
