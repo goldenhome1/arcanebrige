@@ -1,0 +1,29 @@
+{
+  "name": "Фазовый Резонанс: Гидравлика",
+  "category": "hexcasting:patterns/spells",
+  "icon": "arcane_bridge:deciphered_scroll_fluid",
+  "entry_color": "00E5FF",
+  "advancement": "arcane_bridge:spells/phase_fluidics",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Перенос жидкостей сквозь гиперпространство подчиняется законам гидравлического резонанса. Заклинатель связывает медную трубу $(l:create:fluid_pipe)Create$() с указанным каналом.$(br2)Узлы с одинаковым номером канала мгновенно синхронизируют объём жидкости."
+    },
+    {
+      "type": "hexcasting:pattern",
+      "op_id": "arcane_bridge:phase_fluid_tx",
+      "anchor": "arcane_bridge:phase_fluid_tx",
+      "input": "вектор, число",
+      "output": "число",
+      "text": "Превращает трубу в $(l:arcane_bridge:phase_fluid_tx)Фазовый Исток (TX)$(). Жидкости, закачиваемые в этот узел, поступают в указанный фазовый канал."
+    },
+    {
+      "type": "hexcasting:pattern",
+      "op_id": "arcane_bridge:phase_fluid_rx",
+      "anchor": "arcane_bridge:phase_fluid_rx",
+      "input": "вектор, число",
+      "output": "число",
+      "text": "Превращает трубу в $(l:arcane_bridge:phase_fluid_rx)Фазовый Приёмник (RX)$(). Позволяет выкачивать жидкость из указанного фазового канала."
+    }
+  ]
+}
