@@ -56,17 +56,12 @@ public class PhaseFluidTunerItem extends Item {
         Player player = context.getPlayer();
         ItemStack stack = context.getItemInHand();
 
-        if (player != null && player.isShiftKeyDown()) {
-            return InteractionResult.PASS;
-        }
-
         int channel = stack.getOrCreateTag().getInt("SelectedChannel");
         if (channel <= 0) channel = 1;
 
         BlockState state = level.getBlockState(pos);
         BlockEntity be = level.getBlockEntity(pos);
 
-        // Если кликнули по трубе или резервуару Create — превращаем в Фазовый Гидроузел
         if (!(be instanceof PhaseFluidBlockEntity)) {
             level.setBlock(pos, ModBlocks.PHASE_FLUID_RELAY.get().defaultBlockState(), Block.UPDATE_ALL);
             be = level.getBlockEntity(pos);
@@ -74,11 +69,18 @@ public class PhaseFluidTunerItem extends Item {
 
         if (be instanceof PhaseFluidBlockEntity fluidNode) {
             if (!level.isClientSide() && player != null) {
-                fluidNode.setChannel(channel);
+                if (player.isShiftKeyDown()) {
+                    fluidNode.toggleMode();
+                    String modeName = fluidNode.isReceiver ? "§9Приёмник (RX)" : "§3Источник (TX)";
+                    player.sendSystemMessage(Component.literal("§b[Фазовая Гидравлика] §7Режим переключен: " + modeName));
+                    level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 0.9F, 1.4F);
+                } else {
+                    fluidNode.setChannel(channel);
+                    player.sendSystemMessage(Component.literal("§b[Фазовая Гидравлика] §aГидроузел настроен на канал §e#" + channel));
+                    level.playSound(null, pos, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 0.8F, 1.8F);
+                }
 
-                ((ServerLevel) level).sendParticles(ParticleTypes.SPLASH, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, 20, 0.3, 0.3, 0.3, 0.1);
-                level.playSound(null, pos, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 0.8F, 1.8F);
-                player.sendSystemMessage(Component.literal("§b[Фазовая Гидравлика] §aГидроузел настроен на канал §e#" + channel));
+                ((ServerLevel) level).sendParticles(ParticleTypes.SPLASH, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, 15, 0.3, 0.3, 0.3, 0.1);
             }
             return InteractionResult.sidedSuccess(level.isClientSide());
         }
@@ -92,7 +94,8 @@ public class PhaseFluidTunerItem extends Item {
         if (channel <= 0) channel = 1;
         tooltip.add(Component.literal("§7Тестовый инструмент настройки фазовых жидкостей."));
         tooltip.add(Component.literal("§bАктивный канал: §e#" + channel));
-        tooltip.add(Component.literal("§e• ПКМ по блоку: §7настроить/создать гидроузел.").withStyle(ChatFormatting.ITALIC));
-        tooltip.add(Component.literal("§e• Shift + ПКМ в воздух: §7сменить канал.").withStyle(ChatFormatting.ITALIC));
+        tooltip.add(Component.literal("§e• ПКМ по блоку: §7настроить канал.").withStyle(ChatFormatting.ITALIC));
+        tooltip.add(Component.literal("§e• Shift + ПКМ по блоку: §7сменить режим TX/RX.").withStyle(ChatFormatting.ITALIC));
+        tooltip.add(Component.literal("§e• Shift + ПКМ в воздух: §7сменить номер канала.").withStyle(ChatFormatting.ITALIC));
     }
 }
