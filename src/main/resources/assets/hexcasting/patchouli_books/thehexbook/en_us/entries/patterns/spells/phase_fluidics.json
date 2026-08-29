@@ -14,7 +14,7 @@
       "op_id": "arcane_bridge:phase_fluid_tx",
       "anchor": "arcane_bridge:phase_fluid_tx",
       "input": "vector, num",
-      "output": "num",
+      "output": "",
       "text": "Transmutes the pipe into a $(l:arcane_bridge:phase_fluid_tx)Phase Source (TX)$(). Any fluid pumped into this node is fed into the ether channel."
     },
     {
@@ -22,7 +22,7 @@
       "op_id": "arcane_bridge:phase_fluid_rx",
       "anchor": "arcane_bridge:phase_fluid_rx",
       "input": "vector, num",
-      "output": "num",
+      "output": "",
       "text": "Transmutes the pipe into a $(l:arcane_bridge:phase_fluid_rx)Phase Receiver (RX)$(). Allows external pumps to draw fluid from the ether channel."
     }
   ]
