@@ -14,7 +14,6 @@
     "announce_to_chat": true,
     "hidden": false
   },
-  "parent": "hexcasting:root",
   "criteria": {
     "unlock": {
       "trigger": "minecraft:impossible"
