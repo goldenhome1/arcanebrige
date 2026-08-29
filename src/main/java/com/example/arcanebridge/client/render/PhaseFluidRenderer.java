@@ -18,6 +18,8 @@ import org.joml.Matrix4f;
 
 public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEntity> {
 
+    private static final ResourceLocation TEX_END_SKY =
+            new ResourceLocation("minecraft", "textures/environment/end_sky.png");
     private static final ResourceLocation GLYPH_TX =
             new ResourceLocation("arcane_bridge", "textures/vfx/phase_fluid_glyph_tx.png");
     private static final ResourceLocation GLYPH_RX =
@@ -37,51 +39,61 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         ms.pushPose();
         ms.translate(0.5D, 0.5D, 0.5D);
 
-        // Ориентация вдоль оси трубы
+        // Поворот по оси трубы
         switch (axis) {
             case X -> ms.mulPose(Axis.YP.rotationDegrees(90.0F));
             case Z -> {}
             case Y -> ms.mulPose(Axis.XP.rotationDegrees(90.0F));
         }
 
-        Matrix4f posMat = ms.last().pose();
-        Matrix3f normMat = ms.last().normal();
+        float time = (be.getLevel() != null ? be.getLevel().getGameTime() : 0) + partialTicks;
 
         // -------------------------------------------------------------------------
-        // 🌌 1. БЕСКОНЕЧНЫЙ КОСМИЧЕСКИЙ ВОЙД КРАЯ (ТОРЦЫ ТРУБЫ)
+        // 🌌 1. ЗВЁЗДНЫЙ ПОРТАЛ КРАЯ (ТОРЦЫ ТРУБЫ)
         // -------------------------------------------------------------------------
-        float portalSize = 0.30F;   // Внутренний диаметр отверстия трубы (6x6 пикселей)
-        float portalDepth = 0.495F; // Торец трубы (чуть внутри фланца)
+        float portalRadius = 0.28F; // Радиус внутреннего отверстия трубы
+        float portalZ = 0.495F;     // Расположение на срезе фланца
 
-        VertexConsumer portalConsumer = buffer.getBuffer(RenderType.endPortal());
-        drawPortalCap(posMat, portalConsumer, portalSize, portalDepth);
-        drawPortalCap(posMat, portalConsumer, portalSize, -portalDepth);
+        VertexConsumer voidConsumer = buffer.getBuffer(RenderType.entityTranslucent(TEX_END_SKY));
+        
+        // Вращающийся космический фон +Z
+        ms.pushPose();
+        ms.translate(0.0D, 0.0D, portalZ);
+        ms.mulPose(Axis.ZP.rotationDegrees(time * 0.4F));
+        drawSpaceDisc(ms.last().pose(), ms.last().normal(), voidConsumer, portalRadius, 0.12F, 0.02F, 0.22F, 0.98F);
+        ms.popPose();
+
+        // Вращающийся космический фон -Z
+        ms.pushPose();
+        ms.translate(0.0D, 0.0D, -portalZ);
+        ms.mulPose(Axis.ZP.rotationDegrees(-time * 0.4F));
+        drawSpaceDisc(ms.last().pose(), ms.last().normal(), voidConsumer, portalRadius, 0.12F, 0.02F, 0.22F, 0.98F);
+        ms.popPose();
 
         // -------------------------------------------------------------------------
         // 🔮 2. СВЕТЯЩАЯСЯ РУНИЧЕСКАЯ ПЕЧАТЬ ПОВЕРХ ПОРТАЛА
         // -------------------------------------------------------------------------
-        float time = (be.getLevel() != null ? be.getLevel().getGameTime() : 0) + partialTicks;
-        float pulse = 1.0F + (float) Math.sin(time * 0.08F) * 0.02F;
-        ms.scale(pulse, pulse, pulse);
-
+        float pulse = 1.0F + (float) Math.sin(time * 0.08F) * 0.025F;
         float r = be.isReceiver ? 0.20F : 0.05F;
         float g = be.isReceiver ? 0.60F : 0.90F;
         float b = be.isReceiver ? 1.00F : 0.95F;
         float a = 0.95F;
 
         ResourceLocation capTexture = be.isReceiver ? GLYPH_RX : GLYPH_TX;
-
-        // Торцевые глифы на поверхности портала
         VertexConsumer capConsumer = buffer.getBuffer(RenderType.entityTranslucent(capTexture));
-        drawGlyphCap(posMat, normMat, capConsumer, portalSize, portalDepth + 0.002F, r, g, b, a);
-        drawGlyphCap(posMat, normMat, capConsumer, portalSize, -(portalDepth + 0.002F), r, g, b, a);
+
+        Matrix4f posMat = ms.last().pose();
+        Matrix3f normMat = ms.last().normal();
+
+        drawGlyphQuad(posMat, normMat, capConsumer, portalRadius * pulse, portalZ + 0.002F, r, g, b, a);
+        drawGlyphQuad(posMat, normMat, capConsumer, portalRadius * pulse, -(portalZ + 0.002F), r, g, b, a);
 
         // -------------------------------------------------------------------------
-        // ⚡ 3. БОКОВЫЕ ЭФИРНЫЕ ГРАНИ ВОКРУГ СТЕКЛА
+        // ⚡ 3. БОКОВЫЕ РУНИЧЕСКИЕ ЛИНИИ НА СТЕКЛЕ
         // -------------------------------------------------------------------------
-        float s = 0.34F;          // Полуширина боковой грани
-        float halfLen = 0.37F;    // Длина окна между двумя фланцами
-        float yOffset = 0.34F;    // Вынос граней на внешнее стекло
+        float halfW = 0.315F;   // Ширина стекла окна
+        float halfLen = 0.375F; // Длина окна между фланцами
+        float yOffset = 0.315F; // Точный вынос на внешнюю поверхность стекла
 
         VertexConsumer wallConsumer = buffer.getBuffer(RenderType.entityTranslucent(GLYPH_LINES));
         for (int i = 0; i < 4; i++) {
@@ -92,29 +104,31 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
             Matrix4f wallPosMat = ms.last().pose();
             Matrix3f wallNormMat = ms.last().normal();
 
-            drawWallPanel(wallPosMat, wallNormMat, wallConsumer, s, halfLen, r, g, b, a * 0.90F);
+            drawWallPanel(wallPosMat, wallNormMat, wallConsumer, halfW, halfLen, r, g, b, a * 0.90F);
             ms.popPose();
         }
 
         ms.popPose();
     }
 
-    private void drawPortalCap(Matrix4f posMat, VertexConsumer builder, float s, float z) {
-        // Лицевая грань
-        builder.vertex(posMat, -s, -s, z).endVertex();
-        builder.vertex(posMat,  s, -s, z).endVertex();
-        builder.vertex(posMat,  s,  s, z).endVertex();
-        builder.vertex(posMat, -s,  s, z).endVertex();
+    private void drawSpaceDisc(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder,
+                               float s, float r, float g, float b, float a) {
+        int fullLight = 15728880;
 
-        // Обратная грань (для видимости изнутри)
-        builder.vertex(posMat, -s,  s, z).endVertex();
-        builder.vertex(posMat,  s,  s, z).endVertex();
-        builder.vertex(posMat,  s, -s, z).endVertex();
-        builder.vertex(posMat, -s, -s, z).endVertex();
+        builder.vertex(posMat, -s, -s, 0.0F).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
+        builder.vertex(posMat,  s, -s, 0.0F).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
+        builder.vertex(posMat,  s,  s, 0.0F).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
+        builder.vertex(posMat, -s,  s, 0.0F).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
+
+        // Двусторонний рендер
+        builder.vertex(posMat, -s,  s, 0.0F).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
+        builder.vertex(posMat,  s,  s, 0.0F).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
+        builder.vertex(posMat,  s, -s, 0.0F).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
+        builder.vertex(posMat, -s, -s, 0.0F).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
     }
 
-    private void drawGlyphCap(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder,
-                              float s, float z, float r, float g, float b, float a) {
+    private void drawGlyphQuad(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder,
+                               float s, float z, float r, float g, float b, float a) {
         int fullLight = 15728880;
 
         builder.vertex(posMat, -s, -s, z).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
@@ -122,24 +136,24 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         builder.vertex(posMat,  s,  s, z).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
         builder.vertex(posMat, -s,  s, z).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
 
-        builder.vertex(posMat, -s,  s, z).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
-        builder.vertex(posMat,  s,  s, z).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
-        builder.vertex(posMat,  s, -s, z).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
-        builder.vertex(posMat, -s, -s, z).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
+        builder.vertex(posMat, -s,  s, z).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
+        builder.vertex(posMat,  s,  s, z).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
+        builder.vertex(posMat,  s, -s, z).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
+        builder.vertex(posMat, -s, -s, z).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, -1.0F).endVertex();
     }
 
     private void drawWallPanel(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder,
                                float hw, float halfLen, float r, float g, float b, float a) {
         int fullLight = 15728880;
 
-        builder.vertex(posMat, -hw, 0.0F, -halfLen).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
-        builder.vertex(posMat,  hw, 0.0F, -halfLen).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
-        builder.vertex(posMat,  hw, 0.0F,  halfLen).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
-        builder.vertex(posMat, -hw, 0.0F,  halfLen).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
+        builder.vertex(posMat, -hw, 0.0F, -halfLen).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 1.0F, 0.0F).endVertex();
+        builder.vertex(posMat,  hw, 0.0F, -halfLen).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 1.0F, 0.0F).endVertex();
+        builder.vertex(posMat,  hw, 0.0F,  halfLen).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 1.0F, 0.0F).endVertex();
+        builder.vertex(posMat, -hw, 0.0F,  halfLen).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 1.0F, 0.0F).endVertex();
 
-        builder.vertex(posMat, -hw, 0.0F,  halfLen).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
-        builder.vertex(posMat,  hw, 0.0F,  halfLen).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
-        builder.vertex(posMat,  hw, 0.0F, -halfLen).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
-        builder.vertex(posMat, -hw, 0.0F, -halfLen).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
+        builder.vertex(posMat, -hw, 0.0F,  halfLen).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, -1.0F, 0.0F).endVertex();
+        builder.vertex(posMat,  hw, 0.0F,  halfLen).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, -1.0F, 0.0F).endVertex();
+        builder.vertex(posMat,  hw, 0.0F, -halfLen).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, -1.0F, 0.0F).endVertex();
+        builder.vertex(posMat, -hw, 0.0F, -halfLen).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, -1.0F, 0.0F).endVertex();
     }
 }
