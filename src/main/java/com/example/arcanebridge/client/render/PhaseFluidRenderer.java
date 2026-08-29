@@ -37,12 +37,29 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         ms.pushPose();
         ms.translate(0.5D, 0.5D, 0.5D);
 
+        // Ориентация вдоль оси трубы
         switch (axis) {
             case X -> ms.mulPose(Axis.YP.rotationDegrees(90.0F));
             case Z -> {}
             case Y -> ms.mulPose(Axis.XP.rotationDegrees(90.0F));
         }
 
+        Matrix4f posMat = ms.last().pose();
+        Matrix3f normMat = ms.last().normal();
+
+        // -------------------------------------------------------------------------
+        // 🌌 1. БЕСКОНЕЧНЫЙ КОСМИЧЕСКИЙ ВОЙД КРАЯ (ТОРЦЫ ТРУБЫ)
+        // -------------------------------------------------------------------------
+        float portalSize = 0.30F;   // Внутренний диаметр отверстия трубы (6x6 пикселей)
+        float portalDepth = 0.495F; // Торец трубы (чуть внутри фланца)
+
+        VertexConsumer portalConsumer = buffer.getBuffer(RenderType.endPortal());
+        drawPortalCap(posMat, portalConsumer, portalSize, portalDepth);
+        drawPortalCap(posMat, portalConsumer, portalSize, -portalDepth);
+
+        // -------------------------------------------------------------------------
+        // 🔮 2. СВЕТЯЩАЯСЯ РУНИЧЕСКАЯ ПЕЧАТЬ ПОВЕРХ ПОРТАЛА
+        // -------------------------------------------------------------------------
         float time = (be.getLevel() != null ? be.getLevel().getGameTime() : 0) + partialTicks;
         float pulse = 1.0F + (float) Math.sin(time * 0.08F) * 0.02F;
         ms.scale(pulse, pulse, pulse);
@@ -54,20 +71,18 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
 
         ResourceLocation capTexture = be.isReceiver ? GLYPH_RX : GLYPH_TX;
 
-        Matrix4f posMat = ms.last().pose();
-        Matrix3f normMat = ms.last().normal();
+        // Торцевые глифы на поверхности портала
+        VertexConsumer capConsumer = buffer.getBuffer(RenderType.entityTranslucent(capTexture));
+        drawGlyphCap(posMat, normMat, capConsumer, portalSize, portalDepth + 0.002F, r, g, b, a);
+        drawGlyphCap(posMat, normMat, capConsumer, portalSize, -(portalDepth + 0.002F), r, g, b, a);
 
-        // Точные размеры под стеклянное окно трубы Create
-        float s = 0.34F;          // Полуширина грани (стыкуется в углах 4 граней)
+        // -------------------------------------------------------------------------
+        // ⚡ 3. БОКОВЫЕ ЭФИРНЫЕ ГРАНИ ВОКРУГ СТЕКЛА
+        // -------------------------------------------------------------------------
+        float s = 0.34F;          // Полуширина боковой грани
         float halfLen = 0.37F;    // Длина окна между двумя фланцами
         float yOffset = 0.34F;    // Вынос граней на внешнее стекло
 
-        // 1. Торцевые крышки (+Z и -Z)
-        VertexConsumer capConsumer = buffer.getBuffer(RenderType.entityTranslucent(capTexture));
-        drawGlyphCap(posMat, normMat, capConsumer, s, halfLen, r, g, b, a);
-        drawGlyphCap(posMat, normMat, capConsumer, s, -halfLen, r, g, b, a);
-
-        // 2. 4 боковые грани по периметру стекла
         VertexConsumer wallConsumer = buffer.getBuffer(RenderType.entityTranslucent(GLYPH_LINES));
         for (int i = 0; i < 4; i++) {
             ms.pushPose();
@@ -82,6 +97,20 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         }
 
         ms.popPose();
+    }
+
+    private void drawPortalCap(Matrix4f posMat, VertexConsumer builder, float s, float z) {
+        // Лицевая грань
+        builder.vertex(posMat, -s, -s, z).endVertex();
+        builder.vertex(posMat,  s, -s, z).endVertex();
+        builder.vertex(posMat,  s,  s, z).endVertex();
+        builder.vertex(posMat, -s,  s, z).endVertex();
+
+        // Обратная грань (для видимости изнутри)
+        builder.vertex(posMat, -s,  s, z).endVertex();
+        builder.vertex(posMat,  s,  s, z).endVertex();
+        builder.vertex(posMat,  s, -s, z).endVertex();
+        builder.vertex(posMat, -s, -s, z).endVertex();
     }
 
     private void drawGlyphCap(Matrix4f posMat, Matrix3f normMat, VertexConsumer builder,
@@ -111,6 +140,6 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         builder.vertex(posMat, -hw, 0.0F,  halfLen).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
         builder.vertex(posMat,  hw, 0.0F,  halfLen).color(r, g, b, a).uv(1.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
         builder.vertex(posMat,  hw, 0.0F, -halfLen).color(r, g, b, a).uv(1.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
-        builder.vertex(posMat, -hw, 0.0F, -halfLen).color(r, g, b, a).uv(0.0F, 0.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
+        builder.vertex(posMat, -hw, 0.0F, -halfLen).color(r, g, b, a).uv(0.0F, 1.0F).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullLight).normal(normMat, 0.0F, 0.0F, 1.0F).endVertex();
     }
 }
