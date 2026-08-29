@@ -17,50 +17,67 @@ import net.minecraftforge.registries.ForgeRegistries;
 @Mod.EventBusSubscriber(modid = MobArchetypes.MODID)
 public class DamageDebugLogger {
 
-    // Слушаем событие с наивысшим приоритетом до применения всех срезов урона
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onEntityHurtDebug(LivingHurtEvent event) {
+        LivingEntity target = event.getEntity();
+        if (target.level().isClientSide()) return;
+
         DamageSource source = event.getSource();
         Entity trueSource = source.getEntity();
         Entity directEntity = source.getDirectEntity();
-        LivingEntity target = event.getEntity();
 
-        // Проверяем, что атаку проводит игрок (напрямую или через снаряд/заклинание)
-        if (trueSource instanceof ServerPlayer player) {
-            String damageTypeId = target.level().registryAccess()
+        // 1. Получаем точный DamageType ID из реестра 1.20.1
+        String damageTypeId = "unknown";
+        try {
+            ResourceLocation key = target.level().registryAccess()
                     .registryOrThrow(Registries.DAMAGE_TYPE)
-                    .getKey(source.type()) != null 
-                    ? target.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getKey(source.type()).toString() 
-                    : "unknown";
+                    .getKey(source.type());
+            if (key != null) {
+                damageTypeId = key.toString();
+            }
+        } catch (Exception ignored) {}
 
-            String directEntityName = directEntity != null 
-                    ? directEntity.getClass().getSimpleName() + " [" + ForgeRegistries.ENTITY_TYPES.getKey(directEntity.getType()) + "]" 
-                    : "None (Direct/Indirect)";
+        // 2. Определяем сущность снаряда/атаки (Direct Entity)
+        String directEntityName = "None (Direct)";
+        if (directEntity != null) {
+            ResourceLocation typeKey = ForgeRegistries.ENTITY_TYPES.getKey(directEntity.getType());
+            directEntityName = directEntity.getClass().getSimpleName() + " [" + (typeKey != null ? typeKey : "unknown") + "]";
+        }
 
-            String targetName = ForgeRegistries.ENTITY_TYPES.getKey(target.getType()).toString();
-            ItemStack heldItem = player.getMainHandItem();
-            String itemInHand = heldItem.isEmpty() ? "Empty Hand" : ForgeRegistries.ITEMS.getKey(heldItem.getItem()).toString();
+        // 3. Определяем инициатора урона (True Source: игрок, моб, пушка)
+        String trueSourceName = "Environment / Block";
+        String itemInHand = "N/A";
+        if (trueSource != null) {
+            ResourceLocation typeKey = ForgeRegistries.ENTITY_TYPES.getKey(trueSource.getType());
+            trueSourceName = trueSource.getClass().getSimpleName() + " [" + (typeKey != null ? typeKey : "unknown") + "]";
+            if (trueSource instanceof LivingEntity livingSource) {
+                ItemStack held = livingSource.getMainHandItem();
+                itemInHand = held.isEmpty() ? "Empty Hand" : ForgeRegistries.ITEMS.getKey(held.getItem()).toString();
+            }
+        }
 
-            // Формируем детальное сообщение в чат
-            player.sendSystemMessage(Component.literal("§6§l[DEBUG DAMAGE]§r"));
-            player.sendSystemMessage(Component.literal(" §e➤ Target: §f" + targetName + " §7(ID: " + target.getId() + ")"));
-            player.sendSystemMessage(Component.literal(" §e➤ DamageType ID: §c" + damageTypeId));
-            player.sendSystemMessage(Component.literal(" §e➤ MsgId: §c" + source.getMsgId()));
-            player.sendSystemMessage(Component.literal(" §e➤ Direct Entity: §b" + directEntityName));
-            player.sendSystemMessage(Component.literal(" §e➤ MainHand Item: §a" + itemInHand));
-            player.sendSystemMessage(Component.literal(" §e➤ Raw Amount: §d" + event.getAmount()));
+        String targetName = ForgeRegistries.ENTITY_TYPES.getKey(target.getType()).toString();
 
-            // Вывод в консоль сервера
-            System.out.println(String.format(
-                    "[ARCANE-COMBAT-DEBUG] Player '%s' -> '%s' | DamageType: '%s' | MsgId: '%s' | DirectEntity: '%s' | Item: '%s' | Dmg: %.2f",
-                    player.getName().getString(),
-                    targetName,
-                    damageTypeId,
-                    source.getMsgId(),
-                    directEntityName,
-                    itemInHand,
-                    event.getAmount()
-            ));
+        // 4. Формируем подробный вывод
+        String logConsole = String.format(
+                "[ARCANE-COMBAT-DEBUG] Target: '%s' (ID:%d) | DmgType: '%s' | MsgId: '%s' | Direct: '%s' | TrueSource: '%s' | Item: '%s' | Amount: %.2f",
+                targetName, target.getId(), damageTypeId, source.getMsgId(), directEntityName, trueSourceName, itemInHand, event.getAmount()
+        );
+        System.out.println(logConsole);
+
+        // 5. Отправляем в чат всем игрокам рядом с целью (радиус 32 блока)
+        Component chatMsg = Component.literal(
+                "§6§l[DEBUG DMG] §f" + targetName + " §7<= §c" + damageTypeId +
+                " §7| Msg: §e" + source.getMsgId() +
+                " §7| Direct: §b" + directEntityName +
+                " §7| Source: §a" + trueSourceName +
+                " §7| Dmg: §d" + String.format(java.util.Locale.US, "%.1f", event.getAmount())
+        );
+
+        for (ServerPlayer player : target.level().getServer().getPlayerList().getPlayers()) {
+            if (player.distanceToSqr(target) <= 1024) {
+                player.sendSystemMessage(chatMsg);
+            }
         }
     }
 }
