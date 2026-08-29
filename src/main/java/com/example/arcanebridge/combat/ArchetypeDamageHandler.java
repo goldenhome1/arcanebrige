@@ -1,5 +1,7 @@
 package com.example.arcanebridge.combat;
 
+import com.example.arcanebridge.network.ClientboundSyncShieldPacket;
+import com.example.arcanebridge.network.NetworkHandler;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -19,13 +21,29 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.registries.ForgeRegistries;
 
 @Mod.EventBusSubscriber(modid = MobArchetypes.MODID)
 public class ArchetypeDamageHandler {
+
+    /**
+     * Инициализация и отправка пакета клиентам сразу при спавне моба
+     */
+    @SubscribeEvent
+    public static void onEntityJoin(EntityJoinLevelEvent event) {
+        if (event.getLevel().isClientSide() || !(event.getEntity() instanceof LivingEntity living) || living instanceof Player) return;
+
+        CompoundTag data = living.getPersistentData();
+        if (!data.contains(MobArchetypes.NBT_SHIELD_LAYERS, Tag.TAG_LIST)) {
+            initShieldStack(living, data);
+            syncShieldToTracking(living);
+        }
+    }
 
     @SubscribeEvent
     public static void onLivingHurt(LivingHurtEvent event) {
@@ -34,12 +52,10 @@ public class ArchetypeDamageHandler {
 
         CompoundTag data = target.getPersistentData();
 
-        // 1. Проверка полного отсутствия щитов
         if (data.getBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN)) {
             return;
         }
 
-        // 2. Инициализация стека щитов, если он еще не создан
         if (!data.contains(MobArchetypes.NBT_SHIELD_LAYERS, Tag.TAG_LIST)) {
             initShieldStack(target, data);
         }
@@ -49,10 +65,10 @@ public class ArchetypeDamageHandler {
 
         if (layers.isEmpty() || currentIndex >= layers.size()) {
             data.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, true);
+            syncShieldToTracking(target);
             return;
         }
 
-        // 3. Получение текущего активного слоя
         CompoundTag activeLayer = layers.getCompound(currentIndex);
         MobArchetypes.Type archetype;
         try {
@@ -70,14 +86,10 @@ public class ArchetypeDamageHandler {
         ServerLevel level = (ServerLevel) target.level();
 
         if (isMatchingKey) {
-            // =========================================================================
-            // ПРОФИЛЬНАЯ АТАКА (100% УРОНА ПО ТЕКУЩЕМУ ЩИТУ)
-            // =========================================================================
             currentShieldHp -= incomingDamage;
             activeLayer.putFloat("HP", Math.max(0.0f, currentShieldHp));
 
             if (currentShieldHp <= 0.0f) {
-                // Текущий слой разрушен
                 triggerShieldBreakEffects(level, target, archetype);
                 currentIndex++;
                 data.putInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX, currentIndex);
@@ -86,7 +98,6 @@ public class ArchetypeDamageHandler {
                     data.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, true);
                     data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, true);
                 } else {
-                    // Звук активации следующего внутреннего барьера
                     level.playSound(null, target.getX(), target.getY(), target.getZ(),
                             SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.8f, 1.4f);
                 }
@@ -94,9 +105,6 @@ public class ArchetypeDamageHandler {
                 triggerShieldHitEffects(level, target, archetype, true);
             }
         } else {
-            // =========================================================================
-            // НЕПРОФИЛЬНАЯ АТАКА (20% УРОНА ПО ЩИТУ И ЗДОРОВЬЮ)
-            // =========================================================================
             float reducedDamage = incomingDamage * MobArchetypes.SHIELD_DAMAGE_REDUCTION;
             event.setAmount(reducedDamage);
 
@@ -119,11 +127,24 @@ public class ArchetypeDamageHandler {
                 triggerShieldHitEffects(level, target, archetype, false);
             }
         }
+
+        // Синхронизируем обновленное состояние щита клиентам
+        syncShieldToTracking(target);
     }
 
-    /**
-     * Построение стека слоев из тегов моба или базового архетипа
-     */
+    public static void syncShieldToTracking(LivingEntity entity) {
+        CompoundTag data = entity.getPersistentData();
+        CompoundTag syncTag = new CompoundTag();
+        if (data.contains(MobArchetypes.NBT_SHIELD_LAYERS)) {
+            syncTag.put(MobArchetypes.NBT_SHIELD_LAYERS, data.getList(MobArchetypes.NBT_SHIELD_LAYERS, 10));
+        }
+        syncTag.putInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX, data.getInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX));
+        syncTag.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, data.getBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN));
+
+        NetworkHandler.CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity),
+                new ClientboundSyncShieldPacket(entity.getId(), syncTag));
+    }
+
     private static void initShieldStack(LivingEntity entity, CompoundTag data) {
         ListTag layers = new ListTag();
 
@@ -166,9 +187,6 @@ public class ArchetypeDamageHandler {
         return tag;
     }
 
-    /**
-     * Пошаговая классификация входящей атаки
-     */
     private static MobArchetypes.AttackCategory classifyAttack(LivingEntity target, DamageSource source) {
         String damageTypeId = "";
         try {
@@ -183,7 +201,6 @@ public class ArchetypeDamageHandler {
         String msgId = source.getMsgId();
         Entity directEntity = source.getDirectEntity();
 
-        // 1. МАГИЯ (Ars Nouveau, Hex Casting, ванильная магия)
         if (damageTypeId.contains("ars_nouveau") || damageTypeId.contains("hexcasting") || damageTypeId.contains("magic")
                 || source.is(DamageTypes.MAGIC) || source.is(DamageTypes.INDIRECT_MAGIC) || source.is(DamageTypeTags.WITCH_RESISTANT_TO)) {
             return MobArchetypes.AttackCategory.MAGIC_SPELL;
@@ -195,7 +212,6 @@ public class ArchetypeDamageHandler {
             }
         }
 
-        // 2. ОГНЕСТРЕЛ И АРТИЛЛЕРИЯ (Create: Gunsmithing, NTGL, CBC)
         if (damageTypeId.contains("ntgl") || damageTypeId.contains("cgs") || damageTypeId.contains("createbigcannons")
                 || damageTypeId.contains("machine_gun") || damageTypeId.contains("cannon") || damageTypeId.contains("bullet")
                 || msgId.contains("bullet") || msgId.contains("cgs") || msgId.contains("cannon") || msgId.contains("machine_gun_fire")) {
@@ -210,7 +226,6 @@ public class ArchetypeDamageHandler {
             }
         }
 
-        // 3. БЛИЖНИЙ БОЙ И СТРЕЛЫ / БОЛТЫ
         if (directEntity instanceof AbstractArrow || damageTypeId.contains("arrow")) {
             return MobArchetypes.AttackCategory.MELEE_STRIKE;
         }
