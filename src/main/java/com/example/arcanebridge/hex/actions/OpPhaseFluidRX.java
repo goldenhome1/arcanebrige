@@ -3,6 +3,9 @@ package com.example.arcanebridge.hex.actions;
 import at.petrak.hexcasting.api.casting.OperatorUtils;
 import at.petrak.hexcasting.api.casting.castables.ConstMediaAction;
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
+import at.petrak.hexcasting.api.casting.eval.OperationResult;
+import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
+import at.petrak.hexcasting.api.casting.eval.vm.SpellContinuation;
 import at.petrak.hexcasting.api.casting.iota.Iota;
 import at.petrak.hexcasting.api.casting.mishaps.Mishap;
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadBlock;
@@ -39,6 +42,11 @@ public class OpPhaseFluidRX implements ConstMediaAction {
     @Override
     public long getMediaCost() {
         return MediaConstants.DUST_UNIT * 2L;
+    }
+
+    @Override
+    public OperationResult operate(CastingEnvironment env, CastingImage image, SpellContinuation continuation) {
+        return ConstMediaAction.DefaultImpls.operate(this, env, image, continuation);
     }
 
     @NotNull
