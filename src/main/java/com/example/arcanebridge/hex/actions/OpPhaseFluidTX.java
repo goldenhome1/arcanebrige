@@ -1,6 +1,9 @@
 package com.example.arcanebridge.hex.actions;
 
 import at.petrak.hexcasting.api.casting.OperatorUtils;
+import at.petrak.hexcasting.api.casting.mishaps.MishapUnenlightened;
+import net.minecraft.advancements.Advancement;
+import net.minecraft.server.level.ServerPlayer;
 import at.petrak.hexcasting.api.casting.castables.ConstMediaAction;
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
 import at.petrak.hexcasting.api.casting.eval.OperationResult;
