@@ -37,19 +37,16 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         ms.pushPose();
         ms.translate(0.5D, 0.5D, 0.5D);
 
-        // Ориентация вдоль трубы
         switch (axis) {
             case X -> ms.mulPose(Axis.YP.rotationDegrees(90.0F));
             case Z -> {}
             case Y -> ms.mulPose(Axis.XP.rotationDegrees(90.0F));
         }
 
-        // Эфирная пульсация
         float time = (be.getLevel() != null ? be.getLevel().getGameTime() : 0) + partialTicks;
         float pulse = 1.0F + (float) Math.sin(time * 0.08F) * 0.03F;
         ms.scale(pulse, pulse, pulse);
 
-        // Цветовая гамма: TX = Яркий Циан/Бирюза, RX = Глубокий Ледяной/Индиго
         float r = be.isReceiver ? 0.20F : 0.05F;
         float g = be.isReceiver ? 0.60F : 0.90F;
         float b = be.isReceiver ? 1.00F : 0.95F;
@@ -60,16 +57,14 @@ public class PhaseFluidRenderer implements BlockEntityRenderer<PhaseFluidBlockEn
         Matrix4f posMat = ms.last().pose();
         Matrix3f normMat = ms.last().normal();
 
-        float s = 0.52F;          // Полуширина торцевой грани
-        float halfLen = 0.49F;    // Длина вдоль патрубка
-        float yOffset = 0.52F;    // Вынос граней для стыковки углов
+        float s = 0.44F;
+        float halfLen = 0.48F;
+        float yOffset = 0.44F;
 
-        // 1. Торцевые крышки (+Z и -Z)
         VertexConsumer capConsumer = buffer.getBuffer(RenderType.entityTranslucent(capTexture));
         drawGlyphCap(posMat, normMat, capConsumer, s, halfLen, r, g, b, a);
         drawGlyphCap(posMat, normMat, capConsumer, s, -halfLen, r, g, b, a);
 
-        // 2. 4 боковые панели (шаг 90° для образования прямоугольного короба)
         VertexConsumer wallConsumer = buffer.getBuffer(RenderType.entityTranslucent(GLYPH_LINES));
         for (int i = 0; i < 4; i++) {
             ms.pushPose();
