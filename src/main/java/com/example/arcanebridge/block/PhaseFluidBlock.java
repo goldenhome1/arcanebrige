@@ -10,6 +10,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Rotation;
@@ -20,6 +21,8 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.fluids.FluidUtil;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,9 +30,22 @@ public class PhaseFluidBlock extends Block implements IBE<PhaseFluidBlockEntity>
 
     public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.AXIS;
 
+    protected static final VoxelShape X_AXIS_AABB = Block.box(0, 3, 3, 16, 13, 13);
+    protected static final VoxelShape Y_AXIS_AABB = Block.box(3, 0, 3, 13, 16, 13);
+    protected static final VoxelShape Z_AXIS_AABB = Block.box(3, 3, 0, 13, 13, 16);
+
     public PhaseFluidBlock(Properties properties) {
         super(properties.noOcclusion());
         this.registerDefaultState(this.stateDefinition.any().setValue(AXIS, Direction.Axis.Y));
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        return switch (state.getValue(AXIS)) {
+            case X -> X_AXIS_AABB;
+            case Z -> Z_AXIS_AABB;
+            case Y -> Y_AXIS_AABB;
+        };
     }
 
     @Override
