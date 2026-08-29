@@ -60,10 +60,31 @@ public class DecipheredManuscriptItem extends Item {
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
     }
 
+        public record DecipheredLore(String note, String hexBranch) {}
+
+    private static final java.util.Map<String, DecipheredLore> DECIPHERED_LORE = java.util.Map.of(
+            "spells/phase_kinetics", new DecipheredLore(
+                    "§6Символы кинетического резонанса переведены на язык Hex Casting.",
+                    "§8[Вектор вращения: Источник / Приёмник]"
+            ),
+            "spells/phase_fluidics", new DecipheredLore(
+                    "§bСимволы гидродинамического резонанса переведены на язык Hex Casting.",
+                    "§8[Вектор потока: Исток / Приёмник]"
+            )
+    );
+
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag isAdvanced) {
         tooltip.add(Component.literal("§7Древняя шестиугольная сланцевая плита."));
-        tooltip.add(Component.literal("§aСимволы расшифрованы и переведены на язык Hex Casting."));
+
+        DecipheredLore lore = DECIPHERED_LORE.get(this.advancementId.getPath());
+        if (lore != null) {
+            tooltip.add(Component.literal(lore.note()));
+            tooltip.add(Component.literal(lore.hexBranch()));
+        } else {
+            tooltip.add(Component.literal("§aСимволы расшифрованы и переведены на язык Hex Casting."));
+        }
+
         tooltip.add(Component.literal("§e• Нажмите ПКМ, чтобы переписать формулу в Рунный Блокнот.").withStyle(ChatFormatting.ITALIC));
         super.appendHoverText(stack, level, tooltip, isAdvanced);
     }
