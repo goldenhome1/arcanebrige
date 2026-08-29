@@ -14,7 +14,7 @@
       "op_id": "arcane_bridge:phase_fluid_tx",
       "anchor": "arcane_bridge:phase_fluid_tx",
       "input": "вектор, число",
-      "output": "число",
+      "output": "",
       "text": "Превращает трубу в $(l:arcane_bridge:phase_fluid_tx)Фазовый Исток (TX)$(). Жидкости, закачиваемые в этот узел, поступают в указанный фазовый канал."
     },
     {
@@ -22,7 +22,7 @@
       "op_id": "arcane_bridge:phase_fluid_rx",
       "anchor": "arcane_bridge:phase_fluid_rx",
       "input": "вектор, число",
-      "output": "число",
+      "output": "",
       "text": "Превращает трубу в $(l:arcane_bridge:phase_fluid_rx)Фазовый Приёмник (RX)$(). Позволяет выкачивать жидкость из указанного фазового канала."
     }
   ]
