@@ -7,7 +7,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -17,10 +19,21 @@ import net.minecraftforge.registries.ForgeRegistries;
 @Mod.EventBusSubscriber(modid = MobArchetypes.MODID)
 public class DamageDebugLogger {
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+        @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onEntityHurtDebug(LivingHurtEvent event) {
         LivingEntity target = event.getEntity();
         if (target.level().isClientSide()) return;
+
+        // Ищем игроков с командным блоком в хотбаре в радиусе 32 блоков
+        java.util.List<ServerPlayer> debugWatchers = new java.util.ArrayList<>();
+        for (ServerPlayer player : target.level().getServer().getPlayerList().getPlayers()) {
+            if (player.distanceToSqr(target) <= 1024 && hasCommandBlockInHotbar(player)) {
+                debugWatchers.add(player);
+            }
+        }
+
+        // Если ни у кого рядом нет командного блока в хотбаре — полностью глушим дебаг
+        if (debugWatchers.isEmpty()) return;
 
         DamageSource source = event.getSource();
         Entity trueSource = source.getEntity();
@@ -65,7 +78,7 @@ public class DamageDebugLogger {
         );
         System.out.println(logConsole);
 
-        // 5. Отправляем в чат всем игрокам рядом с целью (радиус 32 блока)
+                // 5. Отправляем в чат только тем игрокам, у которых есть командный блок в хотбаре
         Component chatMsg = Component.literal(
                 "§6§l[DEBUG DMG] §f" + targetName + " §7<= §c" + damageTypeId +
                 " §7| Msg: §e" + source.getMsgId() +
@@ -74,10 +87,24 @@ public class DamageDebugLogger {
                 " §7| Dmg: §d" + String.format(java.util.Locale.US, "%.1f", event.getAmount())
         );
 
-        for (ServerPlayer player : target.level().getServer().getPlayerList().getPlayers()) {
-            if (player.distanceToSqr(target) <= 1024) {
-                player.sendSystemMessage(chatMsg);
+        for (ServerPlayer player : debugWatchers) {
+            player.sendSystemMessage(chatMsg);
+        }
+    }
+
+    /**
+     * Проверка наличия любого командного блока в слотах хотбара (0-8)
+     */
+    private static boolean hasCommandBlockInHotbar(ServerPlayer player) {
+        for (int slot = 0; slot < 9; slot++) {
+            ItemStack stack = player.getInventory().getItem(slot);
+            if (!stack.isEmpty()) {
+                Item item = stack.getItem();
+                if (item == Items.COMMAND_BLOCK || item == Items.CHAIN_COMMAND_BLOCK || item == Items.REPEATING_COMMAND_BLOCK) {
+                    return true;
+                }
             }
         }
+        return false;
     }
 }
