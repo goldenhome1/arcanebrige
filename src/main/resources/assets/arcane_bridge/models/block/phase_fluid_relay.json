@@ -3,9 +3,9 @@
   "parent": "minecraft:block/block",
   "render_type": "translucent",
   "textures": {
-    "particle": "create:block/copper_casing",
-    "copper": "create:block/copper_casing",
-    "glass": "minecraft:block/glass"
+    "particle": "create:block/fluid_pipe/pipe",
+    "copper": "create:block/fluid_pipe/pipe",
+    "window": "create:block/fluid_pipe/window"
   },
   "elements": [
     {
@@ -13,10 +13,10 @@
       "from": [3, 0, 3],
       "to": [13, 2, 13],
       "faces": {
-        "north": { "uv": [3, 14, 13, 16], "texture": "#copper" },
-        "east":  { "uv": [3, 14, 13, 16], "texture": "#copper" },
-        "south": { "uv": [3, 14, 13, 16], "texture": "#copper" },
-        "west":  { "uv": [3, 14, 13, 16], "texture": "#copper" },
+        "north": { "uv": [3, 0, 13, 2], "texture": "#copper" },
+        "east":  { "uv": [3, 0, 13, 2], "texture": "#copper" },
+        "south": { "uv": [3, 0, 13, 2], "texture": "#copper" },
+        "west":  { "uv": [3, 0, 13, 2], "texture": "#copper" },
         "up":    { "uv": [3, 3, 13, 13], "texture": "#copper" },
         "down":  { "uv": [3, 3, 13, 13], "texture": "#copper" }
       }
@@ -26,10 +26,10 @@
       "from": [3, 14, 3],
       "to": [13, 16, 13],
       "faces": {
-        "north": { "uv": [3, 0, 13, 2], "texture": "#copper" },
-        "east":  { "uv": [3, 0, 13, 2], "texture": "#copper" },
-        "south": { "uv": [3, 0, 13, 2], "texture": "#copper" },
-        "west":  { "uv": [3, 0, 13, 2], "texture": "#copper" },
+        "north": { "uv": [3, 14, 13, 16], "texture": "#copper" },
+        "east":  { "uv": [3, 14, 13, 16], "texture": "#copper" },
+        "south": { "uv": [3, 14, 13, 16], "texture": "#copper" },
+        "west":  { "uv": [3, 14, 13, 16], "texture": "#copper" },
         "up":    { "uv": [3, 3, 13, 13], "texture": "#copper" },
         "down":  { "uv": [3, 3, 13, 13], "texture": "#copper" }
       }
@@ -51,8 +51,8 @@
       "to": [13, 14, 5],
       "faces": {
         "north": { "uv": [11, 2, 13, 14], "texture": "#copper" },
-        "east":  { "uv": [3, 2, 5, 14], "texture": "#copper" },
-        "west":  { "uv": [3, 2, 5, 14], "texture": "#copper" },
+        "east":  { "uv": [11, 2, 13, 14], "texture": "#copper" },
+        "west":  { "uv": [11, 2, 13, 14], "texture": "#copper" },
         "south": { "uv": [11, 2, 13, 14], "texture": "#copper" }
       }
     },
@@ -62,8 +62,8 @@
       "to": [5, 14, 13],
       "faces": {
         "south": { "uv": [3, 2, 5, 14], "texture": "#copper" },
-        "west":  { "uv": [11, 2, 13, 14], "texture": "#copper" },
-        "east":  { "uv": [11, 2, 13, 14], "texture": "#copper" },
+        "west":  { "uv": [3, 2, 5, 14], "texture": "#copper" },
+        "east":  { "uv": [3, 2, 5, 14], "texture": "#copper" },
         "north": { "uv": [3, 2, 5, 14], "texture": "#copper" }
       }
     },
@@ -168,13 +168,13 @@
     },
     {
       "name": "glass_window",
-      "from": [4, 4, 4],
-      "to": [12, 12, 12],
+      "from": [3.8, 3.8, 3.8],
+      "to": [12.2, 12.2, 12.2],
       "faces": {
-        "north": { "uv": [4, 4, 12, 12], "texture": "#glass" },
-        "east":  { "uv": [4, 4, 12, 12], "texture": "#glass" },
-        "south": { "uv": [4, 4, 12, 12], "texture": "#glass" },
-        "west":  { "uv": [4, 4, 12, 12], "texture": "#glass" }
+        "north": { "uv": [0, 0, 16, 16], "texture": "#window" },
+        "east":  { "uv": [0, 0, 16, 16], "texture": "#window" },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#window" },
+        "west":  { "uv": [0, 0, 16, 16], "texture": "#window" }
       }
     }
   ]
