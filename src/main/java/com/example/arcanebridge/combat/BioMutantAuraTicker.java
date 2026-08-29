@@ -21,9 +21,21 @@ public class BioMutantAuraTicker {
         CompoundTag data = entity.getPersistentData();
         if (!data.contains(MobArchetypes.NBT_ARCHETYPE)) return;
 
-        // Проверяем, что это био-мутант и щит еще не сломан
-        if (MobArchetypes.Type.BIO.name().equals(data.getString(MobArchetypes.NBT_ARCHETYPE)) &&
-            !data.getBoolean(MobArchetypes.NBT_SHIELD_BROKEN)) {
+                // Проверяем, активен ли в данный момент слой био-мутанта
+        if (data.getBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN)) return;
+
+        net.minecraft.nbt.ListTag layers = data.getList(MobArchetypes.NBT_SHIELD_LAYERS, net.minecraft.nbt.Tag.TAG_COMPOUND);
+        int currentIndex = data.getInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX);
+
+        boolean hasActiveBioLayer = false;
+        if (!layers.isEmpty() && currentIndex < layers.size()) {
+            net.minecraft.nbt.CompoundTag activeLayer = layers.getCompound(currentIndex);
+            if (MobArchetypes.Type.BIO.name().equals(activeLayer.getString("Type")) && activeLayer.getFloat("HP") > 0) {
+                hasActiveBioLayer = true;
+            }
+        }
+
+        if (hasActiveBioLayer) {
 
             ServerLevel level = (ServerLevel) entity.level();
             double time = entity.tickCount * 0.15;
