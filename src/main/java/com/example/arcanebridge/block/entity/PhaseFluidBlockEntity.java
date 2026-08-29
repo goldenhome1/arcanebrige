@@ -24,6 +24,7 @@ import java.util.List;
 
 public class PhaseFluidBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation {
 
+    public boolean isReceiver = false;
     private int channelId = 1;
     private LazyOptional<IFluidHandler> fluidCapability = LazyOptional.empty();
 
@@ -34,12 +35,21 @@ public class PhaseFluidBlockEntity extends SmartBlockEntity implements IHaveGogg
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {}
 
-    public void setChannel(int channel) {
+    public void tune(int channel, boolean receiver) {
         this.channelId = channel;
+        this.isReceiver = receiver;
         this.fluidCapability.invalidate();
         this.fluidCapability = LazyOptional.empty();
         setChanged();
         sendData();
+    }
+
+    public void setChannel(int channel) {
+        tune(channel, this.isReceiver);
+    }
+
+    public void toggleMode() {
+        tune(this.channelId, !this.isReceiver);
     }
 
     public int getChannel() {
@@ -76,6 +86,7 @@ public class PhaseFluidBlockEntity extends SmartBlockEntity implements IHaveGogg
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         tooltip.add(Component.literal("    §bФазовый Гидро-Резонатор:"));
         tooltip.add(Component.literal("  §7Канал: §e#" + channelId));
+        tooltip.add(Component.literal("  §7Режим: " + (this.isReceiver ? "§9Приёмник (RX)" : "§3Источник (TX)")));
 
         IFluidHandler handler = getFluidStorage();
         FluidStack fluid = handler.getFluidInTank(0);
@@ -92,11 +103,13 @@ public class PhaseFluidBlockEntity extends SmartBlockEntity implements IHaveGogg
     protected void write(CompoundTag tag, boolean clientPacket) {
         super.write(tag, clientPacket);
         tag.putInt("ChannelId", this.channelId);
+        tag.putBoolean("IsReceiver", this.isReceiver);
     }
 
     @Override
     protected void read(CompoundTag tag, boolean clientPacket) {
         super.read(tag, clientPacket);
         this.channelId = tag.getInt("ChannelId");
+        this.isReceiver = tag.getBoolean("IsReceiver");
     }
 }
