@@ -44,8 +44,18 @@ public class OpPhaseFluidTX implements ConstMediaAction {
     public List<Iota> execute(@NotNull List<? extends Iota> args, @NotNull CastingEnvironment env) {
         Vec3 targetVec = OperatorUtils.getVec3(args, 0, getArgc());
         double channelId = OperatorUtils.getDouble(args, 1, getArgc());
-        BlockPos targetPos = BlockPos.containing(targetVec);
+                BlockPos targetPos = BlockPos.containing(targetVec);
         ServerLevel level = env.getWorld();
+        ServerPlayer caster = env.getCaster();
+
+        if (caster != null) {
+            ResourceLocation advId = new ResourceLocation("arcane_bridge", "spells/phase_fluidics");
+            Advancement adv = level.getServer().getAdvancements().getAdvancement(advId);
+            if (adv != null && !caster.getAdvancements().getOrStartProgress(adv).isDone()) {
+                throw new at.petrak.hexcasting.api.casting.mishaps.MishapUnenlightened();
+            }
+        }
+
         BlockState targetState = level.getBlockState(targetPos);
 
         Block fluidPipe = ForgeRegistries.BLOCKS.getValue(new ResourceLocation("create", "fluid_pipe"));
