@@ -3,7 +3,7 @@
     "category": "hexcasting:patterns/spells",
   "icon": "arcane_bridge:phase_relay",
   "sortnum": 15,
-  "advancement": "arcane_bridge:spells/phase_kinetics",
+    "advancement": "arcane_bridge:spells/phase_kinetics",
   "pages": [
     {
       "type": "patchouli:text",
