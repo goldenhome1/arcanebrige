@@ -1,0 +1,29 @@
+{
+  "name": "Phase Resonance: Fluidics",
+  "category": "hexcasting:spells",
+  "icon": "arcane_bridge:deciphered_scroll_fluid",
+  "entry_color": "00E5FF",
+  "advancement": "arcane_bridge:spells/phase_fluidics",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Transporting liquid matter through ethereal space adheres to the laws of harmonic resonance. By focusing on a $(l:create:fluid_pipe)Create Pipe$(), the caster tethers it to a designated dimensional fluid channel.$(br2)Linked pipes synchronize fluid contents instantaneously regardless of distance."
+    },
+    {
+      "type": "hexcasting:pattern",
+      "op_id": "arcane_bridge:phase_fluid_tx",
+      "anchor": "arcane_bridge:phase_fluid_tx",
+      "input": "vector, num",
+      "output": "",
+      "text": "Transmutes the pipe into a $(l:arcane_bridge:phase_fluid_tx)Phase Emitter (TX)$(). Any fluid pumped into this node is fed directly into the ether network."
+    },
+    {
+      "type": "hexcasting:pattern",
+      "op_id": "arcane_bridge:phase_fluid_rx",
+      "anchor": "arcane_bridge:phase_fluid_rx",
+      "input": "vector, num",
+      "output": "",
+      "text": "Transmutes the pipe into a $(l:arcane_bridge:phase_fluid_rx)Phase Receiver (RX)$(). Allows external pumps to draw fluids out from the ether network."
+    }
+  ]
+}
