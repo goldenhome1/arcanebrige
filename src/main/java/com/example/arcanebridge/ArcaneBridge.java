@@ -3,14 +3,13 @@ package com.example.arcanebridge;
 import com.example.arcanebridge.capability.ResonanceProvider;
 import com.example.arcanebridge.decipher.DecryptionRegistry;
 import com.example.arcanebridge.entity.ModEntities;
-import com.example.arcanebridge.hex.ArcaneHexRegistry;
-import com.example.arcanebridge.hex.ModHexActions;
 import com.example.arcanebridge.item.ModItems;
 import com.example.arcanebridge.logic.ResonanceEngine;
 import com.example.arcanebridge.network.NetworkHandler;
 import com.example.arcanebridge.raid.RaidConfig;
 import com.example.arcanebridge.registry.ModBlockEntities;
 import com.example.arcanebridge.registry.ModBlocks;
+import com.example.arcanebridge.registry.ModHexActions;
 import com.example.arcanebridge.sound.ModSounds;
 
 import net.minecraft.resources.ResourceLocation;
@@ -32,26 +31,25 @@ public class ArcaneBridge {
     public ArcaneBridge() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
-                NetworkHandler.register();
+        NetworkHandler.register();
         ModSounds.register(modEventBus);
-        ArcaneHexRegistry.register(modEventBus);
+        ModEntities.register(modEventBus);
+        ModBlocks.register(modEventBus);
         ModItems.register(modEventBus);
         ModBlockEntities.register(modEventBus);
-        ModItems.register(modEventBus);
-        com.example.arcanebridge.registry.ModHexActions.register(modEventBus);
-        ModBlockEntities.register(modEventBus);
+        ModHexActions.register(modEventBus);
+
         modEventBus.addListener(this::commonSetup);
-        ModHexActions.register(FMLJavaModLoadingContext.get().getModEventBus());
         MinecraftForge.EVENT_BUS.register(this);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-                event.enqueueWork(() -> {
+        event.enqueueWork(() -> {
             ResonanceEngine.loadOrCreateConfig();
             RaidConfig.loadOrCreateConfig();
-            
-                        // Регистрация доступных для расшифровки реликвий
-                        DecryptionRegistry.register(
+
+            // Регистрация реликвий
+            DecryptionRegistry.register(
                     ModItems.ANCIENT_SCROLL_PHASE.get(),
                     ModItems.DECIPHERED_SCROLL_PHASE.get(),
                     new ResourceLocation("arcane_bridge", "spells/phase_kinetics"),
