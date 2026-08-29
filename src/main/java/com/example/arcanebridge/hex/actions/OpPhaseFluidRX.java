@@ -1,106 +1,96 @@
 package com.example.arcanebridge.hex.actions;
 
 import at.petrak.hexcasting.api.casting.OperatorUtils;
-import at.petrak.hexcasting.api.casting.castables.Action;
+import at.petrak.hexcasting.api.casting.castables.ConstMediaAction;
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
 import at.petrak.hexcasting.api.casting.eval.OperationResult;
 import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
-import at.petrak.hexcasting.api.casting.eval.vm.HexEvalMarker;
 import at.petrak.hexcasting.api.casting.eval.vm.SpellContinuation;
+import at.petrak.hexcasting.api.casting.iota.DoubleIota;
 import at.petrak.hexcasting.api.casting.iota.Iota;
-import at.petrak.hexcasting.api.casting.mishaps.Mishap;
-import at.petrak.hexcasting.api.casting.mishaps.MishapBadBlock;
-import at.petrak.hexcasting.api.casting.mishaps.MishapNotEnoughArgs;
-import at.petrak.hexcasting.api.misc.MediaConstants;
+import at.petrak.hexcasting.api.casting.iota.NullIota;
 import com.example.arcanebridge.block.PhaseFluidBlock;
 import com.example.arcanebridge.block.entity.PhaseFluidBlockEntity;
 import com.example.arcanebridge.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class OpPhaseFluidRX implements Action {
+public class OpPhaseFluidRX implements ConstMediaAction {
 
-    public static final OpPhaseFluidRX INSTANCE = new OpPhaseFluidRX();
+    @Override
+    public int getArgc() {
+        return 2;
+    }
+
+    @Override
+    public long getMediaCost() {
+        return 0L;
+    }
 
     @NotNull
     @Override
-    public OperationResult operate(@NotNull CastingEnvironment env, @NotNull CastingImage image, @NotNull SpellContinuation continuation) throws Mishap {
-        List<Iota> stack = image.getStack();
-        if (stack.size() < 2) {
-            throw new MishapNotEnoughArgs(2, stack.size());
+    public List<Iota> execute(@NotNull List<? extends Iota> args, @NotNull CastingEnvironment env) {
+        Vec3 targetVec = OperatorUtils.getVec3(args, 0, getArgc());
+        double channelId = OperatorUtils.getDouble(args, 1, getArgc());
+        BlockPos targetPos = BlockPos.containing(targetVec);
+        ServerLevel level = env.getWorld();
+        BlockState targetState = level.getBlockState(targetPos);
+
+        Block fluidPipe = ForgeRegistries.BLOCKS.getValue(new ResourceLocation("create", "fluid_pipe"));
+        Block glassPipe = ForgeRegistries.BLOCKS.getValue(new ResourceLocation("create", "glass_fluid_pipe"));
+
+        boolean isCreatePipe = (fluidPipe != null && targetState.is(fluidPipe))
+                || (glassPipe != null && targetState.is(glassPipe));
+        boolean isPhasePipe = targetState.getBlock() instanceof PhaseFluidBlock;
+
+        if (!isCreatePipe && !isPhasePipe) {
+            return List.of(new NullIota());
         }
 
-        BlockPos pos = OperatorUtils.getBlockPos(stack, stack.size() - 2, 2);
-        int channel = OperatorUtils.getInt(stack, stack.size() - 1, 2);
-
-        env.assertPosInRange(pos);
-
-        Level level = env.getWorld();
-        BlockState state = level.getBlockState(pos);
-        BlockEntity be = level.getBlockEntity(pos);
-
-        boolean isValidTarget = state.getBlock() instanceof PhaseFluidBlock
-                || state.getBlock() instanceof com.simibubi.create.content.fluids.pipes.FluidPipeBlock
-                || state.getBlock() instanceof com.simibubi.create.content.fluids.pipes.GlassFluidPipeBlock
-                || state.getBlock() instanceof com.simibubi.create.content.fluids.pipes.EncasedPipeBlock
-                || (be != null && be.getCapability(ForgeCapabilities.FLUID_HANDLER).isPresent());
-
-        if (!isValidTarget) {
-            throw new MishapBadBlock(pos, Component.translatable("hexcasting.mishap.bad_block.pipe"));
-        }
-
-        env.extractMedia(MediaConstants.DUST_UNIT * 2L, false);
-
-        Direction.Axis axis = Direction.Axis.Y;
-        if (state.hasProperty(PhaseFluidBlock.AXIS)) {
-            axis = state.getValue(PhaseFluidBlock.AXIS);
-        } else if (state.hasProperty(BlockStateProperties.AXIS)) {
-            axis = state.getValue(BlockStateProperties.AXIS);
-        } else if (state.hasProperty(BlockStateProperties.FACING)) {
-            axis = state.getValue(BlockStateProperties.FACING).getAxis();
-        }
-
-        if (!(state.getBlock() instanceof PhaseFluidBlock)) {
-            level.setBlock(pos, ModBlocks.PHASE_FLUID_RELAY.get().defaultBlockState().setValue(PhaseFluidBlock.AXIS, axis), Block.UPDATE_ALL);
-        }
-
-        be = level.getBlockEntity(pos);
-        if (be instanceof PhaseFluidBlockEntity fluidNode) {
-            fluidNode.tune(Math.max(1, channel), true); // true = Приёмник (RX)
-
-            if (level instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(ParticleTypes.SPLASH, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, 25, 0.3, 0.3, 0.3, 0.15);
-                serverLevel.sendParticles(ParticleTypes.ENCHANT, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 30, 0.4, 0.4, 0.4, 0.5);
+        if (isCreatePipe) {
+            Direction.Axis axis = Direction.Axis.Y;
+            if (targetState.hasProperty(PhaseFluidBlock.AXIS)) {
+                axis = targetState.getValue(PhaseFluidBlock.AXIS);
+            } else if (targetState.hasProperty(BlockStateProperties.AXIS)) {
+                axis = targetState.getValue(BlockStateProperties.AXIS);
+            } else if (targetState.hasProperty(BlockStateProperties.FACING)) {
+                axis = targetState.getValue(BlockStateProperties.FACING).getAxis();
             }
-            level.playSound(null, pos, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1.0F, 1.8F);
-            level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 1.0F, 1.2F);
+
+            BlockState newState = ModBlocks.PHASE_FLUID_RELAY.get().defaultBlockState()
+                    .setValue(PhaseFluidBlock.AXIS, axis);
+            level.setBlock(targetPos, newState, Block.UPDATE_ALL);
         }
 
-        List<Iota> newStack = new ArrayList<>(stack.subList(0, stack.size() - 2));
-        CastingImage newImage = image.copy(
-                newStack,
-                image.getParenCount(),
-                image.getParenthesized(),
-                image.getEscapeNext(),
-                image.getOpsConsumed() + 1,
-                image.getUserData()
-        );
+        if (level.getBlockEntity(targetPos) instanceof PhaseFluidBlockEntity fluidNode) {
+            fluidNode.tune((int) channelId, true);
+            level.playSound(null, targetPos, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 0.9F, 1.4F);
+        }
 
-        return new OperationResult(newImage, List.of(), continuation, HexEvalMarker.NORMAL);
+        return List.of(new DoubleIota(channelId));
+    }
+
+    @NotNull
+    @Override
+    public ConstMediaAction.CostMediaActionResult executeWithOpCount(@NotNull List<? extends Iota> args, @NotNull CastingEnvironment env) {
+        return ConstMediaAction.DefaultImpls.executeWithOpCount(this, args, env);
+    }
+
+    @NotNull
+    @Override
+    public OperationResult operate(@NotNull CastingEnvironment env, @NotNull CastingImage image, @NotNull SpellContinuation continuation) {
+        return ConstMediaAction.DefaultImpls.operate(this, env, image, continuation);
     }
 }
