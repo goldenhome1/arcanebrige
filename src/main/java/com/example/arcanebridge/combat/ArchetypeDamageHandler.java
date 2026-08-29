@@ -8,6 +8,8 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -29,7 +31,7 @@ public class ArchetypeDamageHandler {
         CompoundTag data = target.getPersistentData();
         MobArchetypes.Type archetype = MobArchetypes.Type.NONE;
 
-        // 1. Чтение или динамическая инициализация архетипа
+        // 1. Определение или динамическая инициализация архетипа
         if (data.contains(MobArchetypes.NBT_ARCHETYPE)) {
             try {
                 archetype = MobArchetypes.Type.valueOf(data.getString(MobArchetypes.NBT_ARCHETYPE));
@@ -50,7 +52,7 @@ public class ArchetypeDamageHandler {
             }
         }
 
-        // Если у моба нет архетипа или щит уже окончательно расколот — урон проходит штатно (100%)
+        // Если архетипа нет или щит уже сломан — урон проходит без изменений (100%)
         if (archetype == MobArchetypes.Type.NONE || data.getBoolean(MobArchetypes.NBT_SHIELD_BROKEN)) {
             return;
         }
@@ -71,11 +73,9 @@ public class ArchetypeDamageHandler {
             data.putFloat(MobArchetypes.NBT_SHIELD_HP, Math.max(0.0f, currentShieldHp));
 
             if (currentShieldHp <= 0.0f) {
-                // Раскол барьера
                 data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, true);
                 triggerShieldBreakEffects(level, target, archetype);
             } else {
-                // Промежуточное попадание профильным оружием (треск/вспышка)
                 triggerShieldHitEffects(level, target, archetype, true);
             }
         } else {
@@ -92,33 +92,34 @@ public class ArchetypeDamageHandler {
                 data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, true);
                 triggerShieldBreakEffects(level, target, archetype);
             } else {
-                // Глухой отклик поглощения
                 triggerShieldHitEffects(level, target, archetype, false);
             }
         }
     }
 
     /**
-     * Определение источника урона
+     * Определение категории входящей атаки
      */
     private static MobArchetypes.AttackCategory classifyAttack(DamageSource source) {
         Entity directEntity = source.getDirectEntity();
         Entity trueSource = source.getEntity();
+        String damageMsg = source.getMsgId();
 
-        // 1. Огнестрел Create: Gunsmithing (снаряды или идентификаторы CGS)
+        // 1. Огнестрел Create: Gunsmithing (снаряды или сигнатуры CGS)
         if (directEntity instanceof Projectile) {
             ResourceLocation projId = ForgeRegistries.ENTITY_TYPES.getKey(directEntity.getType());
             if (projId != null && (projId.getNamespace().equals("cgs") || projId.getPath().contains("bullet") || projId.getPath().contains("round"))) {
                 return MobArchetypes.AttackCategory.CGS_FIREARM;
             }
         }
-        String damageMsg = source.getMsgId();
         if (damageMsg.contains("cgs") || damageMsg.contains("bullet") || damageMsg.contains("gun")) {
             return MobArchetypes.AttackCategory.CGS_FIREARM;
         }
 
-        // 2. Магия (Hex Casting / Ars Nouveau / теги DamageTypeTags.IS_MAGIC)
-        if (source.is(DamageTypeTags.IS_MAGIC) || damageMsg.contains("hexcasting") || damageMsg.contains("ars_nouveau") || damageMsg.contains("magic")) {
+        // 2. Магия (Hex Casting / Ars Nouveau / стандартные типы урона Magic)
+        if (source.is(DamageTypes.MAGIC) || source.is(DamageTypes.INDIRECT_MAGIC) || source.is(DamageTypes.THORNS)
+                || source.is(DamageTypeTags.WITCH_RESISTANT_TO)
+                || damageMsg.contains("hexcasting") || damageMsg.contains("ars_nouveau") || damageMsg.contains("magic")) {
             return MobArchetypes.AttackCategory.MAGIC_SPELL;
         }
         if (directEntity != null) {
@@ -128,7 +129,7 @@ public class ArchetypeDamageHandler {
             }
         }
 
-        // 3. Ближний бой (контактный удар от игрока или сущности, не являющийся снарядом)
+        // 3. Ближний бой (прямой контактный удар от игрока или моба)
         if (directEntity != null && directEntity == trueSource && trueSource instanceof LivingEntity) {
             return MobArchetypes.AttackCategory.MELEE_STRIKE;
         }
@@ -136,9 +137,6 @@ public class ArchetypeDamageHandler {
         return MobArchetypes.AttackCategory.GENERIC;
     }
 
-    /**
-     * Проверка соответствия ключа уязвимости
-     */
     private static boolean isProfileMatch(MobArchetypes.Type archetype, MobArchetypes.AttackCategory category) {
         return switch (archetype) {
             case ARMORED -> category == MobArchetypes.AttackCategory.CGS_FIREARM;
@@ -148,9 +146,6 @@ public class ArchetypeDamageHandler {
         };
     }
 
-    /**
-     * Звуки и частицы при обычном попадании
-     */
     private static void triggerShieldHitEffects(ServerLevel level, LivingEntity target, MobArchetypes.Type archetype, boolean isProfileHit) {
         double x = target.getX();
         double y = target.getY() + (target.getBbHeight() * 0.5);
@@ -173,9 +168,6 @@ public class ArchetypeDamageHandler {
         }
     }
 
-    /**
-     * Звуки, частицы и статусы при полном расколе барьера (Shield HP <= 0)
-     */
     private static void triggerShieldBreakEffects(ServerLevel level, LivingEntity target, MobArchetypes.Type archetype) {
         double x = target.getX();
         double y = target.getY() + (target.getBbHeight() * 0.5);
@@ -195,9 +187,8 @@ public class ArchetypeDamageHandler {
             case BIO -> {
                 level.playSound(null, x, y, z, SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR, SoundSource.HOSTILE, 0.9f, 1.3f);
                 level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y, z, 15, 0.4, 0.4, 0.4, 0.05);
-                // Отключаем регенерацию и накладываем микро-стан (замедление IV на 1 секунду)
                 target.removeEffect(MobEffects.REGENERATION);
-                target.addEffect(new net.minecraft.world.effect.MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 3, false, false));
+                target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 3, false, false));
             }
             default -> {}
         }
