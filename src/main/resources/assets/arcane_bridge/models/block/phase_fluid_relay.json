@@ -2,10 +2,10 @@
   "credit": "Arcane Bridge Phase Pipe",
   "parent": "minecraft:block/block",
   "textures": {
-    "particle": "create:block/fluid_pipe",
-    "pipe": "create:block/fluid_pipe",
+    "particle": "create:block/copper_casing",
+    "pipe": "create:block/fluid_pipe/pipe",
     "casing": "create:block/copper_casing",
-    "window": "create:block/fluid_pipe_window"
+    "window": "create:block/fluid_pipe/window"
   },
   "elements": [
     {
