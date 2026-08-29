@@ -19,15 +19,32 @@ public class MobArchetypes {
     public static final TagKey<EntityType<?>> ETHEREAL_TAG = TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation("arcane", "ethereal_entity"));
     public static final TagKey<EntityType<?>> BIO_TAG = TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation("arcane", "bio_mutant"));
 
-    // NBT-ключи в persistentData моба
+    // 3. NBT-ключи в persistentData моба (Стек многослойных щитов)
+
+    public static final String NBT_SHIELD_LAYERS = "ArcaneShieldLayers";
+
+    public static final String NBT_CURRENT_LAYER_INDEX = "ArcaneCurrentLayerIndex";
+
+    public static final String NBT_ALL_SHIELDS_BROKEN = "ArcaneAllShieldsBroken";
+
+
+    // Устаревшие ключи для обратной совместимости
+
     public static final String NBT_ARCHETYPE = "ArcaneArchetype";
+
     public static final String NBT_SHIELD_HP = "ArcaneShieldHP";
+
     public static final String NBT_MAX_SHIELD_HP = "ArcaneMaxShieldHP";
+
     public static final String NBT_SHIELD_BROKEN = "ArcaneShieldBroken";
 
-    // Базовые значения емкости барьеров (Shield HP)
+
+    // 4. Базовые значения емкости барьеров (Shield HP)
+
     public static final float HP_ARMORED_SHIELD = 12.0f; // ~1-2 выстрела Create Gunsmithing
+
     public static final float HP_ETHEREAL_SHIELD = 15.0f; // ~1 боевой каст Hex / Ars
+
     public static final float HP_BIO_SHIELD = 10.0f;      // ~2 акцентированных удара в ближнем бою
 
     // Множитель сопротивления при активном щите для непрофильного оружия (20% входящего урона)
