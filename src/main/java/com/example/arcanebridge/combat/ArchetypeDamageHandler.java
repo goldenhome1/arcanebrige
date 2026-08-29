@@ -1,6 +1,7 @@
 package com.example.arcanebridge.combat;
 
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -14,6 +15,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -52,13 +54,13 @@ public class ArchetypeDamageHandler {
             }
         }
 
-        // Если архетипа нет или щит уже сломан — урон проходит без изменений (100%)
+        // Если архетипа нет или щит уже сломан — урон проходит штатно (100%)
         if (archetype == MobArchetypes.Type.NONE || data.getBoolean(MobArchetypes.NBT_SHIELD_BROKEN)) {
             return;
         }
 
         DamageSource source = event.getSource();
-        MobArchetypes.AttackCategory category = classifyAttack(source);
+        MobArchetypes.AttackCategory category = classifyAttack(target, source);
         boolean isMatchingKey = isProfileMatch(archetype, category);
 
         float incomingDamage = event.getAmount();
@@ -98,39 +100,57 @@ public class ArchetypeDamageHandler {
     }
 
     /**
-     * Определение категории входящей атаки
+     * Пошаговая классификация входящей атаки
      */
-    private static MobArchetypes.AttackCategory classifyAttack(DamageSource source) {
-        Entity directEntity = source.getDirectEntity();
-        Entity trueSource = source.getEntity();
-        String damageMsg = source.getMsgId();
-
-        // 1. Огнестрел Create: Gunsmithing (снаряды или сигнатуры CGS)
-        if (directEntity instanceof Projectile) {
-            ResourceLocation projId = ForgeRegistries.ENTITY_TYPES.getKey(directEntity.getType());
-            if (projId != null && (projId.getNamespace().equals("cgs") || projId.getPath().contains("bullet") || projId.getPath().contains("round"))) {
-                return MobArchetypes.AttackCategory.CGS_FIREARM;
+    private static MobArchetypes.AttackCategory classifyAttack(LivingEntity target, DamageSource source) {
+        String damageTypeId = "";
+        try {
+            ResourceLocation key = target.level().registryAccess()
+                    .registryOrThrow(Registries.DAMAGE_TYPE)
+                    .getKey(source.type());
+            if (key != null) {
+                damageTypeId = key.toString();
             }
-        }
-        if (damageMsg.contains("cgs") || damageMsg.contains("bullet") || damageMsg.contains("gun")) {
-            return MobArchetypes.AttackCategory.CGS_FIREARM;
-        }
+        } catch (Exception ignored) {}
 
-        // 2. Магия (Hex Casting / Ars Nouveau / стандартные типы урона Magic)
-        if (source.is(DamageTypes.MAGIC) || source.is(DamageTypes.INDIRECT_MAGIC) || source.is(DamageTypes.THORNS)
-                || source.is(DamageTypeTags.WITCH_RESISTANT_TO)
-                || damageMsg.contains("hexcasting") || damageMsg.contains("ars_nouveau") || damageMsg.contains("magic")) {
+        String msgId = source.getMsgId();
+        Entity directEntity = source.getDirectEntity();
+
+        // 1. ШАГ 1: МАГИЯ (Ars Nouveau, Hex Casting, ванильная магия)
+        if (damageTypeId.contains("ars_nouveau") || damageTypeId.contains("hexcasting") || damageTypeId.contains("magic")
+                || source.is(DamageTypes.MAGIC) || source.is(DamageTypes.INDIRECT_MAGIC) || source.is(DamageTypeTags.WITCH_RESISTANT_TO)) {
             return MobArchetypes.AttackCategory.MAGIC_SPELL;
         }
         if (directEntity != null) {
-            ResourceLocation projId = ForgeRegistries.ENTITY_TYPES.getKey(directEntity.getType());
-            if (projId != null && (projId.getNamespace().equals("ars_nouveau") || projId.getNamespace().equals("hexcasting"))) {
+            ResourceLocation entId = ForgeRegistries.ENTITY_TYPES.getKey(directEntity.getType());
+            if (entId != null && (entId.getNamespace().equals("ars_nouveau") || entId.getNamespace().equals("hexcasting"))) {
                 return MobArchetypes.AttackCategory.MAGIC_SPELL;
             }
         }
 
-        // 3. Ближний бой (прямой контактный удар от игрока или моба)
-        if (directEntity != null && directEntity == trueSource && trueSource instanceof LivingEntity) {
+        // 2. ШАГ 2: ОГНЕСТРЕЛ И АРТИЛЛЕРИЯ (Create: Gunsmithing, NTGL, CBC)
+        if (damageTypeId.contains("ntgl") || damageTypeId.contains("cgs") || damageTypeId.contains("createbigcannons")
+                || damageTypeId.contains("machine_gun") || damageTypeId.contains("cannon") || damageTypeId.contains("bullet")
+                || msgId.contains("bullet") || msgId.contains("cgs") || msgId.contains("cannon") || msgId.contains("machine_gun_fire")) {
+            return MobArchetypes.AttackCategory.CGS_FIREARM;
+        }
+        if (directEntity instanceof Projectile && !(directEntity instanceof AbstractArrow)) {
+            ResourceLocation projId = ForgeRegistries.ENTITY_TYPES.getKey(directEntity.getType());
+            if (projId != null && (projId.getNamespace().equals("cgs") || projId.getNamespace().equals("ntgl")
+                    || projId.getNamespace().equals("createbigcannons") || projId.getPath().contains("bullet")
+                    || projId.getPath().contains("rocket") || projId.getPath().contains("projectile"))) {
+                return MobArchetypes.AttackCategory.CGS_FIREARM;
+            }
+        }
+
+        // 3. ШАГ 3: БЛИЖНИЙ БОЙ И СТРЕЛЫ / БОЛТЫ (Уязвимость Био-мутанта)
+        // Ванильные стрелы и болты
+        if (directEntity instanceof AbstractArrow || damageTypeId.contains("arrow")) {
+            return MobArchetypes.AttackCategory.MELEE_STRIKE;
+        }
+        // Прямой контактный удар мечом, топором, кулаком или лапой моба
+        if (damageTypeId.equals("minecraft:player_attack") || damageTypeId.equals("minecraft:mob_attack")
+                || (msgId.equals("player") && !damageTypeId.contains("spell") && !damageTypeId.contains("magic"))) {
             return MobArchetypes.AttackCategory.MELEE_STRIKE;
         }
 
