@@ -214,9 +214,17 @@ public class ShieldBarOverlayRenderer {
             maxX = halfSize + 3;
         }
 
-        float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
+                float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
 
-        // 1. Отрисовка контурной рамки
+        // Расчет плавно сгорающего белого шлейфа (Fighting Game Damage Trail)
+        float trailProgress = updateAndGetDamageTrail(target.getId(), progress);
+
+        // 1. Слой шлейфа урона (белая задерживающаяся полоска)
+        if (trailProgress > progress) {
+            drawPerimeterShieldFrame(mat, minX, minY, maxX, maxY, trailProgress, 0xEEFFFFFF);
+        }
+
+        // 2. Основная цветная полоса щита (поверх шлейфа)
         drawPerimeterShieldFrame(mat, minX, minY, maxX, maxY, progress, shieldColor);
 
         // 2. Цифры щита строго под рамкой
