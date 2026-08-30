@@ -34,6 +34,16 @@ public class ShieldBarOverlayRenderer {
 
     private static final double MAX_RENDER_DISTANCE_SQ = 24.0 * 24.0;
 
+    // Кэш анимации урона (эффект шлейфа из файтингов)
+    private static final java.util.Map<Integer, TrailData> SHIELD_TRAILS = new java.util.HashMap<>();
+
+    private static class TrailData {
+        float trailingProgress = 1.0F;
+        float lastActualProgress = 1.0F;
+        long lastDamageTimestamp = 0L;
+        long lastFrameTime = 0L;
+    }
+
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
