@@ -182,26 +182,43 @@ public class ShieldBarOverlayRenderer {
             }
         }
 
-        float targetMaxHealth = target.getMaxHealth();
-        int halfSize = (int) Math.max(20, Math.min(48, targetMaxHealth));
+        // Корректный расчет ширины по стандарту Neat (база 22px или длина имени, независимая от HP)
 
-                // Выверенные границы: урезана ширина на 1px с обеих сторон, нижняя грань поднята на 1px
-        int minX = -halfSize - 5;
-        int maxX = halfSize + 5;
+        int nameHalfWidth = font.width(target.getDisplayName().getString()) / 2;
+
+        int halfSize = Math.max(22, nameHalfWidth + 6);
+
+
+        // Точные границы плашки Neat
+
+        int minX = -halfSize - 2;
+
+        int maxX = halfSize + 2;
+
         int minY = -6;
+
         int maxY = 7;
+
 
         float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
 
+
         // 1. Отрисовка контурной рамки
+
         drawPerimeterShieldFrame(mat, minX, minY, maxX, maxY, progress, shieldColor);
 
-        // 2. Цифры щита опущены ниже и уменьшены в 1.5 раза (масштаб ~0.37F)
+
+        // 2. Цифры щита опущены строго под нижнюю грань и уменьшены
+
         String stackInfo = remainingLayers > 1 ? " §7x" + remainingLayers : "";
+
         String text = String.format("%s%.0f§7/§f%.0f%s", colorCode, currentHp, maxHp, stackInfo);
 
+
         poseStack.pushPose();
-        poseStack.translate(0, maxY + 5.0F, 0);
+
+        poseStack.translate(0, maxY + 4.5F, 0);
+
         poseStack.scale(0.37F, 0.37F, 0.37F);
 
         int textWidth = font.width(text);
