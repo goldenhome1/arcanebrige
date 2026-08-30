@@ -88,8 +88,8 @@ public class ShieldBarOverlayRenderer {
         double y = target.yo + (target.getY() - target.yo) * partialTick - cameraPos.y;
         double z = target.zo + (target.getZ() - target.zo) * partialTick - cameraPos.z;
 
-        // Выносим плашку щита над Neat (на высоте 0.85 блока)
-        double heightOffset = target.getBbHeight() + (hasHudJack ? 0.82D : 0.40D);
+        // Позиционирование строго над плашкой Neat
+        double heightOffset = target.getBbHeight() + (hasHudJack ? 0.78D : 0.42D);
 
         poseStack.pushPose();
         poseStack.translate(x, y + heightOffset, z);
@@ -97,66 +97,83 @@ public class ShieldBarOverlayRenderer {
         Camera camera = mc.gameRenderer.getMainCamera();
         poseStack.mulPose(Axis.YP.rotationDegrees(-camera.getYRot()));
         poseStack.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
-        poseStack.scale(-0.018F, -0.018F, 0.018F);
+        poseStack.scale(-0.016F, -0.016F, 0.016F);
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
-        RenderSystem.disableDepthTest(); // Исключает обрезание и перекрытие чужими полосами
+        RenderSystem.disableDepthTest();
 
         Matrix4f mat = poseStack.last().pose();
 
+        // Мягкие, благородные матовые оттенки (не кислотные)
         int barColor;
         String icon;
         switch (typeStr) {
             case "ARMORED" -> {
-                barColor = 0xFFD49B2A; // Латунь
+                barColor = 0xFFB8860B; // Dark Goldenrod (Латунь)
                 icon = "⚙";
             }
             case "ETHEREAL" -> {
-                barColor = 0xFF9B59B6; // Аметист
+                barColor = 0xFF6A1B9A; // Глубокий аметист
                 icon = "🔮";
             }
             case "BIO" -> {
-                barColor = 0xFF2ECC71; // Био-зеленый
+                barColor = 0xFF2E7D32; // Мшистый био-зеленый
                 icon = "🧬";
             }
             default -> {
-                barColor = 0xFF3498DB;
+                barColor = 0xFF1565C0; // Индиго
                 icon = "🛡";
             }
         }
 
-        int totalWidth = 42;
+        int totalWidth = 38;
         int barHeight = 2;
         int halfWidth = totalWidth / 2;
 
-        // 1. Полупрозрачная подложка Neat-стиля
-        fill(mat, -halfWidth - 1, -1, halfWidth + 1, barHeight + 1, 0x88000000);
+        // 1. Темный Neat-фон блока щита
+        fill(mat, -halfWidth - 2, -10, halfWidth + 2, barHeight + 1, 0xCC111215);
 
-        // 2. Рамка
-        fill(mat, -halfWidth - 1, -2, halfWidth + 1, -1, 0xAA222222);
-        fill(mat, -halfWidth - 1, barHeight + 1, halfWidth + 1, barHeight + 2, 0xAA222222);
+        // 2. Рамка блока
+        fill(mat, -halfWidth - 2, -11, halfWidth + 2, -10, 0xEE2A2C30);
+        fill(mat, -halfWidth - 2, barHeight + 1, halfWidth + 2, barHeight + 2, 0xEE2A2C30);
+        fill(mat, -halfWidth - 3, -11, -halfWidth - 2, barHeight + 2, 0xEE2A2C30);
+        fill(mat, halfWidth + 2, -11, halfWidth + 3, barHeight + 2, 0xEE2A2C30);
 
-        // 3. Полоса щита
+        // 3. Подложка для полоски прогресса
+        fill(mat, -halfWidth, 0, halfWidth, barHeight, 0xFF222428);
+
+        // 4. Активная цветная полоса барьера
         float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
         int filledWidth = (int) (totalWidth * progress);
         if (filledWidth > 0) {
             fill(mat, -halfWidth, 0, -halfWidth + filledWidth, barHeight, barColor);
         }
 
-        // 4. Текстовый бейдж над полосой щита
-        String stackInfo = remainingLayers > 1 ? " x" + remainingLayers : "";
-        String text = String.format("%s %.0f/%.0f%s", icon, currentHp, maxHp, stackInfo);
+        // 5. Четкий текст с тенью (иконка + числа)
+        String stackInfo = remainingLayers > 1 ? " §7x" + remainingLayers : "";
+        String text = String.format("%s §f%.0f§7/§f%.0f%s", icon, currentHp, maxHp, stackInfo);
 
         poseStack.pushPose();
-        poseStack.translate(0, -7.5F, 0);
-        poseStack.scale(0.58F, 0.58F, 0.58F);
+        poseStack.translate(0, -9.0F, -0.05F);
+        poseStack.scale(0.60F, 0.60F, 0.60F);
 
         int textWidth = font.width(text);
         int light = LevelRenderer.getLightColor(target.level(), target.blockPosition());
-        font.drawInBatch(text, -textWidth / 2.0F, 0, 0xFFE0E0E0, false, mat,
-                mc.renderBuffers().bufferSource(), Font.DisplayMode.NORMAL, 0, light);
+        
+        font.drawInBatch(
+                text,
+                -textWidth / 2.0F,
+                0,
+                0xFFE6E6E6,
+                true, // Контрастная тень
+                mat,
+                mc.renderBuffers().bufferSource(),
+                Font.DisplayMode.NORMAL,
+                0,
+                light
+        );
         mc.renderBuffers().bufferSource().endBatch();
         poseStack.popPose();
 
