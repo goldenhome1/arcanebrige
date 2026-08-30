@@ -163,7 +163,7 @@ public class ShieldBarOverlayRenderer {
 
         int shieldColor;
         String colorCode;
-        switch (typeStr) {
+                switch (typeStr) {
             case "ARMORED" -> {
                 shieldColor = 0xFFFFD700;
                 colorCode = "§6";
@@ -182,19 +182,27 @@ public class ShieldBarOverlayRenderer {
             }
         }
 
-                // В Neat имя рендерится с масштабом 0.5F, плюс резервируется отступ под иконки брони/дропа
-        String displayName = target.getDisplayName().getString();
-        int namePlateWidth = (int) (font.width(displayName) * 0.5F);
-        int totalContentWidth = namePlateWidth + 14;
+        boolean hasCustomName = target.hasCustomName() && target.getCustomName() != null && !target.getCustomName().getString().isEmpty();
 
-        // Базовая полуширина Neat с аккуратным запасом (+4px по краям)
-        int halfSize = Math.max(25, (totalContentWidth + 1) / 2);
-
-        // Контурные границы: расширены по ширине на 2-3px для идеального охвата
-        int minX = -halfSize - 4;
-        int maxX = halfSize + 4;
+        int minX;
+        int maxX;
         int minY = -6;
-        int maxY = 7;
+        int maxY = 6; // Нижняя грань поднята на 1px вверх
+
+        if (hasCustomName) {
+            // Кастомное имя: на 1px шире с каждой стороны
+            String displayName = target.getDisplayName().getString();
+            int namePlateWidth = (int) (font.width(displayName) * 0.5F);
+            int totalContentWidth = namePlateWidth + 14;
+            int halfSize = Math.max(25, (totalContentWidth + 1) / 2);
+            minX = -halfSize - 5;
+            maxX = halfSize + 5;
+        } else {
+            // Обычное имя: на 1px уже с каждой стороны
+            int halfSize = 24;
+            minX = -halfSize - 3;
+            maxX = halfSize + 3;
+        }
 
         float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
 
