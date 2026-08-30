@@ -45,6 +45,7 @@ public class ShieldBarOverlayRenderer {
         boolean hasGoggles = hasEngineerGoggles(player);
         boolean hasHudJack = hasCyberware(player, "cyber_ware_port:cybereye_upgrades_hudjack") || hasCyberware(player, "cyber_ware_port:cybereyes");
 
+        // Если нет ни очков, ни импланта — полностью выключаем отрисовку
         if (!hasGoggles && !hasHudJack) return;
 
         Camera camera = mc.gameRenderer.getMainCamera();
@@ -74,13 +75,22 @@ public class ShieldBarOverlayRenderer {
             String typeStr = activeLayer.getString("Type");
             int remainingLayers = layers.size() - currentIndex;
 
-            renderShieldBar(poseStack, cameraPos, target, currentHp, maxHp, typeStr, remainingLayers, hasHudJack, event.getPartialTick());
+            if (hasHudJack) {
+                // РЕЖИМ 2: С имплантом (Контурная рамка-накладка вокруг Neat + цифры снизу)
+                renderNeatIntegratedShield(poseStack, cameraPos, target, currentHp, maxHp, typeStr, remainingLayers, event.getPartialTick());
+            } else {
+                // РЕЖИМ 1: Только Очки Инженера (Только чистые парящие цифры без Neat)
+                renderGogglesFloatingText(poseStack, cameraPos, target, currentHp, maxHp, typeStr, remainingLayers, event.getPartialTick());
+            }
         }
     }
 
-    private static void renderShieldBar(PoseStack poseStack, Vec3 cameraPos, LivingEntity target,
-                                        float currentHp, float maxHp, String typeStr, int remainingLayers,
-                                        boolean hasHudJack, float partialTick) {
+    /**
+     * РЕЖИМ 1: Очки Инженера (Чистые цифры прочности щита над головой)
+     */
+    private static void renderGogglesFloatingText(PoseStack poseStack, Vec3 cameraPos, LivingEntity target,
+                                                 float currentHp, float maxHp, String typeStr, int remainingLayers,
+                                                 float partialTick) {
         Minecraft mc = Minecraft.getInstance();
         Font font = mc.font;
 
@@ -88,8 +98,57 @@ public class ShieldBarOverlayRenderer {
         double y = target.yo + (target.getY() - target.yo) * partialTick - cameraPos.y;
         double z = target.zo + (target.getZ() - target.zo) * partialTick - cameraPos.z;
 
-        // Позиционирование строго над плашкой Neat
-        double heightOffset = target.getBbHeight() + (hasHudJack ? 0.78D : 0.42D);
+        poseStack.pushPose();
+        poseStack.translate(x, y + target.getBbHeight() + 0.35D, z);
+
+        Camera camera = mc.gameRenderer.getMainCamera();
+        poseStack.mulPose(Axis.YP.rotationDegrees(-camera.getYRot()));
+        poseStack.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
+        poseStack.scale(-0.020F, -0.020F, 0.020F);
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
+
+        Matrix4f mat = poseStack.last().pose();
+
+        String colorCode = switch (typeStr) {
+            case "ARMORED" -> "§6"; // Золото
+            case "ETHEREAL" -> "§d"; // Светло-фиолетовый
+            case "BIO" -> "§a";      // Зеленый
+            default -> "§b";
+        };
+
+        String stackInfo = remainingLayers > 1 ? " §7x" + remainingLayers : "";
+        String text = String.format("%s%.0f§7/§f%.0f%s", colorCode, currentHp, maxHp, stackInfo);
+
+        int textWidth = font.width(text);
+        int light = LevelRenderer.getLightColor(target.level(), target.blockPosition());
+
+        font.drawInBatch(text, -textWidth / 2.0F, 0, 0xFFFFFFFF, true, mat,
+                mc.renderBuffers().bufferSource(), Font.DisplayMode.NORMAL, 0, light);
+        mc.renderBuffers().bufferSource().endBatch();
+
+        RenderSystem.enableDepthTest();
+        RenderSystem.disableBlend();
+        poseStack.popPose();
+    }
+
+    /**
+     * РЕЖИМ 2: HUD Jack (Контурный щит-рамка вокруг Neat + цифры снизу плашки)
+     */
+    private static void renderNeatIntegratedShield(PoseStack poseStack, Vec3 cameraPos, LivingEntity target,
+                                                  float currentHp, float maxHp, String typeStr, int remainingLayers,
+                                                  float partialTick) {
+        Minecraft mc = Minecraft.getInstance();
+        Font font = mc.font;
+
+        double x = target.xo + (target.getX() - target.xo) * partialTick - cameraPos.x;
+        double y = target.yo + (target.getY() - target.yo) * partialTick - cameraPos.y;
+        double z = target.zo + (target.getZ() - target.zo) * partialTick - cameraPos.z;
+
+        // Точные формулы позиционирования Neat
+        double heightOffset = target.getBbHeight() + 0.6D;
 
         poseStack.pushPose();
         poseStack.translate(x, y + heightOffset, z);
@@ -97,7 +156,7 @@ public class ShieldBarOverlayRenderer {
         Camera camera = mc.gameRenderer.getMainCamera();
         poseStack.mulPose(Axis.YP.rotationDegrees(-camera.getYRot()));
         poseStack.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
-        poseStack.scale(-0.016F, -0.016F, 0.016F);
+        poseStack.scale(-0.02666667F, -0.02666667F, 0.02666667F);
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -106,74 +165,49 @@ public class ShieldBarOverlayRenderer {
 
         Matrix4f mat = poseStack.last().pose();
 
-        // Мягкие, благородные матовые оттенки (не кислотные)
-        int barColor;
-        String icon;
+        int shieldColor;
+        String colorCode;
         switch (typeStr) {
             case "ARMORED" -> {
-                barColor = 0xFFB8860B; // Dark Goldenrod (Латунь)
-                icon = "⚙";
+                shieldColor = 0xFFFFD700; // Золотой контур
+                colorCode = "§6";
             }
             case "ETHEREAL" -> {
-                barColor = 0xFF6A1B9A; // Глубокий аметист
-                icon = "🔮";
+                shieldColor = 0xFFDDA0DD; // Аметистовый контур
+                colorCode = "§d";
             }
             case "BIO" -> {
-                barColor = 0xFF2E7D32; // Мшистый био-зеленый
-                icon = "🧬";
+                shieldColor = 0xFF55FF55; // Спорово-зеленый контур
+                colorCode = "§a";
             }
             default -> {
-                barColor = 0xFF1565C0; // Индиго
-                icon = "🛡";
+                shieldColor = 0xFF00FFFF;
+                colorCode = "§b";
             }
         }
 
-        int totalWidth = 38;
-        int barHeight = 2;
-        int halfWidth = totalWidth / 2;
-
-        // 1. Темный Neat-фон блока щита
-        fill(mat, -halfWidth - 2, -10, halfWidth + 2, barHeight + 1, 0xCC111215);
-
-        // 2. Рамка блока
-        fill(mat, -halfWidth - 2, -11, halfWidth + 2, -10, 0xEE2A2C30);
-        fill(mat, -halfWidth - 2, barHeight + 1, halfWidth + 2, barHeight + 2, 0xEE2A2C30);
-        fill(mat, -halfWidth - 3, -11, -halfWidth - 2, barHeight + 2, 0xEE2A2C30);
-        fill(mat, halfWidth + 2, -11, halfWidth + 3, barHeight + 2, 0xEE2A2C30);
-
-        // 3. Подложка для полоски прогресса
-        fill(mat, -halfWidth, 0, halfWidth, barHeight, 0xFF222428);
-
-        // 4. Активная цветная полоса барьера
+        // Стандартные габариты плашки Neat
+        int halfWidth = 24; // Общая ширина плашки Neat ~48 пикселей
+        int top = -10;
+        int bottom = 5;
         float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
-        int filledWidth = (int) (totalWidth * progress);
-        if (filledWidth > 0) {
-            fill(mat, -halfWidth, 0, -halfWidth + filledWidth, barHeight, barColor);
-        }
 
-        // 5. Четкий текст с тенью (иконка + числа)
+        // Отрисовка сгорающей контурной рамки вокруг Neat (Периметр = Верх -> Право -> Низ -> Лево)
+        drawPerimeterShieldFrame(mat, -halfWidth - 2, top - 2, halfWidth + 2, bottom + 2, progress, shieldColor);
+
+        // Цифры щита строго под полоской Neat (как на рисунке)
         String stackInfo = remainingLayers > 1 ? " §7x" + remainingLayers : "";
-        String text = String.format("%s §f%.0f§7/§f%.0f%s", icon, currentHp, maxHp, stackInfo);
+        String text = String.format("%s%.0f§7/§f%.0f%s", colorCode, currentHp, maxHp, stackInfo);
 
         poseStack.pushPose();
-        poseStack.translate(0, -9.0F, -0.05F);
-        poseStack.scale(0.60F, 0.60F, 0.60F);
+        poseStack.translate(0, bottom + 4.0F, 0);
+        poseStack.scale(0.70F, 0.70F, 0.70F);
 
         int textWidth = font.width(text);
         int light = LevelRenderer.getLightColor(target.level(), target.blockPosition());
-        
-        font.drawInBatch(
-                text,
-                -textWidth / 2.0F,
-                0,
-                0xFFE6E6E6,
-                true, // Контрастная тень
-                mat,
-                mc.renderBuffers().bufferSource(),
-                Font.DisplayMode.NORMAL,
-                0,
-                light
-        );
+
+        font.drawInBatch(text, -textWidth / 2.0F, 0, 0xFFFFFFFF, true, mat,
+                mc.renderBuffers().bufferSource(), Font.DisplayMode.NORMAL, 0, light);
         mc.renderBuffers().bufferSource().endBatch();
         poseStack.popPose();
 
@@ -181,6 +215,43 @@ public class ShieldBarOverlayRenderer {
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
         poseStack.popPose();
+    }
+
+    /**
+     * Отрисовка контурной рамки щита по периметру плашки Neat с прогрессом сгорания
+     */
+    private static void drawPerimeterShieldFrame(Matrix4f matrix, int minX, int minY, int maxX, int maxY, float progress, int color) {
+        int width = maxX - minX;
+        int height = maxY - minY;
+        int totalPerimeter = (width * 2) + (height * 2);
+        int remainingLength = (int) (totalPerimeter * progress);
+
+        // 1. Верхняя грань (слева направо)
+        int topLen = Math.min(remainingLength, width);
+        if (topLen > 0) {
+            fill(matrix, minX, minY, minX + topLen, minY + 1, color);
+            remainingLength -= topLen;
+        }
+
+        // 2. Правая грань (сверху вниз)
+        if (remainingLength > 0) {
+            int rightLen = Math.min(remainingLength, height);
+            fill(matrix, maxX - 1, minY, maxX, minY + rightLen, color);
+            remainingLength -= rightLen;
+        }
+
+        // 3. Нижняя грань (справа налево)
+        if (remainingLength > 0) {
+            int botLen = Math.min(remainingLength, width);
+            fill(matrix, maxX - botLen, maxY - 1, maxX, maxY, color);
+            remainingLength -= botLen;
+        }
+
+        // 4. Левая грань (снизу вверх)
+        if (remainingLength > 0) {
+            int leftLen = Math.min(remainingLength, height);
+            fill(matrix, minX, maxY - leftLen, minX + 1, maxY, color);
+        }
     }
 
     private static void fill(Matrix4f matrix, int minX, int minY, int maxX, int maxY, int color) {
