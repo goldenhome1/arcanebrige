@@ -182,28 +182,22 @@ public class ShieldBarOverlayRenderer {
             }
         }
 
-        // 1. Точный расчёт габаритов плашки Neat по байткоду мода (учитывает и MaxHP, и длину имени)
+        // Расчёт ширины Neat: фиксированные 48px базы или расширение по длине имени + иконок
 
-        int healthHalfSize = (int) (target.getMaxHealth() * 1.0F); // По умолчанию plateSize = 1[cite: 5]
+        int nameWidth = font.width(target.getDisplayName().getString());
 
+        int totalWidth = Math.max(48, nameWidth + 22);
 
-        String entityName = target.getDisplayName().getString(); //[cite: 5]
-
-        int nameHalfLen = font.width(entityName) / 2; //[cite: 5]
-
-
-        // Итоговая полуширина плашки Neat
-
-        int neatHalfSize = Math.max(healthHalfSize, nameHalfLen); //[cite: 5]
+        int halfSize = totalWidth / 2;
 
 
-        // Контурные границы: точно облегают фоновую плашку Neat (padding 2 + окантовка 1px)[cite: 5]
+        // Контурные границы: точно облегают плашку Neat любого моба и босса
 
-        int minX = -neatHalfSize - 3;
+        int minX = -halfSize - 3;
 
-        int maxX = neatHalfSize + 3;
+        int maxX = halfSize + 3;
 
-        int minY = -7;
+        int minY = -6;
 
         int maxY = 7;
 
@@ -211,12 +205,12 @@ public class ShieldBarOverlayRenderer {
         float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
 
 
-        // 2. Отрисовка контурной рамки
+        // 1. Отрисовка контурной рамки
 
         drawPerimeterShieldFrame(mat, minX, minY, maxX, maxY, progress, shieldColor);
 
 
-        // 3. Цифры щита строго под рамкой на свободном пространстве
+        // 2. Цифры щита опущены строго под нижнюю грань и уменьшены
 
         String stackInfo = remainingLayers > 1 ? " §7x" + remainingLayers : "";
 
@@ -225,9 +219,9 @@ public class ShieldBarOverlayRenderer {
 
         poseStack.pushPose();
 
-        poseStack.translate(0, maxY + 2.5F, 0);
+        poseStack.translate(0, maxY + 4.0F, 0);
 
-        poseStack.scale(0.55F, 0.55F, 0.55F);
+        poseStack.scale(0.38F, 0.38F, 0.38F);
 
         int textWidth = font.width(text);
         int light = LevelRenderer.getLightColor(target.level(), target.blockPosition());
