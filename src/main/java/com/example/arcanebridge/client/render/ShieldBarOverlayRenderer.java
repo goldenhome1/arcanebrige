@@ -182,26 +182,41 @@ public class ShieldBarOverlayRenderer {
             }
         }
 
-        // Выверенные фиксированные границы Neat (не зависят от HP и имени моба)
+        // 1. Точный расчёт габаритов плашки Neat по байткоду мода (учитывает и MaxHP, и длину имени)
 
-        int minX = -26;
+        int healthHalfSize = (int) (target.getMaxHealth() * 1.0F); // По умолчанию plateSize = 1[cite: 5]
 
-        int maxX = 26;
 
-        int minY = -6;
+        String entityName = target.getDisplayName().getString(); //[cite: 5]
 
-        int maxY = 8;
+        int nameHalfLen = font.width(entityName) / 2; //[cite: 5]
+
+
+        // Итоговая полуширина плашки Neat
+
+        int neatHalfSize = Math.max(healthHalfSize, nameHalfLen); //[cite: 5]
+
+
+        // Контурные границы: точно облегают фоновую плашку Neat (padding 2 + окантовка 1px)[cite: 5]
+
+        int minX = -neatHalfSize - 3;
+
+        int maxX = neatHalfSize + 3;
+
+        int minY = -7;
+
+        int maxY = 7;
 
 
         float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
 
 
-        // 1. Отрисовка контурной рамки
+        // 2. Отрисовка контурной рамки
 
         drawPerimeterShieldFrame(mat, minX, minY, maxX, maxY, progress, shieldColor);
 
 
-        // 2. Цифры щита строго под рамкой на свободном пространстве
+        // 3. Цифры щита строго под рамкой на свободном пространстве
 
         String stackInfo = remainingLayers > 1 ? " §7x" + remainingLayers : "";
 
