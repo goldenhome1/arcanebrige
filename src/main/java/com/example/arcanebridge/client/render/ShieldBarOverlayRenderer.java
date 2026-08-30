@@ -88,7 +88,7 @@ public class ShieldBarOverlayRenderer {
         double y = target.yo + (target.getY() - target.yo) * partialTick - cameraPos.y;
         double z = target.zo + (target.getZ() - target.zo) * partialTick - cameraPos.z;
 
-        // Точное позиционирование на уровне плашки Neat над головой
+        // Высота полосы здоровья в моде Neat
         double heightOffset = target.getBbHeight() + 0.52D;
 
         poseStack.pushPose();
@@ -105,12 +105,12 @@ public class ShieldBarOverlayRenderer {
 
         Matrix4f mat = poseStack.last().pose();
 
-        // Мягкая невыбивающаяся палитра
+        // Стилизованные некислотные цвета
         int barColor;
         String icon;
         switch (typeStr) {
             case "ARMORED" -> {
-                barColor = 0xFFD49B2A; // Латунь Create
+                barColor = 0xFFC68C24; // Латунь / Золото
                 icon = "⚙";
             }
             case "ETHEREAL" -> {
@@ -118,7 +118,7 @@ public class ShieldBarOverlayRenderer {
                 icon = "🔮";
             }
             case "BIO" -> {
-                barColor = 0xFF27AE60; // Насыщенный био-зеленый
+                barColor = 0xFF27AE60; // Органический зеленый
                 icon = "🧬";
             }
             default -> {
@@ -127,31 +127,32 @@ public class ShieldBarOverlayRenderer {
             }
         }
 
-        int totalWidth = 36;
-        int barHeight = 2;
+        // Точные пропорции под Neat
+        int totalWidth = 48;
+        int barHeight = 4;
         int halfWidth = totalWidth / 2;
 
-        // 1. Тонкая подложка накладки (Neat Style)
-        fill(mat, -halfWidth, 0, halfWidth, barHeight, 0x99111111);
+        // 1. Плотный темный фон плашки
+        fill(mat, -halfWidth, 0, halfWidth, barHeight, 0xFF181818);
 
-        // 2. Активная полоса барьера
+        // 2. Полоса барьера
         float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
         int filledWidth = (int) (totalWidth * progress);
         if (filledWidth > 0) {
             fill(mat, -halfWidth, 0, -halfWidth + filledWidth, barHeight, barColor);
         }
 
-        // 3. Компактный индикатор справа от полосы
-        String stackInfo = remainingLayers > 1 ? "x" + remainingLayers : "";
-        String badge = String.format("%s%.0f %s", icon, currentHp, stackInfo).trim();
+        // 3. Текст внутри полосы (Иконка, HP щита и оставшиеся слои)
+        String stackInfo = remainingLayers > 1 ? " x" + remainingLayers : "";
+        String text = String.format("%s %.0f/%.0f%s", icon, currentHp, maxHp, stackInfo);
 
         poseStack.pushPose();
-        poseStack.translate(halfWidth + 3, -2.0F, 0);
-        poseStack.scale(0.65F, 0.65F, 0.65F);
+        poseStack.translate(0, -1.0F, -0.1F);
+        poseStack.scale(0.55F, 0.55F, 0.55F);
 
-        // Читаем реальный свет моба в мире
+        int textWidth = font.width(text);
         int light = LevelRenderer.getLightColor(target.level(), target.blockPosition());
-        font.drawInBatch(badge, 0, 0, 0xFFE0E0E0, false, mat,
+        font.drawInBatch(text, -textWidth / 2.0F, 0, 0xFFFFFFFF, true, mat,
                 mc.renderBuffers().bufferSource(), Font.DisplayMode.NORMAL, 0, light);
         mc.renderBuffers().bufferSource().endBatch();
         poseStack.popPose();
