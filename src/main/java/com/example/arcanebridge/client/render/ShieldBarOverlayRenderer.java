@@ -83,7 +83,7 @@ public class ShieldBarOverlayRenderer {
     }
 
     /**
-     * РЕЖИМ 1: Очки Инженера (Чистые парящие цифры над мобом без Neat)
+     * РЕЖИМ 1: Очки Инженера (Только парящие цифры над мобом)
      */
     private static void renderGogglesFloatingText(PoseStack poseStack, Vec3 cameraPos, LivingEntity target,
                                                  float currentHp, float maxHp, String typeStr, int remainingLayers,
@@ -132,7 +132,7 @@ public class ShieldBarOverlayRenderer {
     }
 
     /**
-     * РЕЖИМ 2: HUD Jack (Точная динамическая обводка по контуру плашки Neat)
+     * РЕЖИМ 2: HUD Jack (Идеально подогнанная рамка вокруг Neat)
      */
     private static void renderNeatContourShield(PoseStack poseStack, Vec3 cameraPos, LivingEntity target,
                                                 float currentHp, float maxHp, String typeStr, int remainingLayers,
@@ -144,8 +144,7 @@ public class ShieldBarOverlayRenderer {
         double y = target.yo + (target.getY() - target.yo) * partialTick - cameraPos.y;
         double z = target.zo + (target.getZ() - target.zo) * partialTick - cameraPos.z;
 
-        // Позиция Neat: Y = bbHeight + 0.6D[cite: 3]
-        double heightOffset = target.getBbHeight() + 0.6D;
+        double heightOffset = target.getBbHeight() + 0.6D;[cite: 3]
 
         poseStack.pushPose();
         poseStack.translate(x, y + heightOffset, z);
@@ -153,7 +152,7 @@ public class ShieldBarOverlayRenderer {
         Camera camera = mc.gameRenderer.getMainCamera();
         poseStack.mulPose(Axis.YP.rotationDegrees(-camera.getYRot()));
         poseStack.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
-        poseStack.scale(-0.02666667F, -0.02666667F, 0.02666667F); // Точный масштаб Neat[cite: 3]
+        poseStack.scale(-0.02666667F, -0.02666667F, 0.02666667F);[cite: 3]
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -166,15 +165,15 @@ public class ShieldBarOverlayRenderer {
         String colorCode;
         switch (typeStr) {
             case "ARMORED" -> {
-                shieldColor = 0xFFFFD700; // Золотой
+                shieldColor = 0xFFFFD700;
                 colorCode = "§6";
             }
             case "ETHEREAL" -> {
-                shieldColor = 0xFFDDA0DD; // Аметистовый
+                shieldColor = 0xFFDDA0DD;
                 colorCode = "§d";
             }
             case "BIO" -> {
-                shieldColor = 0xFF55FF55; // Зеленый
+                shieldColor = 0xFF55FF55;
                 colorCode = "§a";
             }
             default -> {
@@ -183,27 +182,26 @@ public class ShieldBarOverlayRenderer {
             }
         }
 
-        // Динамический расчет ширины Neat по формуле мода: halfSize = (int)(maxHealth * plateSize)[cite: 3]
         float targetMaxHealth = target.getMaxHealth();
-        int halfSize = (int) Math.max(20, Math.min(48, targetMaxHealth)); //[cite: 3]
-        
-        // Габариты фона Neat: от X = (-halfSize - 2) до (+halfSize + 2), от Y = -8 (верх имени) до +5 (низ бара)[cite: 3]
-        int minX = -halfSize - 2;
-        int maxX = halfSize + 2;
-        int minY = -9;
-        int maxY = 5;
-        
+        int halfSize = (int) Math.max(20, Math.min(48, targetMaxHealth));[cite: 3]
+
+        // Скорректированные границы: расширены по X и смещены вниз по Y
+        int minX = -halfSize - 6;
+        int maxX = halfSize + 6;
+        int minY = -6;
+        int maxY = 8;
+
         float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
 
-        // 1. Отрисовка сгорающей обводки по часовой стрелке
+        // 1. Отрисовка контурной рамки
         drawPerimeterShieldFrame(mat, minX, minY, maxX, maxY, progress, shieldColor);
 
-        // 2. Цифры щита строго под плашкой Neat на чистом фоне
+        // 2. Цифры щита строго под рамкой на свободном пространстве
         String stackInfo = remainingLayers > 1 ? " §7x" + remainingLayers : "";
         String text = String.format("%s%.0f§7/§f%.0f%s", colorCode, currentHp, maxHp, stackInfo);
 
         poseStack.pushPose();
-        poseStack.translate(0, maxY + 3.0F, 0);
+        poseStack.translate(0, maxY + 2.5F, 0);
         poseStack.scale(0.55F, 0.55F, 0.55F);
 
         int textWidth = font.width(text);
@@ -214,7 +212,7 @@ public class ShieldBarOverlayRenderer {
                 -textWidth / 2.0F,
                 0,
                 0xFFFFFFFF,
-                true, // Четкая тень
+                true,
                 mat,
                 mc.renderBuffers().bufferSource(),
                 Font.DisplayMode.NORMAL,
@@ -230,9 +228,6 @@ public class ShieldBarOverlayRenderer {
         poseStack.popPose();
     }
 
-    /**
-     * Отрисовка рамки по часовой стрелке: Верх (L->R) -> Право (T->B) -> Низ (R->L) -> Лево (B->T)
-     */
     private static void drawPerimeterShieldFrame(Matrix4f matrix, int minX, int minY, int maxX, int maxY, float progress, int color) {
         int width = maxX - minX;
         int height = maxY - minY;
