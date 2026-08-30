@@ -74,13 +74,13 @@ public class ShieldBarOverlayRenderer {
             String typeStr = activeLayer.getString("Type");
             int remainingLayers = layers.size() - currentIndex;
 
-            renderShieldBar(poseStack, cameraPos, target, currentHp, maxHp, typeStr, remainingLayers, event.getPartialTick());
+            renderShieldBar(poseStack, cameraPos, target, currentHp, maxHp, typeStr, remainingLayers, hasHudJack, event.getPartialTick());
         }
     }
 
     private static void renderShieldBar(PoseStack poseStack, Vec3 cameraPos, LivingEntity target,
                                         float currentHp, float maxHp, String typeStr, int remainingLayers,
-                                        float partialTick) {
+                                        boolean hasHudJack, float partialTick) {
         Minecraft mc = Minecraft.getInstance();
         Font font = mc.font;
 
@@ -88,8 +88,8 @@ public class ShieldBarOverlayRenderer {
         double y = target.yo + (target.getY() - target.yo) * partialTick - cameraPos.y;
         double z = target.zo + (target.getZ() - target.zo) * partialTick - cameraPos.z;
 
-        // Высота полосы здоровья в моде Neat
-        double heightOffset = target.getBbHeight() + 0.52D;
+        // Выносим плашку щита над Neat (на высоте 0.85 блока)
+        double heightOffset = target.getBbHeight() + (hasHudJack ? 0.82D : 0.40D);
 
         poseStack.pushPose();
         poseStack.translate(x, y + heightOffset, z);
@@ -97,66 +97,70 @@ public class ShieldBarOverlayRenderer {
         Camera camera = mc.gameRenderer.getMainCamera();
         poseStack.mulPose(Axis.YP.rotationDegrees(-camera.getYRot()));
         poseStack.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
-        poseStack.scale(-0.020F, -0.020F, 0.020F);
+        poseStack.scale(-0.018F, -0.018F, 0.018F);
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
+        RenderSystem.disableDepthTest(); // Исключает обрезание и перекрытие чужими полосами
 
         Matrix4f mat = poseStack.last().pose();
 
-        // Стилизованные некислотные цвета
         int barColor;
         String icon;
         switch (typeStr) {
             case "ARMORED" -> {
-                barColor = 0xFFC68C24; // Латунь / Золото
+                barColor = 0xFFD49B2A; // Латунь
                 icon = "⚙";
             }
             case "ETHEREAL" -> {
-                barColor = 0xFF8E44AD; // Спокойный аметист
+                barColor = 0xFF9B59B6; // Аметист
                 icon = "🔮";
             }
             case "BIO" -> {
-                barColor = 0xFF27AE60; // Органический зеленый
+                barColor = 0xFF2ECC71; // Био-зеленый
                 icon = "🧬";
             }
             default -> {
-                barColor = 0xFF2980B9;
+                barColor = 0xFF3498DB;
                 icon = "🛡";
             }
         }
 
-        // Точные пропорции под Neat
-        int totalWidth = 48;
-        int barHeight = 4;
+        int totalWidth = 42;
+        int barHeight = 2;
         int halfWidth = totalWidth / 2;
 
-        // 1. Плотный темный фон плашки
-        fill(mat, -halfWidth, 0, halfWidth, barHeight, 0xFF181818);
+        // 1. Полупрозрачная подложка Neat-стиля
+        fill(mat, -halfWidth - 1, -1, halfWidth + 1, barHeight + 1, 0x88000000);
 
-        // 2. Полоса барьера
+        // 2. Рамка
+        fill(mat, -halfWidth - 1, -2, halfWidth + 1, -1, 0xAA222222);
+        fill(mat, -halfWidth - 1, barHeight + 1, halfWidth + 1, barHeight + 2, 0xAA222222);
+
+        // 3. Полоса щита
         float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
         int filledWidth = (int) (totalWidth * progress);
         if (filledWidth > 0) {
             fill(mat, -halfWidth, 0, -halfWidth + filledWidth, barHeight, barColor);
         }
 
-        // 3. Текст внутри полосы (Иконка, HP щита и оставшиеся слои)
+        // 4. Текстовый бейдж над полосой щита
         String stackInfo = remainingLayers > 1 ? " x" + remainingLayers : "";
         String text = String.format("%s %.0f/%.0f%s", icon, currentHp, maxHp, stackInfo);
 
         poseStack.pushPose();
-        poseStack.translate(0, -1.0F, -0.1F);
-        poseStack.scale(0.55F, 0.55F, 0.55F);
+        poseStack.translate(0, -7.5F, 0);
+        poseStack.scale(0.58F, 0.58F, 0.58F);
 
         int textWidth = font.width(text);
         int light = LevelRenderer.getLightColor(target.level(), target.blockPosition());
-        font.drawInBatch(text, -textWidth / 2.0F, 0, 0xFFFFFFFF, true, mat,
+        font.drawInBatch(text, -textWidth / 2.0F, 0, 0xFFE0E0E0, false, mat,
                 mc.renderBuffers().bufferSource(), Font.DisplayMode.NORMAL, 0, light);
         mc.renderBuffers().bufferSource().endBatch();
         poseStack.popPose();
 
+        RenderSystem.enableDepthTest();
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
         poseStack.popPose();
