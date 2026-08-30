@@ -182,24 +182,42 @@ public class ShieldBarOverlayRenderer {
             }
         }
 
-        // Расчёт ширины Neat: фиксированные 48px базы или расширение по длине имени + иконок
+        // Динамическое определение режима плашки Neat (кастомное имя vs стандартный компактный бар)
 
-        int nameWidth = font.width(target.getDisplayName().getString());
-
-        int totalWidth = Math.max(48, nameWidth + 22);
-
-        int halfSize = totalWidth / 2;
+        boolean hasCustomName = target.hasCustomName() && target.getCustomName() != null && !target.getCustomName().getString().isEmpty();
 
 
-        // Контурные границы: точно облегают плашку Neat любого моба и босса
+        int halfSize;
+
+        int minY;
+
+        int maxY = 7;
+
+
+        if (hasCustomName) {
+
+            // Моб с кастомным именем (Зомби, Био-Мутант): расширяем рамку под имя и включаем верхнюю строку
+
+            int nameHalfWidth = font.width(target.getCustomName().getString()) / 2;
+
+            halfSize = Math.max(24, nameHalfWidth + 6);
+
+            minY = -6; // Охватывает строку имени + полосу HP
+
+        } else {
+
+            // Обычный моб без кастомного имени (Скелет): компактная плашка 48px только под полосу HP
+
+            halfSize = 24;
+
+            minY = -2; // Компактная рамка строго вокруг шкалы здоровья без пустой шапки
+
+        }
+
 
         int minX = -halfSize - 3;
 
         int maxX = halfSize + 3;
-
-        int minY = -6;
-
-        int maxY = 7;
 
 
         float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
@@ -210,7 +228,7 @@ public class ShieldBarOverlayRenderer {
         drawPerimeterShieldFrame(mat, minX, minY, maxX, maxY, progress, shieldColor);
 
 
-        // 2. Цифры щита опущены строго под нижнюю грань и уменьшены
+        // 2. Цифры щита опущены строго под нижнюю грань и уменьшены в 1.5 раза
 
         String stackInfo = remainingLayers > 1 ? " §7x" + remainingLayers : "";
 
@@ -221,7 +239,7 @@ public class ShieldBarOverlayRenderer {
 
         poseStack.translate(0, maxY + 4.0F, 0);
 
-        poseStack.scale(0.38F, 0.38F, 0.38F);
+        poseStack.scale(0.37F, 0.37F, 0.37F);
 
         int textWidth = font.width(text);
         int light = LevelRenderer.getLightColor(target.level(), target.blockPosition());
