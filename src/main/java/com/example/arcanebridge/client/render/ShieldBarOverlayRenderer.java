@@ -185,24 +185,24 @@ public class ShieldBarOverlayRenderer {
         float targetMaxHealth = target.getMaxHealth();
         int halfSize = (int) Math.max(20, Math.min(48, targetMaxHealth));
 
-        // Выверенные границы: охватывают всю плашку Neat с запасом
-        int minX = -halfSize - 6;
-        int maxX = halfSize + 6;
+                // Выверенные границы: урезана ширина на 1px с обеих сторон, нижняя грань поднята на 1px
+        int minX = -halfSize - 5;
+        int maxX = halfSize + 5;
         int minY = -6;
-        int maxY = 8;
+        int maxY = 7;
 
         float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
 
         // 1. Отрисовка контурной рамки
         drawPerimeterShieldFrame(mat, minX, minY, maxX, maxY, progress, shieldColor);
 
-        // 2. Цифры щита строго под рамкой на свободном пространстве
+        // 2. Цифры щита опущены ниже и уменьшены в 1.5 раза (масштаб ~0.37F)
         String stackInfo = remainingLayers > 1 ? " §7x" + remainingLayers : "";
         String text = String.format("%s%.0f§7/§f%.0f%s", colorCode, currentHp, maxHp, stackInfo);
 
         poseStack.pushPose();
-        poseStack.translate(0, maxY + 2.5F, 0);
-        poseStack.scale(0.55F, 0.55F, 0.55F);
+        poseStack.translate(0, maxY + 5.0F, 0);
+        poseStack.scale(0.37F, 0.37F, 0.37F);
 
         int textWidth = font.width(text);
         int light = LevelRenderer.getLightColor(target.level(), target.blockPosition());
