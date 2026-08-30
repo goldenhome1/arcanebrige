@@ -259,6 +259,45 @@ public class ShieldBarOverlayRenderer {
         poseStack.popPose();
     }
 
+        /**
+     * Логика шлейфа урона: мгновенная фиксация урона -> задержка 300 мс -> плавное стекание к текущему HP
+     */
+    private static float updateAndGetDamageTrail(int entityId, float currentProgress) {
+        long now = System.currentTimeMillis();
+        TrailData data = SHIELD_TRAILS.computeIfAbsent(entityId, id -> {
+            TrailData d = new TrailData();
+            d.trailingProgress = currentProgress;
+            d.lastActualProgress = currentProgress;
+            d.lastDamageTimestamp = now;
+            d.lastFrameTime = now;
+            return d;
+        });
+
+        // Засекаем дельту времени между кадрами
+        float dt = (data.lastFrameTime > 0) ? (now - data.lastFrameTime) / 1000.0F : 0.016F;
+        data.lastFrameTime = now;
+
+        // Если получен урон — обновляем таймер удара
+        if (currentProgress < data.lastActualProgress - 0.001F) {
+            data.lastDamageTimestamp = now;
+            data.lastActualProgress = currentProgress;
+        } else if (currentProgress > data.trailingProgress) {
+            // При регенерации/восстановлении щита шлейф сразу следует вверх
+            data.trailingProgress = currentProgress;
+            data.lastActualProgress = currentProgress;
+        }
+
+        // После паузы в 300 мс белый шлейф плавно догоняет реальное значение щита
+        if (now - data.lastDamageTimestamp > 300) {
+            float drainSpeed = 0.55F; // Скорость стекания полосы (за ~1.5-2 сек)
+            if (data.trailingProgress > currentProgress) {
+                data.trailingProgress = Math.max(currentProgress, data.trailingProgress - drainSpeed * dt);
+            }
+        }
+
+        return data.trailingProgress;
+    }
+
     private static void drawPerimeterShieldFrame(Matrix4f matrix, int minX, int minY, int maxX, int maxY, float progress, int color) {
         int width = maxX - minX;
         int height = maxY - minY;
