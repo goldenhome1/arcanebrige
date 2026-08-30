@@ -75,17 +75,17 @@ public class ShieldBarOverlayRenderer {
             int remainingLayers = layers.size() - currentIndex;
 
             if (hasHudJack) {
-                // РЕЖИМ 2: С имплантом (Контурная рамка строго по границе плашки Neat + цифры снизу)
+                // РЕЖИМ 2: С имплантом (Контурная рамка вокруг Neat + цифры снизу)
                 renderNeatIntegratedShield(poseStack, cameraPos, target, currentHp, maxHp, typeStr, remainingLayers, event.getPartialTick());
             } else {
-                // РЕЖИМ 1: Только Очки Инженера (Чистые парящие цифры над головой без плашки Neat)
+                // РЕЖИМ 1: Только Очки Инженера (Чистые цифры над головой)
                 renderGogglesFloatingText(poseStack, cameraPos, target, currentHp, maxHp, typeStr, remainingLayers, event.getPartialTick());
             }
         }
     }
 
     /**
-     * РЕЖИМ 1: Очки Инженера (Парящие цифры над головой)
+     * РЕЖИМ 1: Очки Инженера (Только цифры над головой моба)
      */
     private static void renderGogglesFloatingText(PoseStack poseStack, Vec3 cameraPos, LivingEntity target,
                                                  float currentHp, float maxHp, String typeStr, int remainingLayers,
@@ -134,7 +134,7 @@ public class ShieldBarOverlayRenderer {
     }
 
     /**
-     * РЕЖИМ 2: HUD Jack (Идеальная рамка по контуру плашки Neat)
+     * РЕЖИМ 2: HUD Jack (Контурная рамка вокруг Neat + цифры снизу)
      */
     private static void renderNeatIntegratedShield(PoseStack poseStack, Vec3 cameraPos, LivingEntity target,
                                                   float currentHp, float maxHp, String typeStr, int remainingLayers,
@@ -146,7 +146,7 @@ public class ShieldBarOverlayRenderer {
         double y = target.yo + (target.getY() - target.yo) * partialTick - cameraPos.y;
         double z = target.zo + (target.getZ() - target.zo) * partialTick - cameraPos.z;
 
-        // Позиция центра плашки Neat (высота bbHeight + 0.6D)
+        // Высота базовой точки Neat[cite: 3]
         double heightOffset = target.getBbHeight() + 0.6D;
 
         poseStack.pushPose();
@@ -155,7 +155,7 @@ public class ShieldBarOverlayRenderer {
         Camera camera = mc.gameRenderer.getMainCamera();
         poseStack.mulPose(Axis.YP.rotationDegrees(-camera.getYRot()));
         poseStack.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
-        poseStack.scale(-0.02666667F, -0.02666667F, 0.02666667F);
+        poseStack.scale(-0.02666667F, -0.02666667F, 0.02666667F); // Масштаб Neat[cite: 3]
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -185,29 +185,40 @@ public class ShieldBarOverlayRenderer {
             }
         }
 
-        // Точные физические границы плашки Neat
-        int minX = -23;
-        int maxX = 23;
-        int minY = -6;
-        int maxY = 6;
+        // Выверенные пиксели контура плашки Neat:
+        // Neat по умолчанию имеет ширину 44px и смещен относительно центра на (-24 .. +20)[cite: 3]
+        int minX = -24;
+        int maxX = 20;
+        int minY = -7;
+        int maxY = 5;
         float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
 
-        // Отрисовка контурной рамки толщиной в 1 пиксель ровно по внешнему краю Neat
+        // 1. Отрисовка сгорающей контурной рамки
         drawPerimeterShieldFrame(mat, minX, minY, maxX, maxY, progress, shieldColor);
 
-        // Числа щита строго под плашкой Neat
+        // 2. Цифры щита строго под плашкой Neat (на чистом темном фоне)
         String stackInfo = remainingLayers > 1 ? " §7x" + remainingLayers : "";
         String text = String.format("%s%.0f§7/§f%.0f%s", colorCode, currentHp, maxHp, stackInfo);
 
         poseStack.pushPose();
-        poseStack.translate(0, maxY + 2.0F, 0);
+        poseStack.translate(-2.0F, maxY + 3.5F, 0); // Смещение по центру плашки и вниз
         poseStack.scale(0.55F, 0.55F, 0.55F);
 
         int textWidth = font.width(text);
         int light = LevelRenderer.getLightColor(target.level(), target.blockPosition());
 
-        font.drawInBatch(text, -textWidth / 2.0F, 0, 0xFFFFFFFF, true, mat,
-                mc.renderBuffers().bufferSource(), Font.DisplayMode.NORMAL, 0, light);
+        font.drawInBatch(
+                text,
+                -textWidth / 2.0F,
+                0,
+                0xFFFFFFFF,
+                true, // Контрастная тень, чтобы текст был четким ночью и днем
+                mat,
+                mc.renderBuffers().bufferSource(),
+                Font.DisplayMode.NORMAL,
+                0,
+                light
+        );
         mc.renderBuffers().bufferSource().endBatch();
         poseStack.popPose();
 
@@ -217,37 +228,34 @@ public class ShieldBarOverlayRenderer {
         poseStack.popPose();
     }
 
-    /**
-     * Отрисовка рамки по часовой стрелке: Верх (L->R) -> Право (T->B) -> Низ (R->L) -> Лево (B->T)
-     */
     private static void drawPerimeterShieldFrame(Matrix4f matrix, int minX, int minY, int maxX, int maxY, float progress, int color) {
         int width = maxX - minX;
         int height = maxY - minY;
         int totalPerimeter = (width * 2) + (height * 2);
         int remainingLength = (int) (totalPerimeter * progress);
 
-        // 1. Верхняя грань
+        // 1. Верхняя грань (слева направо)
         int topLen = Math.min(remainingLength, width);
         if (topLen > 0) {
             fill(matrix, minX, minY, minX + topLen, minY + 1, color);
             remainingLength -= topLen;
         }
 
-        // 2. Правая грань
+        // 2. Правая грань (сверху вниз)
         if (remainingLength > 0) {
             int rightLen = Math.min(remainingLength, height);
             fill(matrix, maxX - 1, minY, maxX, minY + rightLen, color);
             remainingLength -= rightLen;
         }
 
-        // 3. Нижняя грань
+        // 3. Нижняя грань (справа налево)
         if (remainingLength > 0) {
             int botLen = Math.min(remainingLength, width);
             fill(matrix, maxX - botLen, maxY - 1, maxX, maxY, color);
             remainingLength -= botLen;
         }
 
-        // 4. Левая грань
+        // 4. Левая грань (снизу вверх)
         if (remainingLength > 0) {
             int leftLen = Math.min(remainingLength, height);
             fill(matrix, minX, maxY - leftLen, minX + 1, maxY, color);
