@@ -7,6 +7,7 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -44,7 +45,6 @@ public class ShieldBarOverlayRenderer {
         boolean hasGoggles = hasEngineerGoggles(player);
         boolean hasHudJack = hasCyberware(player, "cyber_ware_port:cybereye_upgrades_hudjack") || hasCyberware(player, "cyber_ware_port:cybereyes");
 
-        // Не рендерим, если у игрока нет очков и нет импланта
         if (!hasGoggles && !hasHudJack) return;
 
         Camera camera = mc.gameRenderer.getMainCamera();
@@ -74,13 +74,13 @@ public class ShieldBarOverlayRenderer {
             String typeStr = activeLayer.getString("Type");
             int remainingLayers = layers.size() - currentIndex;
 
-            renderShieldBar(poseStack, cameraPos, target, currentHp, maxHp, typeStr, remainingLayers, hasHudJack, event.getPartialTick());
+            renderShieldBar(poseStack, cameraPos, target, currentHp, maxHp, typeStr, remainingLayers, event.getPartialTick());
         }
     }
 
     private static void renderShieldBar(PoseStack poseStack, Vec3 cameraPos, LivingEntity target,
                                         float currentHp, float maxHp, String typeStr, int remainingLayers,
-                                        boolean hasHudJack, float partialTick) {
+                                        float partialTick) {
         Minecraft mc = Minecraft.getInstance();
         Font font = mc.font;
 
@@ -88,7 +88,8 @@ public class ShieldBarOverlayRenderer {
         double y = target.yo + (target.getY() - target.yo) * partialTick - cameraPos.y;
         double z = target.zo + (target.getZ() - target.zo) * partialTick - cameraPos.z;
 
-        double heightOffset = target.getBbHeight() + (hasHudJack ? 0.65D : 0.30D);
+        // Точное позиционирование на уровне плашки Neat над головой
+        double heightOffset = target.getBbHeight() + 0.52D;
 
         poseStack.pushPose();
         poseStack.translate(x, y + heightOffset, z);
@@ -96,7 +97,7 @@ public class ShieldBarOverlayRenderer {
         Camera camera = mc.gameRenderer.getMainCamera();
         poseStack.mulPose(Axis.YP.rotationDegrees(-camera.getYRot()));
         poseStack.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
-        poseStack.scale(-0.022F, -0.022F, 0.022F);
+        poseStack.scale(-0.020F, -0.020F, 0.020F);
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -104,52 +105,54 @@ public class ShieldBarOverlayRenderer {
 
         Matrix4f mat = poseStack.last().pose();
 
+        // Мягкая невыбивающаяся палитра
         int barColor;
         String icon;
         switch (typeStr) {
             case "ARMORED" -> {
-                barColor = 0xFFFFAA00;
+                barColor = 0xFFD49B2A; // Латунь Create
                 icon = "⚙";
             }
             case "ETHEREAL" -> {
-                barColor = 0xFFAA00FF;
+                barColor = 0xFF8E44AD; // Спокойный аметист
                 icon = "🔮";
             }
             case "BIO" -> {
-                barColor = 0xFF55FF55;
+                barColor = 0xFF27AE60; // Насыщенный био-зеленый
                 icon = "🧬";
             }
             default -> {
-                barColor = 0xFF00AAFF;
+                barColor = 0xFF2980B9;
                 icon = "🛡";
             }
         }
 
-        int totalWidth = 44;
-        int barHeight = 4;
+        int totalWidth = 36;
+        int barHeight = 2;
         int halfWidth = totalWidth / 2;
 
-        fill(mat, -halfWidth - 1, -2, halfWidth + 1, barHeight + 1, 0x88000000);
-        fill(mat, -halfWidth - 1, -3, halfWidth + 1, -2, 0xAA333333);
-        fill(mat, -halfWidth - 1, barHeight + 1, halfWidth + 1, barHeight + 2, 0xAA333333);
-        fill(mat, -halfWidth - 2, -3, -halfWidth - 1, barHeight + 2, 0xAA333333);
-        fill(mat, halfWidth + 1, -3, halfWidth + 2, barHeight + 2, 0xAA333333);
+        // 1. Тонкая подложка накладки (Neat Style)
+        fill(mat, -halfWidth, 0, halfWidth, barHeight, 0x99111111);
 
+        // 2. Активная полоса барьера
         float progress = Math.max(0.0F, Math.min(1.0F, currentHp / maxHp));
         int filledWidth = (int) (totalWidth * progress);
         if (filledWidth > 0) {
-            fill(mat, -halfWidth, -1, -halfWidth + filledWidth, barHeight, barColor);
+            fill(mat, -halfWidth, 0, -halfWidth + filledWidth, barHeight, barColor);
         }
 
-        String stackInfo = remainingLayers > 1 ? " x" + remainingLayers : "";
-        String text = String.format("%s %.0f/%.0f%s", icon, currentHp, maxHp, stackInfo);
+        // 3. Компактный индикатор справа от полосы
+        String stackInfo = remainingLayers > 1 ? "x" + remainingLayers : "";
+        String badge = String.format("%s%.0f %s", icon, currentHp, stackInfo).trim();
 
         poseStack.pushPose();
-        poseStack.translate(0, -9.0F, 0);
-        poseStack.scale(0.75F, 0.75F, 0.75F);
-        int textWidth = font.width(text);
-        font.drawInBatch(text, -textWidth / 2.0F, 0, 0xFFFFFFFF, true, mat,
-                mc.renderBuffers().bufferSource(), Font.DisplayMode.NORMAL, 0, 15728880);
+        poseStack.translate(halfWidth + 3, -2.0F, 0);
+        poseStack.scale(0.65F, 0.65F, 0.65F);
+
+        // Читаем реальный свет моба в мире
+        int light = LevelRenderer.getLightColor(target.level(), target.blockPosition());
+        font.drawInBatch(badge, 0, 0, 0xFFE0E0E0, false, mat,
+                mc.renderBuffers().bufferSource(), Font.DisplayMode.NORMAL, 0, light);
         mc.renderBuffers().bufferSource().endBatch();
         poseStack.popPose();
 
@@ -175,11 +178,9 @@ public class ShieldBarOverlayRenderer {
     }
 
     private static boolean hasEngineerGoggles(Player player) {
-        // 1. Проверка ванильного слота головы
         ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
         if (isGogglesItem(head)) return true;
 
-        // 2. Проверка слотов Curios
         try {
             var curiosInventory = CuriosApi.getCuriosInventory(player);
             if (curiosInventory.isPresent()) {
