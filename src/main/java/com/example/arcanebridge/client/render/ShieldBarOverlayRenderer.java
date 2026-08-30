@@ -182,17 +182,17 @@ public class ShieldBarOverlayRenderer {
             }
         }
 
-        // В Neat имя рендерится с масштабом 0.5F, плюс резервируется ~12px под правые иконки брони/дропа
+                // В Neat имя рендерится с масштабом 0.5F, плюс резервируется отступ под иконки брони/дропа
         String displayName = target.getDisplayName().getString();
         int namePlateWidth = (int) (font.width(displayName) * 0.5F);
-        int totalContentWidth = namePlateWidth + 12;
+        int totalContentWidth = namePlateWidth + 14;
 
-        // Базовая полуширина Neat: минимум 24px (48px ширина плашки по умолчанию)
-        int halfSize = Math.max(24, (totalContentWidth + 1) / 2);
+        // Базовая полуширина Neat с аккуратным запасом (+4px по краям)
+        int halfSize = Math.max(25, (totalContentWidth + 1) / 2);
 
-        // Контурные границы
-        int minX = -halfSize - 2;
-        int maxX = halfSize + 2;
+        // Контурные границы: расширены по ширине на 2-3px для идеального охвата
+        int minX = -halfSize - 4;
+        int maxX = halfSize + 4;
         int minY = -6;
         int maxY = 7;
 
