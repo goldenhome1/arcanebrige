@@ -83,7 +83,7 @@ public class ShieldBarOverlayRenderer {
     }
 
     /**
-     * РЕЖИМ 1: Очки Инженера (Только парящие цифры над мобом)
+     * РЕЖИМ 1: Очки Инженера (Парящие цифры над мобом)
      */
     private static void renderGogglesFloatingText(PoseStack poseStack, Vec3 cameraPos, LivingEntity target,
                                                  float currentHp, float maxHp, String typeStr, int remainingLayers,
@@ -144,7 +144,7 @@ public class ShieldBarOverlayRenderer {
         double y = target.yo + (target.getY() - target.yo) * partialTick - cameraPos.y;
         double z = target.zo + (target.getZ() - target.zo) * partialTick - cameraPos.z;
 
-        double heightOffset = target.getBbHeight() + 0.6D;[cite: 3]
+        double heightOffset = target.getBbHeight() + 0.6D;
 
         poseStack.pushPose();
         poseStack.translate(x, y + heightOffset, z);
@@ -152,7 +152,7 @@ public class ShieldBarOverlayRenderer {
         Camera camera = mc.gameRenderer.getMainCamera();
         poseStack.mulPose(Axis.YP.rotationDegrees(-camera.getYRot()));
         poseStack.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
-        poseStack.scale(-0.02666667F, -0.02666667F, 0.02666667F);[cite: 3]
+        poseStack.scale(-0.02666667F, -0.02666667F, 0.02666667F);
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -183,9 +183,9 @@ public class ShieldBarOverlayRenderer {
         }
 
         float targetMaxHealth = target.getMaxHealth();
-        int halfSize = (int) Math.max(20, Math.min(48, targetMaxHealth));[cite: 3]
+        int halfSize = (int) Math.max(20, Math.min(48, targetMaxHealth));
 
-        // Скорректированные границы: расширены по X и смещены вниз по Y
+        // Выверенные границы: охватывают всю плашку Neat с запасом
         int minX = -halfSize - 6;
         int maxX = halfSize + 6;
         int minY = -6;
