@@ -44,29 +44,17 @@ public class ShieldSuitLayer<T extends LivingEntity, M extends EntityModel<T>> e
 
         String typeStr = activeLayer.getString("Type");
 
-        // Цветовая палитра полупрозрачного скафандра
         float r, g, b;
         switch (typeStr) {
-            case "ARMORED" -> {
-                r = 1.00F; g = 0.80F; b = 0.20F; // Золотой
-            }
-            case "ETHEREAL" -> {
-                r = 0.88F; g = 0.38F; b = 1.00F; // Аметистовый
-            }
-            case "BIO" -> {
-                r = 0.25F; g = 0.95F; b = 0.40F; // Био-зеленый
-            }
-            default -> {
-                r = 0.20F; g = 0.85F; b = 1.00F;
-            }
+            case "ARMORED" -> { r = 1.00F; g = 0.80F; b = 0.20F; }
+            case "ETHEREAL" -> { r = 0.88F; g = 0.38F; b = 1.00F; }
+            case "BIO" -> { r = 0.25F; g = 0.95F; b = 0.40F; }
+            default -> { r = 0.20F; g = 0.85F; b = 1.00F; }
         }
 
         float time = entity.tickCount + partialTick;
-
-        // Плавная пульсация объема поля (раздутие на 6-8% от центра модели)
         float pulse = 1.065F + (float) Math.sin(time * 0.08F) * 0.015F;
 
-        // Альфа-канал с яркой вспышкой при ударе
         float alpha = 0.30F + (float) Math.sin(time * 0.08F) * 0.05F;
         if (entity.hurtTime > 0) {
             alpha = Math.min(0.75F, alpha + 0.40F);
@@ -77,12 +65,11 @@ public class ShieldSuitLayer<T extends LivingEntity, M extends EntityModel<T>> e
         VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityTranslucent(texture));
 
         poseStack.pushPose();
-        // Масштабирование относительно центра тела сущности
-        poseStack.translate(0.0D, -0.75D, 0.0D);
-        poseStack.scale(pulse, pulse, pulse);
+        // Масштабирование строго относительно центра груди (Y = +0.75 в модельном пространстве)
         poseStack.translate(0.0D, 0.75D, 0.0D);
+        poseStack.scale(pulse, pulse, pulse);
+        poseStack.translate(0.0D, -0.75D, 0.0D);
 
-        // Отрисовка синхронизированной родительской модели
         M model = this.getParentModel();
         model.renderToBuffer(poseStack, buffer, 15728880, OverlayTexture.NO_OVERLAY, r, g, b, alpha);
 
