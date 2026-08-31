@@ -18,6 +18,9 @@ import net.minecraft.world.entity.player.Player;
 
 public class ShieldSuitLayer<T extends LivingEntity, M extends EntityModel<T>> extends RenderLayer<T, M> {
 
+    private static final ResourceLocation SHIELD_RUNES_TEX =
+            new ResourceLocation("arcane_bridge", "textures/vfx/shield_runes.png");
+
     public ShieldSuitLayer(RenderLayerParent<T, M> renderer) {
         super(renderer);
     }
@@ -44,27 +47,43 @@ public class ShieldSuitLayer<T extends LivingEntity, M extends EntityModel<T>> e
 
         String typeStr = activeLayer.getString("Type");
 
+        // Цветовые профили неонового свечения матрицы
         float r, g, b;
         switch (typeStr) {
-            case "ARMORED" -> { r = 1.00F; g = 0.80F; b = 0.20F; }
-            case "ETHEREAL" -> { r = 0.88F; g = 0.38F; b = 1.00F; }
-            case "BIO" -> { r = 0.25F; g = 0.95F; b = 0.40F; }
-            default -> { r = 0.20F; g = 0.85F; b = 1.00F; }
+            case "ARMORED" -> {
+                r = 1.00F; g = 0.75F; b = 0.15F; // Латунь / Золото
+            }
+            case "ETHEREAL" -> {
+                r = 0.85F; g = 0.30F; b = 1.00F; // Неоновый Аметист
+            }
+            case "BIO" -> {
+                r = 0.20F; g = 1.00F; b = 0.40F; // Токсичный Био-зеленый
+            }
+            default -> {
+                r = 0.20F; g = 0.85F; b = 1.00F; // Лазурный
+            }
         }
 
         float time = entity.tickCount + partialTick;
-        float pulse = 1.065F + (float) Math.sin(time * 0.08F) * 0.015F;
 
-        float alpha = 0.30F + (float) Math.sin(time * 0.08F) * 0.05F;
+        // Плавное смещение UV-координат (эффект струящейся маны по телу)
+        float uOffset = (time * 0.006F) % 1.0F;
+        float vOffset = (time * 0.010F) % 1.0F;
+
+        // Аддитивный шейдерный слой энерго-поля (как Charged Creeper)
+        RenderType energySwirlType = RenderType.energySwirl(SHIELD_RUNES_TEX, uOffset, vOffset);
+        VertexConsumer buffer = bufferSource.getBuffer(energySwirlType);
+
+        // Пульсация объема и реакция на удар (Hit Flash)
+        float pulse = 1.035F + (float) Math.sin(time * 0.08F) * 0.010F;
+        float alpha = 0.85F;
         if (entity.hurtTime > 0) {
-            alpha = Math.min(0.75F, alpha + 0.40F);
-            pulse += 0.02F;
+            pulse += 0.025F;
+            r = Math.min(1.0F, r + 0.4F);
+            g = Math.min(1.0F, g + 0.4F);
+            b = Math.min(1.0F, b + 0.4F);
         }
 
-        ResourceLocation texture = this.getTextureLocation(entity);
-        VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityTranslucent(texture));
-
-        // В пространстве EntityModel ноги находятся на 1.501, голова на (1.501 - height)
         double midY = 1.501D - (entity.getBbHeight() * 0.5D);
 
         poseStack.pushPose();
@@ -73,6 +92,7 @@ public class ShieldSuitLayer<T extends LivingEntity, M extends EntityModel<T>> e
         poseStack.translate(0.0D, -midY, 0.0D);
 
         M model = this.getParentModel();
+        // Эмиссионный полнояркостный свет для шейдеров (15728880)
         model.renderToBuffer(poseStack, buffer, 15728880, OverlayTexture.NO_OVERLAY, r, g, b, alpha);
 
         poseStack.popPose();
