@@ -18,6 +18,9 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 public class GeoShieldSuitLayer<T extends GeoAnimatable> extends GeoRenderLayer<T> {
 
+    private static final ResourceLocation SHIELD_RUNES_TEX =
+            new ResourceLocation("arcane_bridge", "textures/vfx/shield_runes.png");
+
     public GeoShieldSuitLayer(GeoRenderer<T> entityRenderer) {
         super(entityRenderer);
     }
@@ -46,35 +49,47 @@ public class GeoShieldSuitLayer<T extends GeoAnimatable> extends GeoRenderLayer<
 
         float r, g, b;
         switch (typeStr) {
-            case "ARMORED" -> { r = 1.00F; g = 0.80F; b = 0.20F; }
-            case "ETHEREAL" -> { r = 0.88F; g = 0.38F; b = 1.00F; }
-            case "BIO" -> { r = 0.25F; g = 0.95F; b = 0.40F; }
-            default -> { r = 0.20F; g = 0.85F; b = 1.00F; }
+            case "ARMORED" -> {
+                r = 1.00F; g = 0.75F; b = 0.15F; // Латунь / Золото
+            }
+            case "ETHEREAL" -> {
+                r = 0.85F; g = 0.30F; b = 1.00F; // Неоновый Аметист
+            }
+            case "BIO" -> {
+                r = 0.20F; g = 1.00F; b = 0.40F; // Токсичный Био-зеленый
+            }
+            default -> {
+                r = 0.20F; g = 0.85F; b = 1.00F;
+            }
         }
 
         float time = entity.tickCount + partialTick;
-        float pulse = 1.065F + (float) Math.sin(time * 0.08F) * 0.015F;
 
-        float alpha = 0.30F + (float) Math.sin(time * 0.08F) * 0.05F;
+        // Плавное смещение координат для живой анимации течения маны
+        float uOffset = (time * 0.006F) % 1.0F;
+        float vOffset = (time * 0.010F) % 1.0F;
+
+        RenderType energySwirlType = RenderType.energySwirl(SHIELD_RUNES_TEX, uOffset, vOffset);
+        VertexConsumer suitBuffer = bufferSource.getBuffer(energySwirlType);
+
+        float pulse = 1.035F + (float) Math.sin(time * 0.08F) * 0.010F;
+        float alpha = 0.85F;
         if (entity.hurtTime > 0) {
-            alpha = Math.min(0.75F, alpha + 0.40F);
-            pulse += 0.02F;
+            pulse += 0.025F;
+            r = Math.min(1.0F, r + 0.4F);
+            g = Math.min(1.0F, g + 0.4F);
+            b = Math.min(1.0F, b + 0.4F);
         }
-
-        ResourceLocation texture = getTextureResource(animatable);
-        RenderType suitRenderType = RenderType.entityTranslucent(texture);
-        VertexConsumer suitBuffer = bufferSource.getBuffer(suitRenderType);
 
         double midY = entity.getBbHeight() * 0.5D;
 
         poseStack.pushPose();
-        // Динамическое масштабирование вокруг центра высоты модели GeckoLib
         poseStack.translate(0.0D, midY, 0.0D);
         poseStack.scale(pulse, pulse, pulse);
         poseStack.translate(0.0D, -midY, 0.0D);
 
-        getRenderer().reRender(bakedModel, poseStack, bufferSource, animatable, suitRenderType, suitBuffer,
-                partialTick, 15728880, OverlayTexture.NO_OVERLAY, r, g, b, alpha);[cite: 4]
+        getRenderer().reRender(bakedModel, poseStack, bufferSource, animatable, energySwirlType, suitBuffer,
+                partialTick, 15728880, OverlayTexture.NO_OVERLAY, r, g, b, alpha);
 
         poseStack.popPose();
     }
