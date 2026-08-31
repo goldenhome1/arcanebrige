@@ -11,8 +11,8 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
-import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
@@ -65,12 +65,16 @@ public class GeoShieldSuitLayer<T extends GeoAnimatable> extends GeoRenderLayer<
         RenderType suitRenderType = RenderType.entityTranslucent(texture);
         VertexConsumer suitBuffer = bufferSource.getBuffer(suitRenderType);
 
+        double midY = entity.getBbHeight() * 0.5D;
+
         poseStack.pushPose();
-        // В GeckoLib масштаб накладывается прямо на корень модели
+        // Динамическое масштабирование вокруг центра высоты модели GeckoLib
+        poseStack.translate(0.0D, midY, 0.0D);
         poseStack.scale(pulse, pulse, pulse);
+        poseStack.translate(0.0D, -midY, 0.0D);
 
         getRenderer().reRender(bakedModel, poseStack, bufferSource, animatable, suitRenderType, suitBuffer,
-                partialTick, 15728880, OverlayTexture.NO_OVERLAY, r, g, b, alpha);
+                partialTick, 15728880, OverlayTexture.NO_OVERLAY, r, g, b, alpha);[cite: 4]
 
         poseStack.popPose();
     }
