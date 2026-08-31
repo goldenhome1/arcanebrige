@@ -64,9 +64,10 @@ public class ShieldBarOverlayRenderer {
         List<Entity> entities = mc.level.getEntities(player, player.getBoundingBox().inflate(24.0),
                 e -> e instanceof LivingEntity && !(e instanceof Player) && e.isAlive());
 
-        for (Entity ent : entities) {
+                for (Entity ent : entities) {
             LivingEntity target = (LivingEntity) ent;
             if (target.distanceToSqr(player) > MAX_RENDER_DISTANCE_SQ) continue;
+            if (!player.hasLineOfSight(target)) continue;
 
             CompoundTag data = target.getPersistentData();
             if (data.getBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN)) continue;
@@ -113,9 +114,9 @@ public class ShieldBarOverlayRenderer {
         poseStack.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
         poseStack.scale(-0.020F, -0.020F, 0.020F);
 
-        RenderSystem.enableBlend();
+                RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.disableDepthTest();
+        RenderSystem.enableDepthTest();
 
         Matrix4f mat = poseStack.last().pose();
 
@@ -132,11 +133,10 @@ public class ShieldBarOverlayRenderer {
         int textWidth = font.width(text);
         int light = LevelRenderer.getLightColor(target.level(), target.blockPosition());
 
-        font.drawInBatch(text, -textWidth / 2.0F, 0, 0xFFFFFFFF, true, mat,
+                font.drawInBatch(text, -textWidth / 2.0F, 0, 0xFFFFFFFF, false, mat,
                 mc.renderBuffers().bufferSource(), Font.DisplayMode.NORMAL, 0, light);
         mc.renderBuffers().bufferSource().endBatch();
 
-        RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
         poseStack.popPose();
     }
@@ -164,10 +164,10 @@ public class ShieldBarOverlayRenderer {
         poseStack.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
         poseStack.scale(-0.02666667F, -0.02666667F, 0.02666667F);
 
-        RenderSystem.enableBlend();
+                RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
-        RenderSystem.disableDepthTest();
+        RenderSystem.enableDepthTest();
 
         Matrix4f mat = poseStack.last().pose();
 
@@ -238,12 +238,12 @@ public class ShieldBarOverlayRenderer {
         int textWidth = font.width(text);
         int light = LevelRenderer.getLightColor(target.level(), target.blockPosition());
 
-        font.drawInBatch(
+                font.drawInBatch(
                 text,
                 -textWidth / 2.0F,
                 0,
                 0xFFFFFFFF,
-                true,
+                false,
                 mat,
                 mc.renderBuffers().bufferSource(),
                 Font.DisplayMode.NORMAL,
@@ -253,7 +253,6 @@ public class ShieldBarOverlayRenderer {
         mc.renderBuffers().bufferSource().endBatch();
         poseStack.popPose();
 
-        RenderSystem.enableDepthTest();
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
         poseStack.popPose();
