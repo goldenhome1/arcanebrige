@@ -64,11 +64,13 @@ public class ShieldSuitLayer<T extends LivingEntity, M extends EntityModel<T>> e
         ResourceLocation texture = this.getTextureLocation(entity);
         VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityTranslucent(texture));
 
+        // В пространстве EntityModel ноги находятся на 1.501, голова на (1.501 - height)
+        double midY = 1.501D - (entity.getBbHeight() * 0.5D);
+
         poseStack.pushPose();
-        // Масштабирование строго относительно центра груди (Y = +0.75 в модельном пространстве)
-        poseStack.translate(0.0D, 0.75D, 0.0D);
+        poseStack.translate(0.0D, midY, 0.0D);
         poseStack.scale(pulse, pulse, pulse);
-        poseStack.translate(0.0D, -0.75D, 0.0D);
+        poseStack.translate(0.0D, -midY, 0.0D);
 
         M model = this.getParentModel();
         model.renderToBuffer(poseStack, buffer, 15728880, OverlayTexture.NO_OVERLAY, r, g, b, alpha);
