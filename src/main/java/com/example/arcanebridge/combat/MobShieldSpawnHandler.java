@@ -124,9 +124,12 @@ public class MobShieldSpawnHandler {
             layersList.add(layer);
         }
 
-        persistentData.put(MobArchetypes.NBT_SHIELD_LAYERS, layersList);
+                persistentData.put(MobArchetypes.NBT_SHIELD_LAYERS, layersList);
         persistentData.putInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX, 0);
         persistentData.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, false);
+
+        // Мгновенная синхронизация созданных щитов моба с клиентами
+        ArchetypeDamageHandler.syncShieldToTracking(target);
     }
 
     /**
