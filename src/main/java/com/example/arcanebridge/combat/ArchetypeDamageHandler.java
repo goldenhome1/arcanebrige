@@ -21,7 +21,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -31,43 +30,25 @@ import net.minecraftforge.registries.ForgeRegistries;
 @Mod.EventBusSubscriber(modid = MobArchetypes.MODID)
 public class ArchetypeDamageHandler {
 
-    /**
-     * Инициализация и отправка пакета клиентам сразу при спавне моба
-     */
-    @SubscribeEvent
-    public static void onEntityJoin(EntityJoinLevelEvent event) {
-        if (event.getLevel().isClientSide() || !(event.getEntity() instanceof LivingEntity living) || living instanceof Player) return;
-
-        CompoundTag data = living.getPersistentData();
-        if (!data.contains(MobArchetypes.NBT_SHIELD_LAYERS, Tag.TAG_LIST)) {
-            initShieldStack(living, data);
-            syncShieldToTracking(living);
-        }
-    }
-
     @SubscribeEvent
     public static void onLivingHurt(LivingHurtEvent event) {
         LivingEntity target = event.getEntity();
-        if (target.level().isClientSide() || target instanceof Player) return;
+        if (target.level().isClientSide() || target instanceof Player || !target.isAlive()) return;
 
         CompoundTag data = target.getPersistentData();
-
-        if (data.getBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN)) {
-            return;
-        }
-
-        if (!data.contains(MobArchetypes.NBT_SHIELD_LAYERS, Tag.TAG_LIST)) {
-            initShieldStack(target, data);
-        }
+        if (data.getBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN)) return;
+        if (!data.contains(MobArchetypes.NBT_SHIELD_LAYERS, Tag.TAG_LIST)) return;
 
         ListTag layers = data.getList(MobArchetypes.NBT_SHIELD_LAYERS, Tag.TAG_COMPOUND);
         int currentIndex = data.getInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX);
-
         if (layers.isEmpty() || currentIndex >= layers.size()) {
             data.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, true);
             syncShieldToTracking(target);
             return;
         }
+
+        float incomingDamage = event.getAmount();
+        if (incomingDamage <= 0.0F) return;
 
         CompoundTag activeLayer = layers.getCompound(currentIndex);
         MobArchetypes.Type archetype;
@@ -81,54 +62,57 @@ public class ArchetypeDamageHandler {
         MobArchetypes.AttackCategory category = classifyAttack(target, source);
         boolean isMatchingKey = isProfileMatch(archetype, category);
 
-        float incomingDamage = event.getAmount();
-        float currentShieldHp = activeLayer.getFloat("HP");
+        // Профильное оружие наносит 100% урона по щиту, непрофильное штрафуется резистом (20%)
+        float effectiveShieldDamage = isMatchingKey ? incomingDamage : (incomingDamage * MobArchetypes.SHIELD_DAMAGE_REDUCTION);
+
         ServerLevel level = (ServerLevel) target.level();
+        float damageToProcess = effectiveShieldDamage;
+        float totalAbsorbedByShield = 0.0F;
 
-        if (isMatchingKey) {
-            currentShieldHp -= incomingDamage;
-            activeLayer.putFloat("HP", Math.max(0.0f, currentShieldHp));
+        // Поглощение урона текущим и последующими слоями
+        while (damageToProcess > 0.0F && currentIndex < layers.size()) {
+            CompoundTag currentLayer = layers.getCompound(currentIndex);
+            float layerHp = currentLayer.getFloat("HP");
 
-            if (currentShieldHp <= 0.0f) {
+            if (damageToProcess <= layerHp) {
+                currentLayer.putFloat("HP", layerHp - damageToProcess);
+                totalAbsorbedByShield += damageToProcess;
+                damageToProcess = 0.0F;
+                triggerShieldHitEffects(level, target, archetype, isMatchingKey);
+            } else {
+                totalAbsorbedByShield += layerHp;
+                damageToProcess -= layerHp;
+                currentLayer.putFloat("HP", 0.0F);
+
                 triggerShieldBreakEffects(level, target, archetype);
                 currentIndex++;
-                data.putInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX, currentIndex);
 
-                if (currentIndex >= layers.size()) {
-                    data.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, true);
-                    data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, true);
-                } else {
+                if (currentIndex < layers.size()) {
+                    // Звук переключения на внутренний слой
                     level.playSound(null, target.getX(), target.getY(), target.getZ(),
-                            SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.8f, 1.4f);
+                            SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.9F, 1.3F);
+                    try {
+                        archetype = MobArchetypes.Type.valueOf(layers.getCompound(currentIndex).getString("Type"));
+                    } catch (Exception ignored) {}
                 }
-            } else {
-                triggerShieldHitEffects(level, target, archetype, true);
-            }
-        } else {
-            float reducedDamage = incomingDamage * MobArchetypes.SHIELD_DAMAGE_REDUCTION;
-            event.setAmount(reducedDamage);
-
-            currentShieldHp -= reducedDamage;
-            activeLayer.putFloat("HP", Math.max(0.0f, currentShieldHp));
-
-            if (currentShieldHp <= 0.0f) {
-                triggerShieldBreakEffects(level, target, archetype);
-                currentIndex++;
-                data.putInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX, currentIndex);
-
-                if (currentIndex >= layers.size()) {
-                    data.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, true);
-                    data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, true);
-                } else {
-                    level.playSound(null, target.getX(), target.getY(), target.getZ(),
-                            SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.8f, 1.4f);
-                }
-            } else {
-                triggerShieldHitEffects(level, target, archetype, false);
             }
         }
 
-        // Синхронизируем обновленное состояние щита клиентам
+        // Проверка полного снятия защиты
+        if (currentIndex >= layers.size()) {
+            data.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, true);
+            data.putBoolean(MobArchetypes.NBT_SHIELD_BROKEN, true);
+            level.playSound(null, target.getX(), target.getY(), target.getZ(),
+                    SoundEvents.GLASS_BREAK, SoundSource.HOSTILE, 1.3F, 0.85F);
+        }
+
+        data.putInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX, currentIndex);
+
+        // 20% урона пробивает сквозь щит в здоровье моба + остаточный урон после полного снятия щитов
+        float finalBodyDamage = (totalAbsorbedByShield * 0.20F) + damageToProcess;
+        event.setAmount(finalBodyDamage);
+
+        // Мгновенная синхронизация полосы со всеми клиентами
         syncShieldToTracking(target);
     }
 
@@ -136,7 +120,7 @@ public class ArchetypeDamageHandler {
         CompoundTag data = entity.getPersistentData();
         CompoundTag syncTag = new CompoundTag();
         if (data.contains(MobArchetypes.NBT_SHIELD_LAYERS)) {
-            syncTag.put(MobArchetypes.NBT_SHIELD_LAYERS, data.getList(MobArchetypes.NBT_SHIELD_LAYERS, 10));
+            syncTag.put(MobArchetypes.NBT_SHIELD_LAYERS, data.getList(MobArchetypes.NBT_SHIELD_LAYERS, Tag.TAG_COMPOUND));
         }
         syncTag.putInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX, data.getInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX));
         syncTag.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, data.getBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN));
@@ -145,57 +129,13 @@ public class ArchetypeDamageHandler {
                 new ClientboundSyncShieldPacket(entity.getId(), syncTag));
     }
 
-    private static void initShieldStack(LivingEntity entity, CompoundTag data) {
-        ListTag layers = new ListTag();
-
-        if (entity.getTags().contains(MobArchetypes.TAG_ETHEREAL)) {
-            float hp = data.contains("ArcaneEtherealHP") ? data.getFloat("ArcaneEtherealHP") : MobArchetypes.HP_ETHEREAL_SHIELD;
-            layers.add(createLayerTag(MobArchetypes.Type.ETHEREAL, hp));
-        }
-        if (entity.getTags().contains(MobArchetypes.TAG_ARMORED)) {
-            float hp = data.contains("ArcaneArmoredHP") ? data.getFloat("ArcaneArmoredHP") : MobArchetypes.HP_ARMORED_SHIELD;
-            layers.add(createLayerTag(MobArchetypes.Type.ARMORED, hp));
-        }
-        if (entity.getTags().contains(MobArchetypes.TAG_BIO)) {
-            float hp = data.contains("ArcaneBioHP") ? data.getFloat("ArcaneBioHP") : MobArchetypes.HP_BIO_SHIELD;
-            layers.add(createLayerTag(MobArchetypes.Type.BIO, hp));
-        }
-
-        if (layers.isEmpty()) {
-            MobArchetypes.Type defaultType = MobArchetypes.resolveArchetype(entity);
-            if (defaultType != MobArchetypes.Type.NONE) {
-                float defaultHp = switch (defaultType) {
-                    case ARMORED -> MobArchetypes.HP_ARMORED_SHIELD;
-                    case ETHEREAL -> MobArchetypes.HP_ETHEREAL_SHIELD;
-                    case BIO -> MobArchetypes.HP_BIO_SHIELD;
-                    default -> 0.0f;
-                };
-                layers.add(createLayerTag(defaultType, defaultHp));
-            }
-        }
-
-        data.put(MobArchetypes.NBT_SHIELD_LAYERS, layers);
-        data.putInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX, 0);
-        data.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, layers.isEmpty());
-    }
-
-    private static CompoundTag createLayerTag(MobArchetypes.Type type, float hp) {
-        CompoundTag tag = new CompoundTag();
-        tag.putString("Type", type.name());
-        tag.putFloat("HP", hp);
-        tag.putFloat("MaxHP", hp);
-        return tag;
-    }
-
     private static MobArchetypes.AttackCategory classifyAttack(LivingEntity target, DamageSource source) {
         String damageTypeId = "";
         try {
             ResourceLocation key = target.level().registryAccess()
                     .registryOrThrow(Registries.DAMAGE_TYPE)
                     .getKey(source.type());
-            if (key != null) {
-                damageTypeId = key.toString();
-            }
+            if (key != null) damageTypeId = key.toString();
         } catch (Exception ignored) {}
 
         String msgId = source.getMsgId();
@@ -248,21 +188,21 @@ public class ArchetypeDamageHandler {
 
     private static void triggerShieldHitEffects(ServerLevel level, LivingEntity target, MobArchetypes.Type archetype, boolean isProfileHit) {
         double x = target.getX();
-        double y = target.getY() + (target.getBbHeight() * 0.5);
+        double y = target.getY() + (target.getBbHeight() * 0.5D);
         double z = target.getZ();
 
         switch (archetype) {
             case ARMORED -> {
-                level.playSound(null, x, y, z, SoundEvents.ANVIL_PLACE, SoundSource.HOSTILE, 0.6f, isProfileHit ? 1.5f : 0.8f);
-                level.sendParticles(ParticleTypes.ELECTRIC_SPARK, x, y, z, isProfileHit ? 8 : 3, 0.2, 0.2, 0.2, 0.05);
+                level.playSound(null, x, y, z, SoundEvents.ANVIL_PLACE, SoundSource.HOSTILE, 0.6F, isProfileHit ? 1.5F : 0.8F);
+                level.sendParticles(ParticleTypes.ELECTRIC_SPARK, x, y, z, isProfileHit ? 8 : 3, 0.2D, 0.2D, 0.2D, 0.05D);
             }
             case ETHEREAL -> {
-                level.playSound(null, x, y, z, SoundEvents.AMETHYST_BLOCK_HIT, SoundSource.HOSTILE, 0.7f, isProfileHit ? 1.4f : 0.7f);
-                level.sendParticles(ParticleTypes.WITCH, x, y, z, isProfileHit ? 10 : 3, 0.2, 0.2, 0.2, 0.02);
+                level.playSound(null, x, y, z, SoundEvents.AMETHYST_BLOCK_HIT, SoundSource.HOSTILE, 0.7F, isProfileHit ? 1.4F : 0.7F);
+                level.sendParticles(ParticleTypes.WITCH, x, y, z, isProfileHit ? 10 : 3, 0.2D, 0.2D, 0.2D, 0.02D);
             }
             case BIO -> {
-                level.playSound(null, x, y, z, SoundEvents.SLIME_BLOCK_HIT, SoundSource.HOSTILE, 0.7f, isProfileHit ? 1.2f : 0.6f);
-                level.sendParticles(ParticleTypes.SPORE_BLOSSOM_AIR, x, y, z, isProfileHit ? 12 : 4, 0.3, 0.3, 0.3, 0.01);
+                level.playSound(null, x, y, z, SoundEvents.SLIME_BLOCK_HIT, SoundSource.HOSTILE, 0.7F, isProfileHit ? 1.2F : 0.6F);
+                level.sendParticles(ParticleTypes.SPORE_BLOSSOM_AIR, x, y, z, isProfileHit ? 12 : 4, 0.3D, 0.3D, 0.3D, 0.01D);
             }
             default -> {}
         }
@@ -270,25 +210,25 @@ public class ArchetypeDamageHandler {
 
     private static void triggerShieldBreakEffects(ServerLevel level, LivingEntity target, MobArchetypes.Type archetype) {
         double x = target.getX();
-        double y = target.getY() + (target.getBbHeight() * 0.5);
+        double y = target.getY() + (target.getBbHeight() * 0.5D);
         double z = target.getZ();
 
         switch (archetype) {
             case ARMORED -> {
-                level.playSound(null, x, y, z, SoundEvents.ANVIL_DESTROY, SoundSource.HOSTILE, 1.0f, 1.1f);
-                level.sendParticles(ParticleTypes.CRIT, x, y, z, 20, 0.4, 0.4, 0.4, 0.15);
-                level.sendParticles(ParticleTypes.SMOKE, x, y, z, 15, 0.3, 0.4, 0.3, 0.05);
+                level.playSound(null, x, y, z, SoundEvents.ANVIL_DESTROY, SoundSource.HOSTILE, 1.0F, 1.1F);
+                level.sendParticles(ParticleTypes.CRIT, x, y, z, 20, 0.4D, 0.4D, 0.4D, 0.15D);
+                level.sendParticles(ParticleTypes.SMOKE, x, y, z, 15, 0.3D, 0.4D, 0.3D, 0.05D);
             }
             case ETHEREAL -> {
-                level.playSound(null, x, y, z, SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.HOSTILE, 1.2f, 0.9f);
-                level.sendParticles(ParticleTypes.REVERSE_PORTAL, x, y, z, 25, 0.4, 0.5, 0.4, 0.1);
-                level.sendParticles(ParticleTypes.ENCHANTED_HIT, x, y, z, 15, 0.3, 0.3, 0.3, 0.1);
+                level.playSound(null, x, y, z, SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.HOSTILE, 1.2F, 0.9F);
+                level.sendParticles(ParticleTypes.REVERSE_PORTAL, x, y, z, 25, 0.4D, 0.5D, 0.4D, 0.1D);
+                level.sendParticles(ParticleTypes.ENCHANTED_HIT, x, y, z, 15, 0.3D, 0.3D, 0.3D, 0.1D);
             }
             case BIO -> {
-                level.playSound(null, x, y, z, SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR, SoundSource.HOSTILE, 0.9f, 1.3f);
-                level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y, z, 15, 0.4, 0.4, 0.4, 0.05);
+                level.playSound(null, x, y, z, SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR, SoundSource.HOSTILE, 0.9F, 1.3F);
+                level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y, z, 15, 0.4D, 0.4D, 0.4D, 0.05D);
                 target.removeEffect(MobEffects.REGENERATION);
-                target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 3, false, false));
+                target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 25, 2, false, false));
             }
             default -> {}
         }
