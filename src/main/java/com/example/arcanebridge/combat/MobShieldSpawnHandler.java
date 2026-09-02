@@ -11,7 +11,6 @@ import net.minecraft.world.entity.ambient.AmbientCreature;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.decoration.ArmorStand;
-import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterials;
@@ -22,6 +21,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 @Mod.EventBusSubscriber(modid = MobArchetypes.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -35,7 +37,6 @@ public class MobShieldSpawnHandler {
         if (event.getLevel().isClientSide()) return;
         if (!(event.getEntity() instanceof LivingEntity target)) return;
 
-        // Игнорируем игроков, манекены и мирных животных
         if (target instanceof Player || target instanceof ArmorStand) return;
         if (target instanceof Animal || target instanceof WaterAnimal || target instanceof AmbientCreature) return;
 
@@ -43,89 +44,84 @@ public class MobShieldSpawnHandler {
         if (persistentData.getBoolean(NBT_INITIALIZED)) return;
         persistentData.putBoolean(NBT_INITIALIZED, true);
 
-        // Если у моба уже прописаны кастомные теги из командных блоков — используем их
         if (tryApplyCommandTags(target, persistentData)) return;
 
-        // Проверка базового запаса здоровья сущности
         float maxHp = target.getMaxHealth();
-        if (maxHp < 25.0F) {
-            // Ранг 0 (Рядовой / Fodder) — 0% шанс на щит
-            return;
-        }
+        // Ранг 0 (Рядовой / Fodder) — щиты не выдаются
+        if (maxHp < 25.0F) return;
 
         Level level = event.getLevel();
         String stage = getMajruszStage(level);
 
         int layerCount = 0;
-        float minPercent = 0.20F;
-        float maxPercent = 0.25F;
 
-        // ----------------------------------------------------
-        // 1. Определение ранга и расчет шансов по фазам мира
-        // ----------------------------------------------------
+        // Определение ранга и количества слоев
         if (maxHp < 45.0F) {
-            // Ранг 1: Ветеран (25 - 44 HP)
+            // Ветеран (25 - 44 HP)
             float chance = switch (stage) {
                 case "MASTER" -> 0.60F;
                 case "EXPERT" -> 0.35F;
                 default -> 0.10F;
             };
-            if (RNG.nextFloat() < chance) {
-                layerCount = 1;
-                minPercent = 0.20F;
-                maxPercent = 0.25F;
-            }
+            if (RNG.nextFloat() < chance) layerCount = 1;
         } else if (maxHp < 80.0F) {
-            // Ранг 2: Элита (45 - 79 HP)
+            // Элита (45 - 79 HP)
             float chance = switch (stage) {
                 case "MASTER" -> 1.00F;
                 case "EXPERT" -> 0.80F;
                 default -> 0.40F;
             };
             if (RNG.nextFloat() < chance) {
-                minPercent = 0.25F;
-                maxPercent = 0.35F;
                 if (stage.equals("NORMAL")) {
                     layerCount = 1;
                 } else if (stage.equals("EXPERT")) {
                     layerCount = (RNG.nextFloat() < 0.25F) ? 2 : 1;
-                } else { // MASTER
+                } else {
                     layerCount = (RNG.nextFloat() < 0.50F) ? 2 : 1;
                 }
             }
         } else if (maxHp <= 160.0F) {
-            // Ранг 3: Мини-босс / Чемпион (80 - 160 HP)
-            minPercent = 0.35F;
-            maxPercent = 0.45F;
-            if (stage.equals("MASTER") && RNG.nextFloat() < 0.30F) {
-                layerCount = 3;
-            } else {
-                layerCount = 2;
-            }
+            // Мини-босс / Чемпион (80 - 160 HP)
+            layerCount = (stage.equals("MASTER") && RNG.nextFloat() < 0.30F) ? 3 : 2;
         } else {
-            // Ранг 4: Босс / Титан (> 160 HP)
+            // Босс / Титан (> 160 HP)
             layerCount = 3;
-            minPercent = 0.40F;
-            maxPercent = 0.50F;
         }
 
         if (layerCount <= 0) return;
 
-        // ----------------------------------------------------
-        // 2. Определение архетипов и создание NBT слоев
-        // ----------------------------------------------------
+        // Расчет базового щитового бюджета
+        float baseBudget;
+        if (maxHp < 100.0F) {
+            baseBudget = maxHp * 0.32F;
+        } else if (maxHp <= 300.0F) {
+            baseBudget = maxHp * 0.36F;
+        } else {
+            baseBudget = maxHp * 0.40F; // Для 1000 HP базовый бюджет = 400 HP
+        }
+
+        // Дробление и масштабирование пула щита
+        float layerHp;
+        if (layerCount == 1) {
+            layerHp = (float) Math.ceil(baseBudget);
+        } else if (layerCount == 2) {
+            float totalPool = baseBudget * 1.25F; // 500 при 1000 HP
+            layerHp = (float) Math.ceil(totalPool / 2.0F); // по 250 HP
+        } else {
+            float totalPool = baseBudget * 1.50F; // 600 при 1000 HP
+            layerHp = (float) Math.ceil(totalPool / 3.0F); // по 200 HP
+        }
+
+        // Сборка тактической цепочки уникальных слоев (без дублей)
+        List<String> archetypes = buildUniqueArchetypeChain(target, layerCount);
         ListTag layersList = new ListTag();
 
-        for (int i = 0; i < layerCount; i++) {
-            String archetype = pickArchetypeForEntity(target, i, layerCount);
-            float layerRatio = minPercent + RNG.nextFloat() * (maxPercent - minPercent);
-            float layerHp = (float) Math.ceil(maxHp * layerRatio);
-
-            CompoundTag layerTag = new CompoundTag();
-            layerTag.putString("Type", archetype);
-            layerTag.putFloat("HP", layerHp);
-            layerTag.putFloat("MaxHP", layerHp);
-            layersList.add(layerTag);
+        for (String arch : archetypes) {
+            CompoundTag layer = new CompoundTag();
+            layer.putString("Type", arch);
+            layer.putFloat("HP", layerHp);
+            layer.putFloat("MaxHP", layerHp);
+            layersList.add(layer);
         }
 
         persistentData.put(MobArchetypes.NBT_SHIELD_LAYERS, layersList);
@@ -134,45 +130,62 @@ public class MobShieldSpawnHandler {
     }
 
     /**
-     * Интеллектуальный выбор архетипа щита на основе снаряжения и физиологии моба
+     * Генерация цепочки архетипов без дубликатов с правильным порядком слоев
      */
-    private static String pickArchetypeForEntity(LivingEntity entity, int layerIndex, int totalLayers) {
-        // При многослойных щитах формируем тактическую комбинацию: внешний слой часто Эфирный/Био, внутренний — Броня
-        if (totalLayers >= 2 && layerIndex == totalLayers - 1) {
-            if (hasHeavyArmor(entity) || RNG.nextFloat() < 0.65F) {
-                return "ARMORED";
+    private static List<String> buildUniqueArchetypeChain(LivingEntity entity, int count) {
+        List<String> pool = new ArrayList<>();
+        pool.add("ARMORED");
+        pool.add("ETHEREAL");
+        pool.add("BIO");
+
+        String priority = getPriorityArchetype(entity);
+        List<String> result = new ArrayList<>();
+
+        if (count == 1) {
+            result.add(priority);
+            return result;
+        }
+
+        if (count == 2) {
+            pool.remove(priority);
+            Collections.shuffle(pool, RNG);
+            String secondary = pool.get(0);
+
+            // Тактический порядок: Механика глубже, Эфир/Био на поверхности
+            if (priority.equals("ARMORED")) {
+                result.add(secondary); // Внешний
+                result.add(priority);  // Внутренний
+            } else {
+                result.add(priority);  // Внешний
+                result.add(secondary); // Внутренний
             }
+            return result;
         }
 
-        int armoredWeight = 40;
-        int etherealWeight = 30;
-        int bioWeight = 30;
-
-        // 1. Контекст металлической/тяжелой экипировки
-        if (hasHeavyArmor(entity)) {
-            armoredWeight = 75;
-            etherealWeight = 15;
-            bioWeight = 10;
+        // 3 слоя: присутствуют все три типа в тактическом порядке
+        if (priority.equals("ARMORED")) {
+            result.add("ETHEREAL"); // Внешний
+            result.add("BIO");      // Средний
+            result.add("ARMORED");  // Внутренний
+        } else if (priority.equals("ETHEREAL")) {
+            result.add("ETHEREAL");
+            result.add("BIO");
+            result.add("ARMORED");
+        } else {
+            result.add("BIO");
+            result.add("ETHEREAL");
+            result.add("ARMORED");
         }
-        // 2. Контекст магии, летающих созданий и обитателей Энда
-        else if (isMagicOrAirEntity(entity)) {
-            armoredWeight = 10;
-            etherealWeight = 80;
-            bioWeight = 10;
-        }
-        // 3. Контекст членистоногих, болотной нежити и мутантов
-        else if (isBioEntity(entity)) {
-            armoredWeight = 10;
-            etherealWeight = 10;
-            bioWeight = 80;
-        }
+        return result;
+    }
 
-        int totalWeight = armoredWeight + etherealWeight + bioWeight;
-        int roll = RNG.nextInt(totalWeight);
+    private static String getPriorityArchetype(LivingEntity entity) {
+        if (hasHeavyArmor(entity)) return "ARMORED";
+        if (isMagicOrAirEntity(entity)) return "ETHEREAL";
+        if (isBioEntity(entity)) return "BIO";
 
-        if (roll < armoredWeight) return "ARMORED";
-        if (roll < armoredWeight + etherealWeight) return "ETHEREAL";
-        return "BIO";
+        int roll = RNG.nextInt(3);
+        return roll == 0 ? "ARMORED" : (roll == 1 ? "ETHEREAL" : "BIO");
     }
 
     private static boolean hasHeavyArmor(LivingEntity entity) {
@@ -182,13 +195,9 @@ public class MobShieldSpawnHandler {
             if (stack.getItem() instanceof ArmorItem armor) {
                 var mat = armor.getMaterial();
                 if (mat == ArmorMaterials.IRON || mat == ArmorMaterials.DIAMOND ||
-                    mat == ArmorMaterials.NETHERITE || mat == ArmorMaterials.CHAIN) {
-                    return true;
-                }
+                    mat == ArmorMaterials.NETHERITE || mat == ArmorMaterials.CHAIN) return true;
                 String name = mat.getName().toLowerCase();
-                if (name.contains("brass") || name.contains("steel") || name.contains("enderium")) {
-                    return true;
-                }
+                if (name.contains("brass") || name.contains("steel") || name.contains("enderium")) return true;
             }
         }
         return false;
@@ -214,31 +223,22 @@ public class MobShieldSpawnHandler {
                path.contains("silverfish") || path.contains("drowned") || path.contains("mutant");
     }
 
-    /**
-     * Считывание текущей глобальной фазы сложности Majrusz's Progressive Difficulty
-     */
     private static String getMajruszStage(Level level) {
         try {
             Class<?> helperClass = Class.forName("com.majruszsdifficulty.gamestage.GameStageHelper");
             for (Method m : helperClass.getMethods()) {
                 if (m.getParameterCount() == 0 && (m.getName().equals("getGameStage") || m.getName().equals("getCurrentStage"))) {
                     Object stageObj = m.invoke(null);
-                    if (stageObj != null) {
-                        return stageObj.toString().toUpperCase();
-                    }
+                    if (stageObj != null) return stageObj.toString().toUpperCase();
                 }
             }
         } catch (Throwable ignored) {}
 
-        // Fallback: привязка к измерениям, если фаза не считалась
         if (level.dimension() == Level.END) return "MASTER";
         if (level.dimension() == Level.NETHER) return "EXPERT";
         return "NORMAL";
     }
 
-    /**
-     * Поддержка тестовых тегов из команд /summon
-     */
     private static boolean tryApplyCommandTags(LivingEntity target, CompoundTag persistentData) {
         String manualType = null;
         if (target.getTags().contains("arcane_armored")) manualType = "ARMORED";
