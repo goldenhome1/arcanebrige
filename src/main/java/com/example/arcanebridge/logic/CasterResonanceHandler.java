@@ -30,9 +30,9 @@ public class CasterResonanceHandler {
     private static final Pattern GLYPH_PATTERN = Pattern.compile("([a-z0-9_]+:)?glyph_[a-z0-9_]+");
 
     /**
-     * Вызов частотного импульса: всегда +1 к нагрузке без верхнего предела
+     * Вызов импульса: +0.5 к нагрузке на 5 секунд (100 тиков)
      */
-    private static void triggerSurge(ServerPlayer player, ItemStack stack, int durationTicks) {
+    private static void triggerSurge(ServerPlayer player, ItemStack stack, float virtualArmorLoad, int durationTicks) {
         if (stack.isEmpty()) return;
 
         ResourceLocation rl = ForgeRegistries.ITEMS.getKey(stack.getItem());
@@ -41,7 +41,7 @@ public class CasterResonanceHandler {
         // 1. Проверяем наличие глифов в оружии
         List<String> glyphs = extractActiveGlyphs(stack);
         if (glyphs.isEmpty()) {
-            return; // Пустое оружие без магии не перегружает резонанс
+            return; // Оружие без магии не трогает резонанс
         }
 
         CompoundTag pData = player.getPersistentData();
@@ -56,13 +56,13 @@ public class CasterResonanceHandler {
         String timerKey = isElemental ? "ele_shock_timer" : "arcane_shock_timer";
         String loadKey = isElemental ? "ele_caster_load" : "arcane_caster_load";
 
-        // 3. Расчет нагрузки: каждый выстрел/удар строго +1 без верхнего потолка
+        // 3. Расчет нагрузки: каждый выстрел/удар строго +0.5F
         int currentTimer = pData.getInt(timerKey);
-        int currentLoad = currentTimer > 0 ? pData.getInt(loadKey) : 0;
-        int newLoad = currentLoad + 1;
+        float currentLoad = currentTimer > 0 ? pData.getFloat(loadKey) : 0.0F;
+        float newLoad = currentLoad + virtualArmorLoad;
 
         pData.putInt(timerKey, durationTicks);
-        pData.putInt(loadKey, newLoad);
+        pData.putFloat(loadKey, newLoad);
 
         // 4. Локальный визуальный и аудио-отклик
         ServerLevel level = player.serverLevel();
@@ -112,17 +112,17 @@ public class CasterResonanceHandler {
     }
 
     // =========================================================================
-    // ПЕРЕХВАТ СОБЫТИЙ (ЛУК, АРБАЛЕТ, МЕЧ)
+    // ПЕРЕХВАТЧИКИ СОБЫТИЙ (ЛУК, АРБАЛЕТ, МЕЧ)
     // =========================================================================
 
-    // 1. Выстрел из Лука чародея (Stop using)
+    // 1. Выстрел из Лука чародея (Stop using) — 100 тиков (5 секунд), +0.5 нагрузки
     @SubscribeEvent
     public static void onUseItemStop(LivingEntityUseItemEvent.Stop event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             ItemStack stack = event.getItem();
             ResourceLocation rl = ForgeRegistries.ITEMS.getKey(stack.getItem());
             if (rl != null && rl.getNamespace().startsWith("ars_") && rl.getPath().contains("bow") && !rl.getPath().contains("crossbow")) {
-                triggerSurge(player, stack, 60);
+                triggerSurge(player, stack, 0.5F, 100);
             }
         }
     }
@@ -134,7 +134,7 @@ public class CasterResonanceHandler {
             ItemStack bow = event.getBow();
             ResourceLocation rl = ForgeRegistries.ITEMS.getKey(bow.getItem());
             if (rl != null && rl.getNamespace().startsWith("ars_") && rl.getPath().contains("bow")) {
-                triggerSurge(player, bow, 60);
+                triggerSurge(player, bow, 0.5F, 100);
             }
         }
     }
@@ -149,24 +149,24 @@ public class CasterResonanceHandler {
             ItemStack weapon = isArsBow(mainHand) ? mainHand : (isArsBow(offHand) ? offHand : ItemStack.EMPTY);
 
             if (!weapon.isEmpty()) {
-                triggerSurge(player, weapon, 60);
+                triggerSurge(player, weapon, 0.5F, 100);
             }
         }
     }
 
-    // 4. Удар Мечом чародея
+    // 4. Удар Мечом чародея (+0.5 на 5 секунд)
     @SubscribeEvent
     public static void onAttackEntity(AttackEntityEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             ItemStack held = player.getMainHandItem();
             ResourceLocation rl = ForgeRegistries.ITEMS.getKey(held.getItem());
             if (rl != null && rl.getNamespace().startsWith("ars_") && rl.getPath().contains("sword")) {
-                triggerSurge(player, held, 60);
+                triggerSurge(player, held, 0.5F, 100);
             }
         }
     }
 
-    // 5. Выстрел из заряженного Арбалета чародея (Жезлы и Зеркала исключены)
+    // 5. Выстрел из заряженного Арбалета (+0.5 на 5 секунд)
     @SubscribeEvent
     public static void onItemRightClick(PlayerInteractEvent.RightClickItem event) {
         if (event.getEntity() instanceof ServerPlayer player) {
@@ -176,7 +176,7 @@ public class CasterResonanceHandler {
 
             String path = rl.getPath();
             if (path.contains("crossbow") && CrossbowItem.isCharged(stack)) {
-                triggerSurge(player, stack, 60);
+                triggerSurge(player, stack, 0.5F, 100);
             }
         }
     }
