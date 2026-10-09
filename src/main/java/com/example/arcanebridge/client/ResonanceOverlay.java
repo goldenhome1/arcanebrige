@@ -84,7 +84,8 @@ public class ResonanceOverlay {
 
         int finalColor = actualColor | (alpha << 24);
 
-        g.drawString(Minecraft.getInstance().font, label, x - 10, y - 2, 0xFFFFFF, false);
+        // Буква канала мигает красным цветом при шоке!
+        g.drawString(Minecraft.getInstance().font, label, x - 10, y - 2, isShocked ? finalColor : 0xFFFFFF, false);
 
         int fillWidth = Math.min(load * 5, MAX_BAR_WIDTH);
 
