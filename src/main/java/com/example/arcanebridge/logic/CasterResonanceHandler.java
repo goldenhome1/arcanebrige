@@ -14,7 +14,6 @@ import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.player.ArrowLooseEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -30,41 +29,39 @@ public class CasterResonanceHandler {
     private static final Pattern GLYPH_PATTERN = Pattern.compile("([a-z0-9_]+:)?glyph_[a-z0-9_]+");
 
     /**
-     * Вызов импульса: +0.5 к нагрузке на 5 секунд (100 тиков)
+     * Импульс выстрела: +1 к нагрузке частоты на 5 секунд (100 тиков)
      */
-    private static void triggerSurge(ServerPlayer player, ItemStack stack, float virtualArmorLoad, int durationTicks) {
+    private static void triggerSurge(ServerPlayer player, ItemStack stack, int durationTicks) {
         if (stack.isEmpty()) return;
 
         ResourceLocation rl = ForgeRegistries.ITEMS.getKey(stack.getItem());
         if (rl == null || !rl.getNamespace().startsWith("ars_")) return;
 
-        // 1. Проверяем наличие глифов в оружии
+        // Игнорируем оружие без зашитых глифов
         List<String> glyphs = extractActiveGlyphs(stack);
-        if (glyphs.isEmpty()) {
-            return; // Оружие без магии не трогает резонанс
-        }
+        if (glyphs.isEmpty()) return;
 
         CompoundTag pData = player.getPersistentData();
         long currentTick = player.level().getGameTime();
 
-        // Защита от дублирования импульса в одном тике
+        // Защита от дублирования импульса в рамках одного тика
         if (pData.getLong("last_caster_surge_tick") == currentTick) return;
         pData.putLong("last_caster_surge_tick", currentTick);
 
-        // 2. Определение стихии/арканы
+        // Определение спектра: стихийный или арканный
         boolean isElemental = isElementalSpell(glyphs);
         String timerKey = isElemental ? "ele_shock_timer" : "arcane_shock_timer";
         String loadKey = isElemental ? "ele_caster_load" : "arcane_caster_load";
 
-        // 3. Расчет нагрузки: каждый выстрел/удар строго +0.5F
+        // Накопление нагрузки: каждый выстрел/удар строго +1 без потолка
         int currentTimer = pData.getInt(timerKey);
-        float currentLoad = currentTimer > 0 ? pData.getFloat(loadKey) : 0.0F;
-        float newLoad = currentLoad + virtualArmorLoad;
+        int currentLoad = currentTimer > 0 ? pData.getInt(loadKey) : 0;
+        int newLoad = currentLoad + 1;
 
         pData.putInt(timerKey, durationTicks);
-        pData.putFloat(loadKey, newLoad);
+        pData.putInt(loadKey, newLoad);
 
-        // 4. Локальный визуальный и аудио-отклик
+        // Визуальные и звуковые эффекты всплеска
         ServerLevel level = player.serverLevel();
         double px = player.getX();
         double py = player.getY() + 1.1D;
@@ -111,18 +108,14 @@ public class CasterResonanceHandler {
         return false;
     }
 
-    // =========================================================================
-    // ПЕРЕХВАТЧИКИ СОБЫТИЙ (ЛУК, АРБАЛЕТ, МЕЧ)
-    // =========================================================================
-
-    // 1. Выстрел из Лука чародея (Stop using) — 100 тиков (5 секунд), +0.5 нагрузки
+    // 1. Выстрел из Лука чародея (отпускание тетивы)
     @SubscribeEvent
     public static void onUseItemStop(LivingEntityUseItemEvent.Stop event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             ItemStack stack = event.getItem();
             ResourceLocation rl = ForgeRegistries.ITEMS.getKey(stack.getItem());
             if (rl != null && rl.getNamespace().startsWith("ars_") && rl.getPath().contains("bow") && !rl.getPath().contains("crossbow")) {
-                triggerSurge(player, stack, 0.5F, 100);
+                triggerSurge(player, stack, 100);
             }
         }
     }
@@ -134,7 +127,7 @@ public class CasterResonanceHandler {
             ItemStack bow = event.getBow();
             ResourceLocation rl = ForgeRegistries.ITEMS.getKey(bow.getItem());
             if (rl != null && rl.getNamespace().startsWith("ars_") && rl.getPath().contains("bow")) {
-                triggerSurge(player, bow, 0.5F, 100);
+                triggerSurge(player, bow, 100);
             }
         }
     }
@@ -149,34 +142,31 @@ public class CasterResonanceHandler {
             ItemStack weapon = isArsBow(mainHand) ? mainHand : (isArsBow(offHand) ? offHand : ItemStack.EMPTY);
 
             if (!weapon.isEmpty()) {
-                triggerSurge(player, weapon, 0.5F, 100);
+                triggerSurge(player, weapon, 100);
             }
         }
     }
 
-    // 4. Удар Мечом чародея (+0.5 на 5 секунд)
+    // 4. Удар Мечом чародея
     @SubscribeEvent
     public static void onAttackEntity(AttackEntityEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             ItemStack held = player.getMainHandItem();
             ResourceLocation rl = ForgeRegistries.ITEMS.getKey(held.getItem());
             if (rl != null && rl.getNamespace().startsWith("ars_") && rl.getPath().contains("sword")) {
-                triggerSurge(player, held, 0.5F, 100);
+                triggerSurge(player, held, 100);
             }
         }
     }
 
-    // 5. Выстрел из заряженного Арбалета (+0.5 на 5 секунд)
+    // 5. Выстрел из заряженного Арбалета чародея
     @SubscribeEvent
-    public static void onItemRightClick(PlayerInteractEvent.RightClickItem event) {
+    public static void onItemStopCrossbow(LivingEntityUseItemEvent.Stop event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            ItemStack stack = event.getItemStack();
+            ItemStack stack = event.getItem();
             ResourceLocation rl = ForgeRegistries.ITEMS.getKey(stack.getItem());
-            if (rl == null || !rl.getNamespace().startsWith("ars_")) return;
-
-            String path = rl.getPath();
-            if (path.contains("crossbow") && CrossbowItem.isCharged(stack)) {
-                triggerSurge(player, stack, 0.5F, 100);
+            if (rl != null && rl.getNamespace().startsWith("ars_") && rl.getPath().contains("crossbow") && CrossbowItem.isCharged(stack)) {
+                triggerSurge(player, stack, 100);
             }
         }
     }
