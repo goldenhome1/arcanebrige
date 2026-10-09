@@ -2,7 +2,6 @@ package com.example.arcanebridge.logic;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,55 +27,44 @@ import java.util.regex.Pattern;
 @Mod.EventBusSubscriber(modid = "arcane_bridge")
 public class CasterResonanceHandler {
 
-    // Универсальный шаблон глифов Ars Nouveau и аддонов
     private static final Pattern GLYPH_PATTERN = Pattern.compile("([a-z0-9_]+:)?glyph_[a-z0-9_]+");
 
-    private static void triggerSurge(ServerPlayer player, ItemStack stack, int virtualArmorLoad, int durationTicks, String triggerSource) {
+    /**
+     * Вызов частотного импульса: всегда +1 к нагрузке без верхнего предела
+     */
+    private static void triggerSurge(ServerPlayer player, ItemStack stack, int durationTicks) {
         if (stack.isEmpty()) return;
 
         ResourceLocation rl = ForgeRegistries.ITEMS.getKey(stack.getItem());
         if (rl == null || !rl.getNamespace().startsWith("ars_")) return;
 
-        // 1. Извлекаем глифы
+        // 1. Проверяем наличие глифов в оружии
         List<String> glyphs = extractActiveGlyphs(stack);
-
-        // КРИТИЧЕСКИЙ ФИЛЬТР: Если глифов нет — это немагический выстрел, выходим!
         if (glyphs.isEmpty()) {
-            return;
+            return; // Пустое оружие без магии не перегружает резонанс
         }
 
         CompoundTag pData = player.getPersistentData();
         long currentTick = player.level().getGameTime();
 
-        // Защита от дублирования импульса в рамках одного тика
+        // Защита от дублирования импульса в одном тике
         if (pData.getLong("last_caster_surge_tick") == currentTick) return;
         pData.putLong("last_caster_surge_tick", currentTick);
 
         // 2. Определение стихии/арканы
         boolean isElemental = isElementalSpell(glyphs);
-        String freqName = isElemental ? "ELEMENTAL" : "ARCANE";
         String timerKey = isElemental ? "ele_shock_timer" : "arcane_shock_timer";
         String loadKey = isElemental ? "ele_caster_load" : "arcane_caster_load";
 
-        // 3. Расчет нагрузки: при спаме выстрелов нагрузка суммируется до 4
+        // 3. Расчет нагрузки: каждый выстрел/удар строго +1 без верхнего потолка
         int currentTimer = pData.getInt(timerKey);
         int currentLoad = currentTimer > 0 ? pData.getInt(loadKey) : 0;
-        int newLoad = Math.min(4, Math.max(virtualArmorLoad, currentLoad + 1));
+        int newLoad = currentLoad + 1;
 
         pData.putInt(timerKey, durationTicks);
         pData.putInt(loadKey, newLoad);
 
-        // 4. Отладочный вывод в чат
-        Component debugMsg = Component.literal(
-                "§6§l[DEBUG CASTER] §aТриггер: §e" + triggerSource +
-                "\n §7➤ Оружие: §b" + rl.getPath() +
-                "\n §7➤ Глифы: §f" + glyphs +
-                "\n §7➤ Спектр: " + (isElemental ? "§bСтихийный (ELE)" : "§dАрканный (ARCANE)") +
-                "\n §7➤ Нагрузка: §c+" + newLoad + " к каналу " + freqName + " §7(на " + (durationTicks / 20.0f) + " сек)"
-        );
-        player.sendSystemMessage(debugMsg);
-
-        // 5. Визуальный и аудио отклик
+        // 4. Локальный визуальный и аудио-отклик
         ServerLevel level = player.serverLevel();
         double px = player.getX();
         double py = player.getY() + 1.1D;
@@ -123,14 +111,18 @@ public class CasterResonanceHandler {
         return false;
     }
 
-    // 1. Выстрел из Лука чародея
+    // =========================================================================
+    // ПЕРЕХВАТ СОБЫТИЙ (ЛУК, АРБАЛЕТ, МЕЧ)
+    // =========================================================================
+
+    // 1. Выстрел из Лука чародея (Stop using)
     @SubscribeEvent
     public static void onUseItemStop(LivingEntityUseItemEvent.Stop event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             ItemStack stack = event.getItem();
             ResourceLocation rl = ForgeRegistries.ITEMS.getKey(stack.getItem());
             if (rl != null && rl.getNamespace().startsWith("ars_") && rl.getPath().contains("bow") && !rl.getPath().contains("crossbow")) {
-                triggerSurge(player, stack, 2, 60, "LivingEntityUseItemEvent.Stop");
+                triggerSurge(player, stack, 60);
             }
         }
     }
@@ -142,7 +134,7 @@ public class CasterResonanceHandler {
             ItemStack bow = event.getBow();
             ResourceLocation rl = ForgeRegistries.ITEMS.getKey(bow.getItem());
             if (rl != null && rl.getNamespace().startsWith("ars_") && rl.getPath().contains("bow")) {
-                triggerSurge(player, bow, 2, 60, "ArrowLooseEvent");
+                triggerSurge(player, bow, 60);
             }
         }
     }
@@ -157,24 +149,24 @@ public class CasterResonanceHandler {
             ItemStack weapon = isArsBow(mainHand) ? mainHand : (isArsBow(offHand) ? offHand : ItemStack.EMPTY);
 
             if (!weapon.isEmpty()) {
-                triggerSurge(player, weapon, 2, 60, "EntityJoinLevelEvent(Arrow)");
+                triggerSurge(player, weapon, 60);
             }
         }
     }
 
-    // 4. Удар мечом чародея (+1 нагрузки)
+    // 4. Удар Мечом чародея
     @SubscribeEvent
     public static void onAttackEntity(AttackEntityEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             ItemStack held = player.getMainHandItem();
             ResourceLocation rl = ForgeRegistries.ITEMS.getKey(held.getItem());
             if (rl != null && rl.getNamespace().startsWith("ars_") && rl.getPath().contains("sword")) {
-                triggerSurge(player, held, 1, 40, "AttackEntityEvent");
+                triggerSurge(player, held, 60);
             }
         }
     }
 
-    // 5. Арбалет (+2) и Жезл/Зеркало (+1)
+    // 5. Выстрел из заряженного Арбалета чародея (Жезлы и Зеркала исключены)
     @SubscribeEvent
     public static void onItemRightClick(PlayerInteractEvent.RightClickItem event) {
         if (event.getEntity() instanceof ServerPlayer player) {
@@ -184,9 +176,7 @@ public class CasterResonanceHandler {
 
             String path = rl.getPath();
             if (path.contains("crossbow") && CrossbowItem.isCharged(stack)) {
-                triggerSurge(player, stack, 2, 60, "RightClickItem(Crossbow)");
-            } else if (path.contains("wand") || path.contains("mirror")) {
-                triggerSurge(player, stack, 1, 40, "RightClickItem(Wand/Mirror)");
+                triggerSurge(player, stack, 60);
             }
         }
     }
