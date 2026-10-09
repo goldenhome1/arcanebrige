@@ -1,8 +1,7 @@
 package com.example.arcanebridge.logic;
 
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -29,120 +28,102 @@ import java.util.regex.Pattern;
 @Mod.EventBusSubscriber(modid = "arcane_bridge")
 public class CasterResonanceHandler {
 
-    private static final Pattern GLYPH_PATTERN = Pattern.compile("ars_[a-z]+:glyph_[a-z0-9_]+");
+    // Универсальный шаблон глифов Ars Nouveau и аддонов
+    private static final Pattern GLYPH_PATTERN = Pattern.compile("([a-z0-9_]+:)?glyph_[a-z0-9_]+");
 
-    /**
-     * Вызов кратковременного частотного перегруза (+1..2 виртуальных элемента брони)
-     */
     private static void triggerSurge(ServerPlayer player, ItemStack stack, int virtualArmorLoad, int durationTicks, String triggerSource) {
         if (stack.isEmpty()) return;
 
         ResourceLocation rl = ForgeRegistries.ITEMS.getKey(stack.getItem());
         if (rl == null || !rl.getNamespace().startsWith("ars_")) return;
 
+        // 1. Извлекаем глифы
+        List<String> glyphs = extractActiveGlyphs(stack);
+
+        // КРИТИЧЕСКИЙ ФИЛЬТР: Если глифов нет — это немагический выстрел, выходим!
+        if (glyphs.isEmpty()) {
+            return;
+        }
+
         CompoundTag pData = player.getPersistentData();
         long currentTick = player.level().getGameTime();
 
-        // Защита от дублирования импульса в одном тике
+        // Защита от дублирования импульса в рамках одного тика
         if (pData.getLong("last_caster_surge_tick") == currentTick) return;
         pData.putLong("last_caster_surge_tick", currentTick);
 
-        // 1. Извлекаем реальный список глифов текущего заклинания
-        List<String> glyphs = extractActiveGlyphs(stack);
+        // 2. Определение стихии/арканы
         boolean isElemental = isElementalSpell(glyphs);
-
         String freqName = isElemental ? "ELEMENTAL" : "ARCANE";
         String timerKey = isElemental ? "ele_shock_timer" : "arcane_shock_timer";
         String loadKey = isElemental ? "ele_caster_load" : "arcane_caster_load";
 
-        // 2. Взводим виртуальную нагрузку в NBT игрока (не отнимая стабильность напрямую!)
-        pData.putInt(timerKey, durationTicks);
-        pData.putInt(loadKey, virtualArmorLoad);
+        // 3. Расчет нагрузки: при спаме выстрелов нагрузка суммируется до 4
+        int currentTimer = pData.getInt(timerKey);
+        int currentLoad = currentTimer > 0 ? pData.getInt(loadKey) : 0;
+        int newLoad = Math.min(4, Math.max(virtualArmorLoad, currentLoad + 1));
 
-        // 3. Отладочный отчет в чат
+        pData.putInt(timerKey, durationTicks);
+        pData.putInt(loadKey, newLoad);
+
+        // 4. Отладочный вывод в чат
         Component debugMsg = Component.literal(
                 "§6§l[DEBUG CASTER] §aТриггер: §e" + triggerSource +
-                "\n §7➤ Оружие: §b" + rl +
-                "\n §7➤ Глифы: §f" + (glyphs.isEmpty() ? "[Базовый фокус]" : glyphs) +
+                "\n §7➤ Оружие: §b" + rl.getPath() +
+                "\n §7➤ Глифы: §f" + glyphs +
                 "\n §7➤ Спектр: " + (isElemental ? "§bСтихийный (ELE)" : "§dАрканный (ARCANE)") +
-                "\n §7➤ Частотный импульс: §c+" + virtualArmorLoad + " к нагрузке " + freqName + " §7(на " + (durationTicks / 20.0f) + " сек)"
+                "\n §7➤ Нагрузка: §c+" + newLoad + " к каналу " + freqName + " §7(на " + (durationTicks / 20.0f) + " сек)"
         );
         player.sendSystemMessage(debugMsg);
 
-        // 4. Аудио-визуальный отклик выстрела
+        // 5. Визуальный и аудио отклик
         ServerLevel level = player.serverLevel();
         double px = player.getX();
         double py = player.getY() + 1.1D;
         double pz = player.getZ();
 
         if (isElemental) {
-            level.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME, px, py, pz, 8, 0.2D, 0.2D, 0.2D, 0.04D);
+            level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, px, py, pz, 10, 0.25D, 0.25D, 0.25D, 0.04D);
             level.playSound(null, px, py, pz, SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.7F, 1.3F);
         } else {
-            level.sendParticles(net.minecraft.core.particles.ParticleTypes.ENCHANTED_HIT, px, py, pz, 12, 0.25D, 0.25D, 0.25D, 0.08D);
+            level.sendParticles(ParticleTypes.ENCHANTED_HIT, px, py, pz, 14, 0.3D, 0.3D, 0.3D, 0.08D);
             level.playSound(null, px, py, pz, SoundEvents.AMETHYST_BLOCK_HIT, SoundSource.PLAYERS, 0.8F, 1.4F);
         }
     }
 
-    /**
-     * Точное извлечение идентификаторов глифов только из активного заклинания
-     */
     private static List<String> extractActiveGlyphs(ItemStack stack) {
         List<String> glyphs = new ArrayList<>();
         CompoundTag tag = stack.getTag();
         if (tag == null) return glyphs;
 
-        CompoundTag spellData = tag.getCompound("ars_nouveau_spell");
-        if (spellData.isEmpty()) spellData = tag.getCompound("spell");
-
-        int currentSlot = spellData.getInt("current_slot");
-        CompoundTag slotTag = spellData.getCompound("spells" + currentSlot);
-        if (slotTag.isEmpty()) slotTag = spellData;
-
-        // Вариант 1: Стандартный ListTag "spell"
-        if (slotTag.contains("spell", Tag.TAG_LIST)) {
-            ListTag list = slotTag.getList("spell", Tag.TAG_STRING);
-            for (int i = 0; i < list.size(); i++) {
-                glyphs.add(list.getString(i).toLowerCase());
+        String nbt = tag.toString().toLowerCase();
+        Matcher matcher = GLYPH_PATTERN.matcher(nbt);
+        while (matcher.find()) {
+            String g = matcher.group();
+            if (!glyphs.contains(g)) {
+                glyphs.add(g);
             }
         }
-
-        // Вариант 2: Точный поиск сигнатур глифов через Regex
-        if (glyphs.isEmpty()) {
-            Matcher matcher = GLYPH_PATTERN.matcher(slotTag.toString().toLowerCase());
-            while (matcher.find()) {
-                glyphs.add(matcher.group());
-            }
-        }
-
         return glyphs;
     }
 
-    /**
-     * Проверка: содержит ли заклинание истинно стихийные глифы
-     */
     private static boolean isElementalSpell(List<String> glyphs) {
         for (String g : glyphs) {
-            // Любой глиф аддона Ars Elemental
-            if (g.startsWith("ars_elemental:")) return true;
+            String lower = g.toLowerCase();
+            if (lower.contains("ars_elemental")) return true;
 
-            // Стихийные глифы базового Ars Nouveau (без ложных совпадений с repair/air)
-            if (g.contains("glyph_flare") || g.contains("glyph_ignite") || g.contains("glyph_firework")
-             || g.contains("glyph_freeze") || g.contains("glyph_cold_snap") || g.contains("glyph_conjure_water")
-             || g.contains("glyph_crush")
-             || g.contains("glyph_wind") || g.contains("glyph_gust") || g.contains("glyph_launch")
-             || g.contains("glyph_lightning")) {
+            if (lower.contains("glyph_flare") || lower.contains("glyph_ignite") || lower.contains("glyph_firework")
+             || lower.contains("glyph_freeze") || lower.contains("glyph_cold_snap") || lower.contains("glyph_conjure_water")
+             || lower.contains("glyph_crush")
+             || lower.contains("glyph_wind") || lower.contains("glyph_gust") || lower.contains("glyph_launch")
+             || lower.contains("glyph_lightning")) {
                 return true;
             }
         }
         return false;
     }
 
-    // =========================================================================
-    // ПЕРЕХВАТЧИКИ СОБЫТИЙ
-    // =========================================================================
-
-    // 1. Лук чародея (отпускание тетивы) — +2 виртуальной брони на 3 секунды
+    // 1. Выстрел из Лука чародея
     @SubscribeEvent
     public static void onUseItemStop(LivingEntityUseItemEvent.Stop event) {
         if (event.getEntity() instanceof ServerPlayer player) {
@@ -181,7 +162,7 @@ public class CasterResonanceHandler {
         }
     }
 
-    // 4. Удар мечом чародея — +1 виртуальной брони на 2 секунды
+    // 4. Удар мечом чародея (+1 нагрузки)
     @SubscribeEvent
     public static void onAttackEntity(AttackEntityEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
