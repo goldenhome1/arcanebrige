@@ -81,16 +81,21 @@ public class GeoShieldSuitLayer<T extends GeoAnimatable> extends GeoRenderLayer<
             b = Math.min(1.0F, b + 0.4F);
         }
 
-        double midY = entity.getBbHeight() * 0.5D;
+        float entityHeight = Math.max(entity.getBbHeight(), entity.getType().getHeight());
+        if (entityHeight <= 0.1F) entityHeight = 1.8F;
+        double midY = entityHeight * 0.5D;
 
         poseStack.pushPose();
-        poseStack.translate(0.0D, midY, 0.0D);
-        poseStack.scale(pulse, pulse, pulse);
-        poseStack.translate(0.0D, -midY, 0.0D);
+        try {
+            poseStack.translate(0.0D, midY, 0.0D);
+            poseStack.scale(pulse, pulse, pulse);
+            poseStack.translate(0.0D, -midY, 0.0D);
 
-        getRenderer().reRender(bakedModel, poseStack, bufferSource, animatable, energySwirlType, suitBuffer,
-                partialTick, 15728880, OverlayTexture.NO_OVERLAY, r, g, b, alpha);
-
-        poseStack.popPose();
+            getRenderer().reRender(bakedModel, poseStack, bufferSource, animatable, energySwirlType, suitBuffer,
+                    partialTick, 15728880, OverlayTexture.NO_OVERLAY, r, g, b, alpha);
+        } catch (Throwable ignored) {
+        } finally {
+            poseStack.popPose();
+        }
     }
 }

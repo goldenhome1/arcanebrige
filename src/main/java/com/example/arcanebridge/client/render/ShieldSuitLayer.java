@@ -84,17 +84,22 @@ public class ShieldSuitLayer<T extends LivingEntity, M extends EntityModel<T>> e
             b = Math.min(1.0F, b + 0.4F);
         }
 
-        double midY = 1.501D - (entity.getBbHeight() * 0.5D);
+        float entityHeight = Math.max(entity.getBbHeight(), entity.getType().getHeight());
+        if (entityHeight <= 0.1F) entityHeight = 1.8F;
+        double midY = 1.501D - (entityHeight * 0.5D);
 
         poseStack.pushPose();
-        poseStack.translate(0.0D, midY, 0.0D);
-        poseStack.scale(pulse, pulse, pulse);
-        poseStack.translate(0.0D, -midY, 0.0D);
+        try {
+            poseStack.translate(0.0D, midY, 0.0D);
+            poseStack.scale(pulse, pulse, pulse);
+            poseStack.translate(0.0D, -midY, 0.0D);
 
-        M model = this.getParentModel();
-        // Эмиссионный полнояркостный свет для шейдеров (15728880)
-        model.renderToBuffer(poseStack, buffer, 15728880, OverlayTexture.NO_OVERLAY, r, g, b, alpha);
-
-        poseStack.popPose();
+            M model = this.getParentModel();
+            // Эмиссионный полнояркостный свет для шейдеров (15728880)
+            model.renderToBuffer(poseStack, buffer, 15728880, OverlayTexture.NO_OVERLAY, r, g, b, alpha);
+        } catch (Throwable ignored) {
+        } finally {
+            poseStack.popPose();
+        }
     }
 }

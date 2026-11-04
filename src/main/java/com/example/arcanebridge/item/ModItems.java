@@ -44,6 +44,9 @@ public class ModItems {
     public static final RegistryObject<Item> PHASE_FLUID_TUNER = ITEMS.register("phase_fluid_tuner",
             () -> new PhaseFluidTunerItem(new Item.Properties()));
 
+    public static final RegistryObject<Item> NUMISMATIC_PATENT = ITEMS.register("numismatic_patent",
+            () -> new NumismaticPatentItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));
+
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);
     }

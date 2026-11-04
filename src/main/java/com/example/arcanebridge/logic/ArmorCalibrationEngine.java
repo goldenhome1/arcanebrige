@@ -104,15 +104,36 @@ public class ArmorCalibrationEngine {
         boolean isWrench = mainItemId != null && mainItemId.toString().equals("create:wrench");
         boolean isJammed = offHand.hasTag() && offHand.getTag().getBoolean("Jammed");
 
-        if (isWrench && isJammed) {
-            if (player.level().isClientSide()) {
-                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                    com.example.arcanebridge.client.gui.ClientArmorGuiHelper.openRepairScreen();
-                });
+        if (isWrench) {
+            if (isJammed) {
+                if (player.level().isClientSide()) {
+                    DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                        com.example.arcanebridge.client.gui.ClientArmorGuiHelper.openRepairScreen();
+                    });
+                }
+                player.swing(InteractionHand.MAIN_HAND, true);
+                event.setCanceled(true);
+                event.setCancellationResult(InteractionResult.SUCCESS);
+                return;
             }
-            player.swing(InteractionHand.MAIN_HAND, true);
-            event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.SUCCESS);
+
+            // Аварийный расклин надетой брони на ходу
+            for (EquipmentSlot slot : EquipmentSlot.values()) {
+                if (slot.getType() == EquipmentSlot.Type.ARMOR) {
+                    ItemStack piece = player.getItemBySlot(slot);
+                    if (piece.hasTag() && piece.getTag().getBoolean("Jammed")) {
+                        piece.getTag().remove("Jammed");
+                        if (!player.level().isClientSide()) {
+                            player.displayClientMessage(Component.literal("§a[⚙] Сервоприводы элемента [" + piece.getHoverName().getString() + "§a] расклинены аварийным ударом ключа!"), true);
+                            player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ANVIL_USE, SoundSource.PLAYERS, 0.7f, 1.4f);
+                        }
+                        player.swing(InteractionHand.MAIN_HAND, true);
+                        event.setCanceled(true);
+                        event.setCancellationResult(InteractionResult.SUCCESS);
+                        return;
+                    }
+                }
+            }
         }
     }
 }

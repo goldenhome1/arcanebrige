@@ -18,5 +18,13 @@
   "item.arcane_bridge.guide_core": "Ядро Мастера Резонанса",
   "entity.arcane_bridge.arcane_guide": "Мастер Резонанса",
   "key.categories.arcane_bridge": "Arcane Bridge",
-  "key.arcane_bridge.hud_menu": "Меню интерфейса визора"
+  "key.arcane_bridge.hud_menu": "Меню интерфейса визора",
+  "effect.arcane_bridge.phase_anchor": "Фазовый якорь",
+  "effect.arcane_bridge.crystalline_satiation": "Кристаллическое насыщение",
+  "effect.arcane_bridge.calibrated_servos": "Калиброванные сервоприводы",
+  "effect.arcane_bridge.ethereal_drag": "Эфирный рассинхрон",
+  "effect.arcane_bridge.kinetic_overclock": "Кинетический форсаж",
+  "item.arcane_bridge.numismatic_patent": "Патент Нумизмата",
+  "entity.arcane_bridge.consortium_merchant": "Снабженец Консорциума",
+  "itemGroup.arcane_bridge": "Arcane Bridge"
 }

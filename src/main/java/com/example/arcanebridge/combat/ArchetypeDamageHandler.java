@@ -21,7 +21,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
@@ -30,7 +33,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 @Mod.EventBusSubscriber(modid = MobArchetypes.MODID)
 public class ArchetypeDamageHandler {
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onLivingHurt(LivingHurtEvent event) {
         LivingEntity target = event.getEntity();
         if (target.level().isClientSide() || target instanceof Player || !target.isAlive()) return;
@@ -127,6 +130,21 @@ public class ArchetypeDamageHandler {
 
         NetworkHandler.CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity),
                 new ClientboundSyncShieldPacket(entity.getId(), syncTag));
+    }
+
+    @SubscribeEvent
+    public static void onStartTracking(PlayerEvent.StartTracking event) {
+        if (event.getTarget() instanceof LivingEntity living && event.getEntity() instanceof ServerPlayer player) {
+            CompoundTag data = living.getPersistentData();
+            if (data.contains(MobArchetypes.NBT_SHIELD_LAYERS)) {
+                CompoundTag syncTag = new CompoundTag();
+                syncTag.put(MobArchetypes.NBT_SHIELD_LAYERS, data.getList(MobArchetypes.NBT_SHIELD_LAYERS, Tag.TAG_COMPOUND));
+                syncTag.putInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX, data.getInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX));
+                syncTag.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, data.getBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN));
+                NetworkHandler.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+                        new ClientboundSyncShieldPacket(living.getId(), syncTag));
+            }
+        }
     }
 
     private static MobArchetypes.AttackCategory classifyAttack(LivingEntity target, DamageSource source) {

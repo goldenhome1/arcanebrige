@@ -67,6 +67,12 @@ public class ShieldBarOverlayRenderer {
                 for (Entity ent : entities) {
             LivingEntity target = (LivingEntity) ent;
             if (target.distanceToSqr(player) > MAX_RENDER_DISTANCE_SQ) continue;
+
+            // Восстановление размеров сущности при десинхронизации/баге высоты
+            if (target.getBbHeight() <= 0.1F && target.isAlive()) {
+                target.refreshDimensions();
+            }
+
             if (!player.hasLineOfSight(target)) continue;
 
             CompoundTag data = target.getPersistentData();
@@ -106,8 +112,11 @@ public class ShieldBarOverlayRenderer {
         double y = target.yo + (target.getY() - target.yo) * partialTick - cameraPos.y;
         double z = target.zo + (target.getZ() - target.zo) * partialTick - cameraPos.z;
 
+        float entityHeight = Math.max(target.getBbHeight(), target.getType().getHeight());
+        if (entityHeight <= 0.1F) entityHeight = 1.8F;
+
         poseStack.pushPose();
-        poseStack.translate(x, y + target.getBbHeight() + 0.35D, z);
+        poseStack.translate(x, y + entityHeight + 0.35D, z);
 
         Camera camera = mc.gameRenderer.getMainCamera();
         poseStack.mulPose(Axis.YP.rotationDegrees(-camera.getYRot()));
@@ -154,7 +163,9 @@ public class ShieldBarOverlayRenderer {
         double y = target.yo + (target.getY() - target.yo) * partialTick - cameraPos.y;
         double z = target.zo + (target.getZ() - target.zo) * partialTick - cameraPos.z;
 
-        double heightOffset = target.getBbHeight() + 0.6D;
+        float entityHeight = Math.max(target.getBbHeight(), target.getType().getHeight());
+        if (entityHeight <= 0.1F) entityHeight = 1.8F;
+        double heightOffset = entityHeight + 0.6D;
 
         poseStack.pushPose();
         poseStack.translate(x, y + heightOffset, z);
@@ -399,5 +410,24 @@ public class ShieldBarOverlayRenderer {
             }
         } catch (Throwable ignored) {}
         return false;
+    }
+
+    public static void handleSyncShieldPacket(int entityId, CompoundTag shieldData) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level != null) {
+            Entity entity = mc.level.getEntity(entityId);
+            if (entity instanceof LivingEntity living && shieldData != null) {
+                CompoundTag data = living.getPersistentData();
+                if (shieldData.contains(MobArchetypes.NBT_SHIELD_LAYERS)) {
+                    data.put(MobArchetypes.NBT_SHIELD_LAYERS, shieldData.getList(MobArchetypes.NBT_SHIELD_LAYERS, 10));
+                }
+                data.putInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX, shieldData.getInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX));
+                data.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, shieldData.getBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN));
+
+                if (living.getBbHeight() <= 0.1F && living.isAlive()) {
+                    living.refreshDimensions();
+                }
+            }
+        }
     }
 }

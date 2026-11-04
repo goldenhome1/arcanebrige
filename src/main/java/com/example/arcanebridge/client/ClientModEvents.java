@@ -16,7 +16,15 @@ public class ClientModEvents {
         @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.ARCANE_GUIDE.get(), ArcaneGuideRenderer::new);
+        event.registerEntityRenderer(ModEntities.CONSORTIUM_MERCHANT.get(), net.minecraft.client.renderer.entity.VillagerRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.PHASE_RELAY.get(), PhaseRelayRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.PHASE_FLUID_RELAY.get(), com.example.arcanebridge.client.render.PhaseFluidRenderer::new);
+    }
+
+    @SubscribeEvent
+    public static void onClientSetup(net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent event) {
+        event.enqueueWork(() -> {
+            com.example.arcanebridge.client.compat.CgsEmfCompat.init();
+        });
     }
 }

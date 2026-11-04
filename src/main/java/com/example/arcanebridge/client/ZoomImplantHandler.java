@@ -46,16 +46,30 @@ public class ZoomImplantHandler {
 
         boolean hasZoom = hasZoomUpgradeInstalled(player);
         boolean isZoomPressed = isAnyZoomKeyPressed(mc);
+        boolean holdingCgs = com.example.arcanebridge.client.compat.CgsEmfCompat.isCgsWeapon(player.getMainHandItem())
+                || com.example.arcanebridge.client.compat.CgsEmfCompat.isCgsWeapon(player.getOffhandItem());
 
-        // Если импланта НЕТ — наглухо блокируем любые попытки изменить FOV
-        if (!hasZoom) {
-            event.setFOV(cleanFov);
-            return;
+        // Если удерживается оружие из CGS — не вмешиваемся в прицеливание (ADS)
+        if (holdingCgs) {
+            // Если игрок без импланта всё же нажал отдельную кнопку зума — глушим только сторонний зум
+            if (!hasZoom && isZoomPressed) {
+                event.setFOV(cleanFov);
+            }
+        } else {
+            // Вне оружия: если импланта НЕТ и нажата кнопка зума — сбрасываем FOV
+            if (!hasZoom && isZoomPressed) {
+                event.setFOV(cleanFov);
+            }
         }
 
-        // Если имплант ЕСТЬ — вырезаем только встроенный Shift-зум Cyberware
-        if (player.isCrouching() && !isZoomPressed) {
-            event.setFOV(cleanFov);
+        // Диегетическое расширение угла обзора при боевом резонансе (Пробуждение Щупалец и Кинетический Форсаж)
+        int tAwake = com.example.arcanebridge.network.ClientboundResonanceSyncPacket.tendrilAwakeningTicksStatic;
+        boolean hasOverclock = player.hasEffect(com.example.arcanebridge.registry.ModEffects.KINETIC_OVERCLOCK.get());
+        if (tAwake > 0) {
+            event.setFOV(event.getFOV() + 6.0);
+        } else if (hasOverclock) {
+            int amp = player.getEffect(com.example.arcanebridge.registry.ModEffects.KINETIC_OVERCLOCK.get()).getAmplifier();
+            event.setFOV(event.getFOV() + 5.0 + (amp * 2.0));
         }
     }
 

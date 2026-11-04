@@ -11,6 +11,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import top.theillusivec4.curios.api.CuriosApi;
@@ -28,14 +30,33 @@ public class ResonanceOverlay {
     );
 
     private static final int MAX_BAR_WIDTH = 40;
+    private static boolean isGearEquippedCached = false;
+    private static int clientTickCounter = 0;
+
+    @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+
+        Minecraft mc = Minecraft.getInstance();
+        Player player = mc.player;
+        if (player == null) {
+            isGearEquippedCached = false;
+            return;
+        }
+
+        if (++clientTickCounter % 5 == 0) {
+            isGearEquippedCached = checkGearEquipped(player);
+        }
+    }
 
     @SubscribeEvent
     public static void onRenderGui(RenderGuiOverlayEvent.Post event) {
+        if (!VanillaGuiOverlay.HOTBAR.type().equals(event.getOverlay())) return;
         if (!HudConfig.showResonanceHud) return;
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.options.hideGui || mc.player == null) return;
-        if (!isGearEquipped(mc)) return;
+        if (!isGearEquippedCached) return;
 
         GuiGraphics guiGraphics = event.getGuiGraphics();
         int screenHeight = event.getWindow().getGuiScaledHeight();
@@ -56,7 +77,23 @@ public class ResonanceOverlay {
         int x = 60;
         int y = screenHeight - 60;
 
-        drawBar(guiGraphics, x, y, MAX_BAR_WIDTH, 4, stability, stability < 20 ? 0xFFFF0000 : 0xFF00E5FF);
+        int barColor;
+        if (stability > 85.0f) {
+            barColor = 0xFF00E5FF;
+        } else if (stability > 70.0f) {
+            barColor = 0xFF76FF03;
+        } else if (stability > 50.0f) {
+            barColor = 0xFFFFD600;
+        } else if (stability > 35.0f) {
+            barColor = 0xFFFF6D00;
+        } else if (stability > 20.0f) {
+            barColor = 0xFFFF1744;
+        } else {
+            boolean blink = (System.currentTimeMillis() / 150) % 2 == 0;
+            barColor = blink ? 0xFFFF0000 : 0xFF880000;
+        }
+
+        drawBar(guiGraphics, x, y, MAX_BAR_WIDTH, 4, stability, barColor);
 
         drawFrequencyIndicator(guiGraphics, x, y + 10, "M", mLoad, mLimit, 0xFFAA00, mShock);
         drawFrequencyIndicator(guiGraphics, x, y + 20, "A", aLoad, aLimit, 0xAA00FF, aShock);
@@ -93,8 +130,7 @@ public class ResonanceOverlay {
         g.fill(x, y, x + fillWidth, y + 2, finalColor);
     }
 
-    private static boolean isGearEquipped(Minecraft mc) {
-        Player player = mc.player;
+    private static boolean checkGearEquipped(Player player) {
         if (player == null) return false;
 
         ItemStack headStack = player.getItemBySlot(EquipmentSlot.HEAD);

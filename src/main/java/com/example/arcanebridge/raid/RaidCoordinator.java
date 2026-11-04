@@ -51,7 +51,14 @@ public class RaidCoordinator {
     private static ResourceKey<Level> savedDimension = null;
 
     private static int globalCooldownTimer = 0;
+    private static int currentCooldownTarget = 1800;
+    private static ResourceKey<Level> raidDimension = Level.OVERWORLD;
     private static final Set<UUID> playersInZone = new HashSet<>();
+
+    public static void resetCooldown() {
+        globalCooldownTimer = 0;
+        currentCooldownTarget = RaidConfig.getNextIntervalSeconds();
+    }
 
     public static boolean isPlayerInRaidZone(ServerPlayer player) {
         return isRaidActive && playersInZone.contains(player.getUUID());
@@ -82,6 +89,15 @@ public class RaidCoordinator {
         }
 
         MinecraftServer server = player.getServer();
+        ServerLevel level = player.serverLevel();
+        raidDimension = level.dimension();
+
+        if (savedDayTime == -1L) {
+            savedDayTime = level.getDayTime();
+            savedRaining = level.isRaining();
+            savedThundering = level.isThundering();
+            savedDimension = level.dimension();
+        }
 
         isPrepActive = true;
         maxPrepSeconds = customPrepSeconds > 0 ? customPrepSeconds : RaidConfig.prepDurationSeconds;
@@ -125,6 +141,15 @@ public class RaidCoordinator {
         currentRaidType = raidType != null ? raidType : currentRaidType;
 
         ServerLevel level = player.serverLevel();
+        raidDimension = level.dimension();
+
+        if (savedDayTime == -1L) {
+            savedDayTime = level.getDayTime();
+            savedRaining = level.isRaining();
+            savedThundering = level.isThundering();
+            savedDimension = level.dimension();
+        }
+
         level.setDayTime(18000); // Ночь
         level.setWeatherParameters(0, 6000, true, true); // Гроза
 
@@ -185,6 +210,8 @@ public class RaidCoordinator {
         targetPlayerUUID = null;
         playersInZone.clear();
 
+        resetCooldown();
+
         syncVfxToAll();
 
         if (server != null) {
@@ -203,7 +230,8 @@ public class RaidCoordinator {
                 isRaidActive,
                 currentRaidType,
                 targetPlayerUUID,
-                raidEpicenter
+                raidEpicenter,
+                raidDimension != null ? raidDimension.location() : new ResourceLocation("minecraft", "overworld")
         ));
     }
 
@@ -231,7 +259,8 @@ public class RaidCoordinator {
             double radiusSq = RaidConfig.zoneRadiusBlocks * RaidConfig.zoneRadiusBlocks;
 
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                if (player.blockPosition().distSqr(raidEpicenter) <= radiusSq) {
+                if (player.serverLevel().dimension() == raidDimension
+                        && player.blockPosition().distSqr(raidEpicenter) <= radiusSq) {
                     playersInZone.add(player.getUUID());
                 }
             }
@@ -273,13 +302,22 @@ public class RaidCoordinator {
         if (!RaidConfig.enabled) return;
         if (server.overworld().getDifficulty() == Difficulty.PEACEFUL) return;
 
+        if (currentCooldownTarget <= 0) {
+            currentCooldownTarget = RaidConfig.getNextIntervalSeconds();
+        }
+
         globalCooldownTimer++;
-        if (globalCooldownTimer >= RaidConfig.intervalSeconds) {
-            globalCooldownTimer = 0;
+        if (globalCooldownTimer >= currentCooldownTarget) {
+            resetCooldown();
 
             List<ServerPlayer> validCandidates = new ArrayList<>();
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 if (player.isCreative() || player.isSpectator()) continue;
+
+                // Защита от спавна мобов на крыше: игрок не должен быть глубоко в пещере без неба
+                BlockPos pPos = player.blockPosition();
+                if (!player.serverLevel().canSeeSky(pPos) && pPos.getY() < 55) continue;
+
                 if (hasRequiredAdvancements(player, server)) {
                     validCandidates.add(player);
                 }
@@ -384,7 +422,42 @@ public class RaidCoordinator {
                 .requires(s -> s.hasPermission(2))
                 .executes(ctx -> {
                     stopRaid(ctx.getSource().getServer());
+                    resetCooldown();
                     ctx.getSource().sendSuccess(() -> Component.literal("§a[СИСТЕМА] Рейд и таймеры сброшены!"), true);
+                    return 1;
+                })
+        );
+
+        dispatcher.register(Commands.literal("arcane_raid_reload")
+                .requires(s -> s.hasPermission(2))
+                .executes(ctx -> {
+                    RaidConfig.loadOrCreateConfig();
+                    resetCooldown();
+                    String intervalInfo = RaidConfig.minIntervalSeconds == RaidConfig.maxIntervalSeconds
+                            ? RaidConfig.minIntervalSeconds + " сек."
+                            : RaidConfig.minIntervalSeconds + "-" + RaidConfig.maxIntervalSeconds + " сек.";
+                    ctx.getSource().sendSuccess(() -> Component.literal(
+                            "§a[СИСТЕМА] Конфиг рейдов успешно перезагружен! " +
+                            "Интервал: §e" + intervalInfo + " §a(Следующий рейд через §e" + currentCooldownTarget + " сек.§a)"
+                    ), true);
+                    return 1;
+                })
+        );
+
+        dispatcher.register(Commands.literal("arcane_raid_status")
+                .requires(s -> s.hasPermission(2))
+                .executes(ctx -> {
+                    if (isRaidActive) {
+                        ctx.getSource().sendSuccess(() -> Component.literal("§c[СИСТЕМА] Статус: РЕЙД АКТИВЕН! Длительность: " + elapsedRaidSeconds + " сек."), false);
+                    } else if (isPrepActive) {
+                        ctx.getSource().sendSuccess(() -> Component.literal("§e[СИСТЕМА] Статус: ПОДГОТОВКА К РЕЙДУ! Осталось: " + prepTimerSeconds + " сек."), false);
+                    } else if (!RaidConfig.enabled) {
+                        ctx.getSource().sendSuccess(() -> Component.literal("§7[СИСТЕМА] Авто-рейды отключены в конфиге (enabled = false)."), false);
+                    } else {
+                        int remaining = Math.max(0, currentCooldownTarget - globalCooldownTimer);
+                        String remText = remaining >= 60 ? (remaining / 60) + " мин. " + (remaining % 60) + " сек." : remaining + " сек.";
+                        ctx.getSource().sendSuccess(() -> Component.literal("§b[СИСТЕМА] Ожидание рейда. Таймер: " + globalCooldownTimer + " / " + currentCooldownTarget + " сек. (Осталось: " + remText + ")"), false);
+                    }
                     return 1;
                 })
         );

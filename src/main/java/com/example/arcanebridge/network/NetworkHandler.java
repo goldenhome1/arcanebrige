@@ -74,6 +74,13 @@ public class NetworkHandler {
                 .decoder(ClientboundSyncShieldPacket::decode)
                 .consumerMainThread(ClientboundSyncShieldPacket::handle)
                 .add();
+
+        // 9. Визуализация направленного удара щупалец Ars Nouveau
+        CHANNEL.messageBuilder(ClientboundTendrilStrikePacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(ClientboundTendrilStrikePacket::encode)
+                .decoder(ClientboundTendrilStrikePacket::decode)
+                .consumerMainThread(ClientboundTendrilStrikePacket::handle)
+                .add();
     }
 
     public static <MSG> void sendToPlayer(MSG message, ServerPlayer player) {
@@ -85,6 +92,12 @@ public class NetworkHandler {
     public static <MSG> void sendToPlayer(ServerPlayer player, MSG message) {
         if (player != null) {
             CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), message);
+        }
+    }
+
+    public static <MSG> void sendToTrackingAndSelf(MSG message, ServerPlayer player) {
+        if (player != null) {
+            CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> player), message);
         }
     }
 

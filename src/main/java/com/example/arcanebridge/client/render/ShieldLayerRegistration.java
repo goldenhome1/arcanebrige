@@ -34,10 +34,6 @@ public class ShieldLayerRegistration {
                     for (EntityRenderer<?> renderer : renderers.values()) {
                         if (renderer instanceof LivingEntityRenderer livingRenderer) {
                             livingRenderer.addLayer(new ShieldSuitLayer(livingRenderer));
-                        } else if (renderer instanceof GeoEntityRenderer geoRenderer) {
-                            geoRenderer.addRenderLayer(new GeoShieldSuitLayer(geoRenderer));
-                        } else if (renderer instanceof GeoReplacedEntityRenderer geoReplacedRenderer) {
-                            geoReplacedRenderer.addRenderLayer(new GeoShieldSuitLayer(geoReplacedRenderer));
                         }
                     }
                 }
@@ -64,6 +60,9 @@ public class ShieldLayerRegistration {
         @SubscribeEvent
         @SuppressWarnings({"unchecked", "rawtypes"})
         public static void onGeckoCompileRenderLayers(GeoRenderEvent.Entity.CompileRenderLayers event) {
+            for (var layer : event.getRenderer().getRenderLayers()) {
+                if (layer instanceof GeoShieldSuitLayer) return;
+            }
             event.addLayer(new GeoShieldSuitLayer(event.getRenderer()));
         }
     }

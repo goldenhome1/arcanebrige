@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "minecraft:paper"
+    },
+    {
+      "item": "minecraft:ink_sac"
+    },
+    {
+      "item": "create:golden_sheet"
+    },
+    {
+      "item": "numismatics:crown"
+    }
+  ],
+  "result": {
+    "item": "arcane_bridge:numismatic_patent",
+    "count": 1
+  }
+}

@@ -15,8 +15,9 @@ public class RaidEndHandler {
         if (event.getMessage() != null) {
             String text = event.getMessage().getString().toLowerCase();
 
-            // Проверяем сообщение окончания рейда от Ravents
-            if (text.contains("рейд завершен") || text.contains("рейд завершён") || text.contains("raid completed")) {
+            // Проверяем сообщение окончания или провала рейда от Ravents
+            if (text.contains("рейд завершен") || text.contains("рейд завершён") || text.contains("raid completed")
+                    || text.contains("рейд провален") || text.contains("raid failed")) {
                 NetworkHandler.sendToServer(new ServerboundRaidEndPacket());
             }
         }

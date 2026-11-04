@@ -1,12 +1,10 @@
 package com.example.arcanebridge.network;
 
-import com.example.arcanebridge.combat.MobArchetypes;
-import net.minecraft.client.Minecraft;
+import com.example.arcanebridge.client.render.ShieldBarOverlayRenderer;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -31,20 +29,9 @@ public class ClientboundSyncShieldPacket {
     }
 
     public static void handle(ClientboundSyncShieldPacket msg, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.level != null) {
-                Entity entity = mc.level.getEntity(msg.entityId);
-                if (entity instanceof LivingEntity living && msg.shieldData != null) {
-                    CompoundTag data = living.getPersistentData();
-                    if (msg.shieldData.contains(MobArchetypes.NBT_SHIELD_LAYERS)) {
-                        data.put(MobArchetypes.NBT_SHIELD_LAYERS, msg.shieldData.getList(MobArchetypes.NBT_SHIELD_LAYERS, 10));
-                    }
-                    data.putInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX, msg.shieldData.getInt(MobArchetypes.NBT_CURRENT_LAYER_INDEX));
-                    data.putBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN, msg.shieldData.getBoolean(MobArchetypes.NBT_ALL_SHIELDS_BROKEN));
-                }
-            }
-        });
+        ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(
+                Dist.CLIENT, () -> () -> ShieldBarOverlayRenderer.handleSyncShieldPacket(msg.entityId, msg.shieldData)
+        ));
         ctx.get().setPacketHandled(true);
     }
 }

@@ -38,9 +38,14 @@ public class ArcaneBridge {
         ModItems.register(modEventBus);
         ModBlockEntities.register(modEventBus);
         ModHexActions.register(modEventBus);
+        com.example.arcanebridge.registry.ModEffects.register(modEventBus);
+        com.example.arcanebridge.registry.ModCreativeTabs.register(modEventBus);
+        modEventBus.addListener(com.example.arcanebridge.registry.ModCreativeTabs::addCreative);
 
         modEventBus.addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.register(this);
+
+        net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> com.example.arcanebridge.client.compat.CgsEmfCompat::init);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

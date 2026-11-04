@@ -7,5 +7,9 @@
     "PlayerMixin",
     "GogglesItemMixin"
   ],
+  "client": [
+    "DGLibSkinSwapperMixin",
+    "CyberwareEyeEventsMixin"
+  ],
   "injectors": { "defaultRequire": 1 }
 }

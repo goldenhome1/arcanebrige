@@ -18,5 +18,13 @@
   "item.arcane_bridge.guide_core": "Resonance Master Core",
   "entity.arcane_bridge.arcane_guide": "Master of Resonance",
   "key.categories.arcane_bridge": "Arcane Bridge",
-  "key.arcane_bridge.hud_menu": "Visor HUD Menu"
+  "key.arcane_bridge.hud_menu": "Visor HUD Menu",
+  "effect.arcane_bridge.phase_anchor": "Phase Anchor",
+  "effect.arcane_bridge.crystalline_satiation": "Crystalline Satiation",
+  "effect.arcane_bridge.calibrated_servos": "Calibrated Servos",
+  "effect.arcane_bridge.ethereal_drag": "Ethereal Drag",
+  "effect.arcane_bridge.kinetic_overclock": "Kinetic Overclock",
+  "item.arcane_bridge.numismatic_patent": "Numismatic Patent",
+  "entity.arcane_bridge.consortium_merchant": "Consortium Merchant",
+  "itemGroup.arcane_bridge": "Arcane Bridge"
 }

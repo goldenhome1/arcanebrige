@@ -40,6 +40,7 @@ public class RiftSkyRenderer {
     public static String currentRaidType = "arcane_breach";
     public static UUID targetUUID = new UUID(0L, 0L);
     public static BlockPos raidEpicenter = BlockPos.ZERO;
+    public static ResourceLocation raidDimension = null;
 
     private static float rotationTick = 0.0F;
     private static float smoothPrepSeconds = 0.0F;
@@ -72,7 +73,7 @@ public class RiftSkyRenderer {
             { 315.0F, 55.0F,  18.0F, 58.0F, 3.1F, 0.041F }
     };
 
-    public static void updateRaidState(boolean prep, int prepSec, int maxSec, boolean raid, String type, UUID target, BlockPos epicenter) {
+    public static void updateRaidState(boolean prep, int prepSec, int maxSec, boolean raid, String type, UUID target, BlockPos epicenter, ResourceLocation dimension) {
         if (raid && !prevRaidState) {
             flashIntensity = 1.0F;
         }
@@ -85,6 +86,7 @@ public class RiftSkyRenderer {
         currentRaidType = type != null ? type : "arcane_breach";
         targetUUID = target;
         raidEpicenter = epicenter;
+        raidDimension = dimension;
 
         if (isPrepActive && Math.abs(smoothPrepSeconds - prepSec) > 2.0F) {
             smoothPrepSeconds = prepSec;
@@ -94,6 +96,7 @@ public class RiftSkyRenderer {
             openProgress = 0.0F;
             smoothPrepSeconds = 0.0F;
             flashIntensity = 0.0F;
+            raidDimension = null;
         }
     }
 
@@ -124,6 +127,8 @@ public class RiftSkyRenderer {
     @SubscribeEvent
     public static void onComputeFogColor(ViewportEvent.ComputeFogColor event) {
         if (!isPrepActive && !isRaidActive && flashIntensity <= 0.001F) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || raidDimension == null || !mc.level.dimension().location().equals(raidDimension)) return;
 
         float intensity = isRaidActive ? 0.60F : Math.max(0.05F, 1.0F - (smoothPrepSeconds / (float) maxPrepSeconds)) * 0.50F;
 
@@ -156,7 +161,7 @@ public class RiftSkyRenderer {
 
         Minecraft mc = Minecraft.getInstance();
         Player localPlayer = mc.player;
-        if (localPlayer == null || mc.level == null) return;
+        if (localPlayer == null || mc.level == null || raidDimension == null || !mc.level.dimension().location().equals(raidDimension)) return;
 
         PoseStack poseStack = event.getPoseStack();
         float pTick = event.getPartialTick();

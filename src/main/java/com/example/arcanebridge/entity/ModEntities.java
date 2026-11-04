@@ -17,6 +17,12 @@ public class ModEntities {
                     .clientTrackingRange(10)
                     .build("arcane_guide"));
 
+    public static final RegistryObject<EntityType<ConsortiumMerchantEntity>> CONSORTIUM_MERCHANT =
+            ENTITIES.register("consortium_merchant", () -> EntityType.Builder.of(ConsortiumMerchantEntity::new, MobCategory.MISC)
+                    .sized(0.6F, 1.95F)
+                    .clientTrackingRange(10)
+                    .build("consortium_merchant"));
+
     public static void register(IEventBus eventBus) {
         ENTITIES.register(eventBus);
     }

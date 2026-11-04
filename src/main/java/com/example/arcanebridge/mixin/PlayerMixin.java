@@ -168,8 +168,7 @@ public class PlayerMixin {
                     String className = frame.getClassName().toLowerCase();
                     return className.contains("ars_nouveau") ||
                             className.contains("ars_elemental") ||
-                            className.contains("simibubi.create") ||
-                            className.contains("arcanebridge");
+                            className.contains("simibubi.create");
                 })
         );
     }

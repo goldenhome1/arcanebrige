@@ -7,6 +7,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
+import net.minecraft.resources.ResourceLocation;
+
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -19,9 +21,11 @@ public class ClientboundRaidVfxPacket {
     private final String raidType;
     private final UUID targetPlayerUUID;
     private final BlockPos epicenter;
+    private final ResourceLocation dimension;
 
     public ClientboundRaidVfxPacket(boolean isPrepActive, int prepTimerSeconds, int maxPrepSeconds,
-                                   boolean isRaidActive, String raidType, UUID targetPlayerUUID, BlockPos epicenter) {
+                                   boolean isRaidActive, String raidType, UUID targetPlayerUUID, BlockPos epicenter,
+                                   ResourceLocation dimension) {
         this.isPrepActive = isPrepActive;
         this.prepTimerSeconds = prepTimerSeconds;
         this.maxPrepSeconds = maxPrepSeconds;
@@ -29,6 +33,7 @@ public class ClientboundRaidVfxPacket {
         this.raidType = raidType != null ? raidType : "arcane_breach";
         this.targetPlayerUUID = targetPlayerUUID != null ? targetPlayerUUID : new UUID(0L, 0L);
         this.epicenter = epicenter != null ? epicenter : BlockPos.ZERO;
+        this.dimension = dimension != null ? dimension : new ResourceLocation("minecraft", "overworld");
     }
 
     public ClientboundRaidVfxPacket(FriendlyByteBuf buf) {
@@ -39,6 +44,7 @@ public class ClientboundRaidVfxPacket {
         this.raidType = buf.readUtf(64);
         this.targetPlayerUUID = buf.readUUID();
         this.epicenter = buf.readBlockPos();
+        this.dimension = buf.readResourceLocation();
     }
 
     public static void encode(ClientboundRaidVfxPacket msg, FriendlyByteBuf buf) {
@@ -49,6 +55,7 @@ public class ClientboundRaidVfxPacket {
         buf.writeUtf(msg.raidType);
         buf.writeUUID(msg.targetPlayerUUID);
         buf.writeBlockPos(msg.epicenter);
+        buf.writeResourceLocation(msg.dimension);
     }
 
     public static ClientboundRaidVfxPacket decode(FriendlyByteBuf buf) {
@@ -66,7 +73,8 @@ public class ClientboundRaidVfxPacket {
                         this.isRaidActive,
                         this.raidType,
                         this.targetPlayerUUID,
-                        this.epicenter
+                        this.epicenter,
+                        this.dimension
                 );
             });
         });

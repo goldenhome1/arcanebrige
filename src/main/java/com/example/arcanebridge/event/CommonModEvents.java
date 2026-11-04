@@ -12,5 +12,6 @@ public class CommonModEvents {
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(ModEntities.ARCANE_GUIDE.get(), ArcaneGuideEntity.createAttributes().build());
+        event.put(ModEntities.CONSORTIUM_MERCHANT.get(), net.minecraft.world.entity.npc.Villager.createAttributes().build());
     }
 }
